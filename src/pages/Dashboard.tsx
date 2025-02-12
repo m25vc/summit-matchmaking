@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -134,23 +133,12 @@ const Dashboard = () => {
         priority
       };
 
-      // First try to update if exists
-      const { data: updateResult, error: updateError } = await supabase
+      const { error } = await supabase
         .from('priority_matches')
-        .update(matchData)
-        .eq('founder_id', matchData.founder_id)
-        .eq('investor_id', matchData.investor_id);
+        .upsert(matchData);
 
-      if (updateError) {
-        // If update fails (likely because record doesn't exist), try insert
-        const { error: insertError } = await supabase
-          .from('priority_matches')
-          .insert(matchData);
+      if (error) throw error;
 
-        if (insertError) throw insertError;
-      }
-
-      // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => {
           if (user.id === userId) {
@@ -167,7 +155,6 @@ const Dashboard = () => {
         })
       );
 
-      // Update high priority count
       if (priority === 'high') {
         setHighPriorityCount(prev => {
           const userHadHighPriority = users.find(u => 

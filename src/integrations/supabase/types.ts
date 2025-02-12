@@ -130,6 +130,45 @@ export type Database = {
           },
         ]
       }
+      priority_matches: {
+        Row: {
+          created_at: string
+          founder_id: string
+          id: string
+          investor_id: string
+          priority: Database["public"]["Enums"]["match_priority"]
+        }
+        Insert: {
+          created_at?: string
+          founder_id: string
+          id?: string
+          investor_id: string
+          priority: Database["public"]["Enums"]["match_priority"]
+        }
+        Update: {
+          created_at?: string
+          founder_id?: string
+          id?: string
+          investor_id?: string
+          priority?: Database["public"]["Enums"]["match_priority"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priority_matches_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_matches_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -177,6 +216,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      match_priority: "high" | "medium" | "low"
       user_type: "founder" | "investor"
     }
     CompositeTypes: {

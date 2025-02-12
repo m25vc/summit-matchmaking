@@ -9,7 +9,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleSignIn = () => {
-    toast.info("Sign in functionality coming soon!");
+    navigate('/auth');
   };
 
   const handleContact = () => {

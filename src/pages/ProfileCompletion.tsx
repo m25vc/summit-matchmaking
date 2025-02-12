@@ -52,24 +52,36 @@ export default function ProfileCompletion() {
 
         // Load existing details if any
         if (profileData.user_type === 'founder') {
-          const { data } = await supabase
-            .from('founder_details')
-            .select('*')
-            .eq('profile_id', user.id)
-            .maybeSingle();
-          
-          if (data) {
-            setFounderDetails(data);
+          try {
+            const { data, error } = await supabase
+              .from('founder_details')
+              .select('*')
+              .eq('profile_id', user.id)
+              .maybeSingle();
+            
+            if (error) throw error;
+            if (data) {
+              setFounderDetails(data);
+            }
+          } catch (error) {
+            console.error('Error fetching founder details:', error);
+            // Don't show error toast as this is expected for new users
           }
         } else if (profileData.user_type === 'investor') {
-          const { data } = await supabase
-            .from('investor_details')
-            .select('*')
-            .eq('profile_id', user.id)
-            .maybeSingle();
-          
-          if (data) {
-            setInvestorDetails(data);
+          try {
+            const { data, error } = await supabase
+              .from('investor_details')
+              .select('*')
+              .eq('profile_id', user.id)
+              .maybeSingle();
+            
+            if (error) throw error;
+            if (data) {
+              setInvestorDetails(data);
+            }
+          } catch (error) {
+            console.error('Error fetching investor details:', error);
+            // Don't show error toast as this is expected for new users
           }
         }
       } catch (error) {

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,6 @@ const Dashboard = () => {
       
       toast.success('Test users created successfully');
       console.log('Created users:', data);
-      // Refresh the page to show new users
       window.location.reload();
     } catch (error) {
       console.error('Error:', error);
@@ -68,9 +68,11 @@ const Dashboard = () => {
         if (profileData) {
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
           
+          // Fetch all priority matches for the current user
           const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
             .from('priority_matches')
-            .select('*');
+            .select('*')
+            .or(`founder_id.eq.${user.id},investor_id.eq.${user.id}`);
 
           if (priorityMatchesError) throw priorityMatchesError;
 
@@ -80,6 +82,7 @@ const Dashboard = () => {
           ).length;
           setHighPriorityCount(highPriorityCount);
 
+          // Fetch users of opposite type with their details
           const { data: usersData, error: usersError } = await supabase
             .from('profiles')
             .select(`
@@ -91,6 +94,7 @@ const Dashboard = () => {
 
           if (usersError) throw usersError;
 
+          // Map priority matches to users
           const usersWithPriority = (usersData || []).map(user => ({
             ...user,
             priority_matches: priorityMatchesData?.filter(match => 
@@ -137,7 +141,10 @@ const Dashboard = () => {
         .from('priority_matches')
         .upsert(matchData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upsert error:', error);
+        throw error;
+      }
 
       setUsers(prevUsers => 
         prevUsers.map(user => {

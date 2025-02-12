@@ -42,12 +42,24 @@ const Auth = () => {
         if (error) throw error;
         toast.success("Check your email for the confirmation link!");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        navigate('/dashboard');
+        
+        // Check if user needs to complete their profile
+        const { data: profileData } = await supabase
+          .from(data.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
+          .select('*')
+          .eq('profile_id', data.user.id)
+          .single();
+
+        if (!profileData) {
+          navigate('/profile-completion');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       toast.error(error.message);

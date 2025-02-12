@@ -139,7 +139,9 @@ const Dashboard = () => {
 
       const { error } = await supabase
         .from('priority_matches')
-        .upsert(matchData);
+        .upsert(matchData, {
+          onConflict: 'founder_id,investor_id'
+        });
 
       if (error) {
         console.error('Upsert error:', error);

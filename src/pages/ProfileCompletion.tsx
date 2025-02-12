@@ -98,7 +98,7 @@ export default function ProfileCompletion() {
           funding_stage: values.fundingStage,
           company_description: values.companyDescription,
           target_raise_amount: values.targetRaiseAmount ? parseInt(values.targetRaiseAmount) : null,
-          pitch_deck_url: values.pitchDeckUrl || null,
+          company_website_url: values.companyWebsiteUrl || null,
         });
 
       if (error) {
@@ -127,6 +127,7 @@ export default function ProfileCompletion() {
           max_investment_amount: values.maxInvestmentAmount ? parseInt(values.maxInvestmentAmount) : null,
           preferred_industries: values.preferredIndustries.split(',').map(s => s.trim()),
           preferred_stages: values.preferredStages.split(',').map(s => s.trim()),
+          firm_website_url: values.firmWebsiteUrl || null,
         });
 
       if (error) {
@@ -163,7 +164,7 @@ export default function ProfileCompletion() {
     fundingStage: founderDetails.funding_stage,
     companyDescription: founderDetails.company_description,
     targetRaiseAmount: founderDetails.target_raise_amount?.toString() || '',
-    pitchDeckUrl: founderDetails.pitch_deck_url || '',
+    companyWebsiteUrl: founderDetails.company_website_url || '',
   } : undefined;
 
   const investorDefaultValues = investorDetails ? {
@@ -173,6 +174,7 @@ export default function ProfileCompletion() {
     maxInvestmentAmount: investorDetails.max_investment_amount?.toString() || '',
     preferredIndustries: (investorDetails.preferred_industries || []).join(', '),
     preferredStages: (investorDetails.preferred_stages || []).join(', '),
+    firmWebsiteUrl: investorDetails.firm_website_url || '',
   } : undefined;
 
   return (

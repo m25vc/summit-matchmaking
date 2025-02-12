@@ -128,26 +128,17 @@ const Dashboard = () => {
     }
 
     try {
+      // Simplified upsert operation
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority
       };
 
-      const { data: existingMatch, error: fetchError } = await supabase
-        .from('priority_matches')
-        .select('*')
-        .eq('founder_id', matchData.founder_id)
-        .eq('investor_id', matchData.investor_id)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
       const { error: upsertError } = await supabase
         .from('priority_matches')
-        .upsert({
-          ...matchData,
-          id: existingMatch?.id
+        .upsert(matchData, {
+          onConflict: 'founder_id,investor_id'
         });
 
       if (upsertError) throw upsertError;
@@ -159,9 +150,9 @@ const Dashboard = () => {
             return {
               ...user,
               priority_matches: [{
-                id: existingMatch?.id || '',
                 ...matchData,
-                created_at: existingMatch?.created_at || new Date().toISOString()
+                id: user.priority_matches?.[0]?.id || '',
+                created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString()
               }]
             };
           }

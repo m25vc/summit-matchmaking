@@ -132,7 +132,8 @@ const Dashboard = () => {
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
-        priority
+        priority,
+        set_by: profile.id // Add the set_by field with the current user's ID
       };
 
       console.log('Upserting match data:', matchData);

@@ -35,12 +35,19 @@ const AdminDashboard = () => {
           founder:profiles!priority_matches_founder_id_fkey(
             first_name,
             last_name,
-            company_name
+            company_name,
+            user_type
           ),
           investor:profiles!priority_matches_investor_id_fkey(
             first_name,
             last_name,
-            company_name
+            company_name,
+            user_type
+          ),
+          set_by_user:profiles!priority_matches_set_by_fkey(
+            first_name,
+            last_name,
+            user_type
           )
         `);
       
@@ -102,6 +109,7 @@ const AdminDashboard = () => {
                     <TableHead>Founder</TableHead>
                     <TableHead>Investor</TableHead>
                     <TableHead>Priority</TableHead>
+                    <TableHead>Set By</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -129,6 +137,13 @@ const AdminDashboard = () => {
                           match.priority === 'low' ? 'text-red-600' : 'text-gray-500'
                         }`}>
                           {match.priority}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {match.set_by_user?.first_name} {match.set_by_user?.last_name}
+                        <br />
+                        <span className="text-sm text-gray-500">
+                          ({match.set_by_user?.user_type})
                         </span>
                       </TableCell>
                       <TableCell>

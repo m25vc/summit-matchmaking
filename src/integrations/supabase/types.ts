@@ -140,6 +140,7 @@ export type Database = {
           id: string
           investor_id: string
           priority: Database["public"]["Enums"]["match_priority"]
+          set_by: string
         }
         Insert: {
           created_at?: string
@@ -147,6 +148,7 @@ export type Database = {
           id?: string
           investor_id: string
           priority: Database["public"]["Enums"]["match_priority"]
+          set_by: string
         }
         Update: {
           created_at?: string
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           investor_id?: string
           priority?: Database["public"]["Enums"]["match_priority"]
+          set_by?: string
         }
         Relationships: [
           {
@@ -166,6 +169,13 @@ export type Database = {
           {
             foreignKeyName: "priority_matches_investor_id_fkey"
             columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_matches_set_by_fkey"
+            columns: ["set_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

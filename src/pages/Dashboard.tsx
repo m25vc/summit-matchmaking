@@ -27,7 +27,7 @@ type PriorityMatch = {
 type UserWithDetails = Profile & {
   investor_details?: InvestorDetails;
   founder_details?: FounderDetails;
-  priority_match?: PriorityMatch;
+  priority_matches?: PriorityMatch[];
 };
 
 const Dashboard = () => {
@@ -54,29 +54,42 @@ const Dashboard = () => {
         if (profileData) {
           // Fetch users of the opposite type (investors see founders, founders see investors)
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
+          
+          // First, get all priority matches for the current user
+          const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
+            .from('priority_matches')
+            .select('*')
+            .eq(profileData.user_type === 'founder' ? 'founder_id' : 'investor_id', user.id);
+
+          if (priorityMatchesError) throw priorityMatchesError;
+
+          // Count high priority matches
+          const highPriorityCount = (priorityMatchesData || []).filter(match => match.priority === 'high').length;
+          setHighPriorityCount(highPriorityCount);
+
+          // Then fetch users with their details
           const { data: usersData, error: usersError } = await supabase
             .from('profiles')
             .select(`
               *,
               investor_details (*),
-              founder_details (*),
-              priority_matches!priority_matches_${oppositeType}_id_fkey (*)
+              founder_details (*)
             `)
             .eq('user_type', oppositeType);
 
           if (usersError) throw usersError;
 
-          // Count high priority matches
-          const { data: highPriorityData, error: priorityError } = await supabase
-            .from('priority_matches')
-            .select('*')
-            .eq(profileData.user_type === 'founder' ? 'founder_id' : 'investor_id', user.id)
-            .eq('priority', 'high');
+          // Combine users with their priority match data
+          const usersWithPriority = (usersData || []).map(user => ({
+            ...user,
+            priority_matches: priorityMatchesData?.filter(match => 
+              profileData.user_type === 'founder' 
+                ? match.investor_id === user.id
+                : match.founder_id === user.id
+            ) || []
+          }));
 
-          if (priorityError) throw priorityError;
-
-          setHighPriorityCount(highPriorityData?.length || 0);
-          setUsers(usersData || []);
+          setUsers(usersWithPriority);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -95,7 +108,9 @@ const Dashboard = () => {
       return;
     }
 
-    if (priority === 'high' && highPriorityCount >= 5) {
+    if (priority === 'high' && highPriorityCount >= 5 && !users.find(u => 
+      u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+    )) {
       toast.error("You can only have up to 5 high priority matches");
       return;
     }
@@ -114,33 +129,39 @@ const Dashboard = () => {
 
       if (upsertError) throw upsertError;
 
-      // Refresh the high priority count
-      const { data: highPriorityData, error: countError } = await supabase
-        .from('priority_matches')
-        .select('*')
-        .eq(profile.user_type === 'founder' ? 'founder_id' : 'investor_id', profile.id)
-        .eq('priority', 'high');
-
-      if (countError) throw countError;
-
-      setHighPriorityCount(highPriorityData?.length || 0);
-      
       // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => {
           if (user.id === userId) {
             return {
               ...user,
-              priority_match: {
-                id: '', // This will be updated on next fetch
+              priority_matches: [{
+                id: user.priority_matches?.[0]?.id || '',
                 ...matchData,
                 priority
-              }
+              }]
             };
           }
           return user;
         })
       );
+
+      // Update high priority count
+      if (priority === 'high') {
+        setHighPriorityCount(prev => {
+          const userHadHighPriority = users.find(u => 
+            u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+          );
+          return userHadHighPriority ? prev : prev + 1;
+        });
+      } else {
+        setHighPriorityCount(prev => {
+          const userHadHighPriority = users.find(u => 
+            u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+          );
+          return userHadHighPriority ? prev - 1 : prev;
+        });
+      }
 
       toast.success("Priority updated successfully");
     } catch (error) {
@@ -212,7 +233,7 @@ const Dashboard = () => {
                     )}
                     <div className="pt-4">
                       <Select
-                        value={user.priority_match?.priority || ''}
+                        value={user.priority_matches?.[0]?.priority || ''}
                         onValueChange={(value: 'high' | 'medium' | 'low') => handlePriorityChange(user.id, value)}
                       >
                         <SelectTrigger>

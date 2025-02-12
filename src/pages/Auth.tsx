@@ -50,7 +50,7 @@ const Auth = () => {
         
         if (signInError) throw signInError;
         
-        navigate('/profile-completion');
+        navigate('/profile');
         toast.success("Account created successfully!");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -67,7 +67,7 @@ const Auth = () => {
           .single();
 
         if (!profileData) {
-          navigate('/profile-completion');
+          navigate('/profile');
         } else {
           navigate('/dashboard');
         }

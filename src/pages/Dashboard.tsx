@@ -31,6 +31,26 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [highPriorityCount, setHighPriorityCount] = useState(0);
 
+  const createTestUsers = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-test-users');
+      
+      if (error) {
+        console.error('Error creating test users:', error);
+        toast.error('Failed to create test users');
+        return;
+      }
+      
+      toast.success('Test users created successfully');
+      console.log('Created users:', data);
+      // Refresh the page to show new users
+      window.location.reload();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to create test users');
+    }
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -190,6 +210,13 @@ const Dashboard = () => {
                 Complete Your Profile
               </Button>
             )}
+            <Button 
+              variant="outline" 
+              onClick={createTestUsers}
+              className="ml-4"
+            >
+              Create Test Users
+            </Button>
           </CardContent>
         </Card>
 

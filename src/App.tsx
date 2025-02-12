@@ -9,6 +9,7 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import ProfileCompletion from '@/pages/ProfileCompletion';
+import EditProfile from '@/pages/EditProfile';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -34,6 +35,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfileCompletion />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/edit"
+              element={
+                <ProtectedRoute>
+                  <EditProfile />
                 </ProtectedRoute>
               }
             />

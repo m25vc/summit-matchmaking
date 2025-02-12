@@ -2,14 +2,36 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const handleSignIn = () => {
+    // For now, we'll just show a toast since auth isn't implemented yet
+    toast.info("Sign in functionality coming soon!");
+  };
+
+  const handleGetStarted = () => {
+    // For now, we'll just show a toast since auth isn't implemented yet
+    toast.info("Get started functionality coming soon!");
+  };
+
+  const handleLearnMore = () => {
+    // Scroll to features section smoothly
+    const featuresSection = document.querySelector('#features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="w-full px-6 py-4 backdrop-blur-lg border-b border-slate-200/20">
+      <nav className="w-full px-6 py-4 backdrop-blur-lg border-b border-slate-200/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-theme-800">MeetMatcherHub</h1>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleSignIn}>
             Sign In <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
@@ -38,15 +60,16 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex gap-4 justify-center"
           >
-            <Button size="lg" className="gap-2">
+            <Button size="lg" className="gap-2" onClick={handleGetStarted}>
               Get Started <ArrowRight className="w-4 h-4" />
             </Button>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" onClick={handleLearnMore}>
               Learn More
             </Button>
           </motion.div>
 
           <motion.div
+            id="features"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.4 }}

@@ -3,18 +3,28 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
-import { UserCog } from 'lucide-react';
+import { UserCog, ShieldCheck } from 'lucide-react';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
+        return;
       }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      setIsAdmin(profile?.role === 'admin');
       setLoading(false);
     };
     
@@ -39,6 +49,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <Link to="/dashboard" className="text-xl font-bold">M25 Summit</Link>
             </div>
             <div className="flex items-center space-x-4">
+              {isAdmin && (
+                <Link 
+                  to="/admin"
+                  className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
+                >
+                  <ShieldCheck className="h-4 w-4 mr-1" />
+                  Admin
+                </Link>
+              )}
               <Link 
                 to="/profile/edit"
                 className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"

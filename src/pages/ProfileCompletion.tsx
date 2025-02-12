@@ -20,24 +20,75 @@ export default function ProfileCompletion() {
     const fetchProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
 
-        const { data } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-        setProfile(data);
+        if (profileError) throw profileError;
+        
+        if (!profileData) {
+          toast.error("Profile not found");
+          navigate('/auth');
+          return;
+        }
 
-        // Profile data will be loaded by the respective form components
+        setProfile(profileData);
+
+        // Load existing details if any
+        if (profileData.user_type === 'founder') {
+          const { data } = await supabase
+            .from('founder_details')
+            .select('*')
+            .eq('profile_id', user.id)
+            .maybeSingle();
+          
+          if (data) {
+            // Pre-fill the form if data exists
+            form.reset({
+              industry: data.industry,
+              companyStage: data.company_stage,
+              fundingStage: data.funding_stage,
+              companyDescription: data.company_description,
+              targetRaiseAmount: data.target_raise_amount?.toString() || '',
+              pitchDeckUrl: data.pitch_deck_url || '',
+            });
+          }
+        } else {
+          const { data } = await supabase
+            .from('investor_details')
+            .select('*')
+            .eq('profile_id', user.id)
+            .maybeSingle();
+          
+          if (data) {
+            // Pre-fill the form if data exists
+            form.reset({
+              firmDescription: data.firm_description,
+              investmentThesis: data.investment_thesis || '',
+              minInvestmentAmount: data.min_investment_amount?.toString() || '',
+              maxInvestmentAmount: data.max_investment_amount?.toString() || '',
+              preferredIndustries: (data.preferred_industries || []).join(', '),
+              preferredStages: (data.preferred_stages || []).join(', '),
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error("Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   const onFounderSubmit = async (values: FounderFormValues) => {
     try {
@@ -88,15 +139,28 @@ export default function ProfileCompletion() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!profile) {
+    return null;
   }
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6 p-6">
         <h1 className="text-2xl font-bold">Complete Your Profile</h1>
+        <p className="text-gray-600 mb-6">
+          Please provide additional information to complete your profile
+        </p>
         
-        {profile?.user_type === 'founder' ? (
+        {profile.user_type === 'founder' ? (
           <FounderForm onSubmit={onFounderSubmit} />
         ) : (
           <InvestorForm onSubmit={onInvestorSubmit} />

@@ -1,6 +1,7 @@
 
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
@@ -21,6 +22,9 @@ interface UserListProps {
 }
 
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
+  const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
+  const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">
@@ -29,15 +33,51 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
       <p className="text-gray-600">
         You can mark up to 5 {profile?.user_type === 'founder' ? 'investors' : 'founders'} as high priority. Current high priority matches: {highPriorityCount}/5
       </p>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {users.map((user) => (
-          <UserCard 
-            key={user.id} 
-            user={user} 
-            onPriorityChange={onPriorityChange}
-          />
-        ))}
-      </div>
+      
+      <Tabs defaultValue="new" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="new">
+            New Matches ({newUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="priority">
+            Priority List ({priorityUsers.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="new">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {newUsers.map((user) => (
+              <UserCard 
+                key={user.id} 
+                user={user} 
+                onPriorityChange={onPriorityChange}
+              />
+            ))}
+            {newUsers.length === 0 && (
+              <p className="col-span-full text-center text-gray-500 py-8">
+                No new matches available
+              </p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="priority">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {priorityUsers.map((user) => (
+              <UserCard 
+                key={user.id} 
+                user={user} 
+                onPriorityChange={onPriorityChange}
+              />
+            ))}
+            {priorityUsers.length === 0 && (
+              <p className="col-span-full text-center text-gray-500 py-8">
+                No priority matches yet
+              </p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

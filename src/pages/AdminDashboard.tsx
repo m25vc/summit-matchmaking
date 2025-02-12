@@ -63,23 +63,39 @@ const AdminDashboard = () => {
           )
         `);
       
-      if (matchesError) throw matchesError;
+      if (matchesError) {
+        console.error('Matches error:', matchesError);
+        throw matchesError;
+      }
+
+      console.log('Matches data:', matchesData); // Debug log
 
       // Get all priority matches in a single query
       const { data: allPriorityMatches, error: priorityError } = await supabase
         .from('priority_matches')
         .select('*');
 
-      if (priorityError) throw priorityError;
+      if (priorityError) {
+        console.error('Priority matches error:', priorityError);
+        throw priorityError;
+      }
+
+      console.log('Priority matches:', allPriorityMatches); // Debug log
 
       // Process matches with their priorities
       const matchesWithPriorities = (matchesData || []).map((match) => {
-        // Find founder and investor priorities for this match
+        // Find founder priority - only consider records where this match's founder is setting priority
         const founderPriority = allPriorityMatches?.find(
-          pm => pm.founder_id === match.founder_id && pm.investor_id === match.investor_id
+          pm => pm.founder_id === match.founder_id && 
+               pm.investor_id === match.investor_id && 
+               pm.founder_id === match.founder_id // This ensures we get founder's priority
         );
+
+        // Find investor priority - only consider records where this match's investor is setting priority
         const investorPriority = allPriorityMatches?.find(
-          pm => pm.founder_id === match.founder_id && pm.investor_id === match.investor_id
+          pm => pm.founder_id === match.founder_id && 
+               pm.investor_id === match.investor_id && 
+               pm.investor_id === match.investor_id // This ensures we get investor's priority
         );
 
         const score = getPriorityScore(
@@ -94,6 +110,8 @@ const AdminDashboard = () => {
           investor_priority: investorPriority?.priority || null,
         };
       });
+
+      console.log('Processed matches:', matchesWithPriorities); // Debug log
 
       return matchesWithPriorities;
     },

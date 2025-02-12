@@ -47,23 +47,27 @@ export default function ProfileCompletion() {
 
         // Load existing details if any
         if (profileData.user_type === 'founder') {
-          const { data } = await supabase
+          const { data, error: founderError } = await supabase
             .from('founder_details')
             .select('*')
             .eq('profile_id', user.id)
             .maybeSingle();
           
-          if (data) {
+          if (founderError && founderError.code !== 'PGRST116') {
+            console.error('Error fetching founder details:', founderError);
+          } else if (data) {
             setFounderDetails(data);
           }
         } else {
-          const { data } = await supabase
+          const { data, error: investorError } = await supabase
             .from('investor_details')
             .select('*')
             .eq('profile_id', user.id)
             .maybeSingle();
           
-          if (data) {
+          if (investorError && investorError.code !== 'PGRST116') {
+            console.error('Error fetching investor details:', investorError);
+          } else if (data) {
             setInvestorDetails(data);
           }
         }

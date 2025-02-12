@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
+type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
 type PriorityMatch = {
   id: string;
   founder_id: string;
@@ -23,14 +24,15 @@ type PriorityMatch = {
   priority: 'high' | 'medium' | 'low';
 };
 
-type InvestorWithDetails = Profile & {
-  investor_details: InvestorDetails;
+type UserWithDetails = Profile & {
+  investor_details?: InvestorDetails;
+  founder_details?: FounderDetails;
   priority_match?: PriorityMatch;
 };
 
 const Dashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [investors, setInvestors] = useState<InvestorWithDetails[]>([]);
+  const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [highPriorityCount, setHighPriorityCount] = useState(0);
 
@@ -48,26 +50,28 @@ const Dashboard = () => {
 
         setProfile(profileData);
 
-        if (profileData?.user_type === 'founder') {
-          // Fetch all investors with their details
-          const { data: investorsData } = await supabase
+        if (profileData) {
+          // Fetch users of the opposite type (investors see founders, founders see investors)
+          const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
+          const { data: usersData } = await supabase
             .from('profiles')
             .select(`
               *,
               investor_details (*),
-              priority_matches!priority_matches_investor_id_fkey (*)
+              founder_details (*),
+              priority_matches!priority_matches_${oppositeType}_id_fkey (*)
             `)
-            .eq('user_type', 'investor');
+            .eq('user_type', oppositeType);
 
           // Count high priority matches
           const { data: highPriorityData } = await supabase
             .from('priority_matches')
             .select('*')
-            .eq('founder_id', user.id)
+            .eq(profileData.user_type === 'founder' ? 'founder_id' : 'investor_id', user.id)
             .eq('priority', 'high');
 
           setHighPriorityCount(highPriorityData?.length || 0);
-          setInvestors(investorsData || []);
+          setUsers(usersData || []);
         }
       } finally {
         setLoading(false);
@@ -77,7 +81,7 @@ const Dashboard = () => {
     fetchProfile();
   }, []);
 
-  const handlePriorityChange = async (investorId: string, priority: 'high' | 'medium' | 'low') => {
+  const handlePriorityChange = async (userId: string, priority: 'high' | 'medium' | 'low') => {
     if (!profile) return;
 
     if (priority === 'high' && highPriorityCount >= 5) {
@@ -86,11 +90,14 @@ const Dashboard = () => {
     }
 
     try {
+      const matchData = profile.user_type === 'founder' 
+        ? { founder_id: profile.id, investor_id: userId }
+        : { investor_id: profile.id, founder_id: userId };
+
       const { error } = await supabase
         .from('priority_matches')
         .upsert({
-          founder_id: profile.id,
-          investor_id: investorId,
+          ...matchData,
           priority
         });
 
@@ -100,26 +107,25 @@ const Dashboard = () => {
       const { data: highPriorityData } = await supabase
         .from('priority_matches')
         .select('*')
-        .eq('founder_id', profile.id)
+        .eq(profile.user_type === 'founder' ? 'founder_id' : 'investor_id', profile.id)
         .eq('priority', 'high');
 
       setHighPriorityCount(highPriorityData?.length || 0);
       
       // Update local state
-      setInvestors(prevInvestors => 
-        prevInvestors.map(investor => {
-          if (investor.id === investorId) {
+      setUsers(prevUsers => 
+        prevUsers.map(user => {
+          if (user.id === userId) {
             return {
-              ...investor,
+              ...user,
               priority_match: {
                 id: '', // This will be updated on next fetch
-                founder_id: profile.id,
-                investor_id: investorId,
+                ...matchData,
                 priority
               }
             };
           }
-          return investor;
+          return user;
         })
       );
 
@@ -150,54 +156,68 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {profile?.user_type === 'founder' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Potential Investors</h2>
-            <p className="text-gray-600">
-              You can mark up to 5 investors as high priority. Current high priority matches: {highPriorityCount}/5
-            </p>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {investors.map((investor) => (
-                <Card key={investor.id}>
-                  <CardHeader>
-                    <CardTitle>{investor.first_name} {investor.last_name}</CardTitle>
-                    <p className="text-sm text-gray-500">{investor.company_name}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <p>{investor.investor_details?.firm_description}</p>
-                      {investor.investor_details?.preferred_industries && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">
+            {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Founders'}
+          </h2>
+          <p className="text-gray-600">
+            You can mark up to 5 {profile?.user_type === 'founder' ? 'investors' : 'founders'} as high priority. Current high priority matches: {highPriorityCount}/5
+          </p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {users.map((user) => (
+              <Card key={user.id}>
+                <CardHeader>
+                  <CardTitle>{user.first_name} {user.last_name}</CardTitle>
+                  <p className="text-sm text-gray-500">{user.company_name}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {user.user_type === 'investor' ? (
+                      <>
+                        <p>{user.investor_details?.firm_description}</p>
+                        {user.investor_details?.preferred_industries && (
+                          <p className="text-sm">
+                            <strong>Industries:</strong> {user.investor_details.preferred_industries.join(', ')}
+                          </p>
+                        )}
+                        {user.investor_details?.preferred_stages && (
+                          <p className="text-sm">
+                            <strong>Stages:</strong> {user.investor_details.preferred_stages.join(', ')}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>{user.founder_details?.company_description}</p>
                         <p className="text-sm">
-                          <strong>Industries:</strong> {investor.investor_details.preferred_industries.join(', ')}
+                          <strong>Industry:</strong> {user.founder_details?.industry}
                         </p>
-                      )}
-                      {investor.investor_details?.preferred_stages && (
                         <p className="text-sm">
-                          <strong>Stages:</strong> {investor.investor_details.preferred_stages.join(', ')}
+                          <strong>Stage:</strong> {user.founder_details?.company_stage}
                         </p>
-                      )}
-                      <div className="pt-4">
-                        <Select
-                          value={investor.priority_match?.priority || ''}
-                          onValueChange={(value: 'high' | 'medium' | 'low') => handlePriorityChange(investor.id, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Set priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="high">High Priority</SelectItem>
-                            <SelectItem value="medium">Medium Priority</SelectItem>
-                            <SelectItem value="low">Low Priority</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      </>
+                    )}
+                    <div className="pt-4">
+                      <Select
+                        value={user.priority_match?.priority || ''}
+                        onValueChange={(value: 'high' | 'medium' | 'low') => handlePriorityChange(user.id, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Set priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High Priority</SelectItem>
+                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </DashboardLayout>
   );

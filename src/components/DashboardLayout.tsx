@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
+import { UserCog } from 'lucide-react';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -35,9 +36,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <span className="text-xl font-bold">M25 Summit</span>
+              <Link to="/dashboard" className="text-xl font-bold">M25 Summit</Link>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              <Link 
+                to="/profile/edit"
+                className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
+              >
+                <UserCog className="h-4 w-4 mr-1" />
+                Edit Profile
+              </Link>
               <Button 
                 variant="ghost" 
                 onClick={handleSignOut}

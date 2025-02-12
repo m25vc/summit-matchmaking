@@ -128,20 +128,27 @@ const Dashboard = () => {
     }
 
     try {
-      // Simplified upsert operation
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority
       };
 
-      const { error: upsertError } = await supabase
+      // First try to update if exists
+      const { data: updateResult, error: updateError } = await supabase
         .from('priority_matches')
-        .upsert(matchData, {
-          onConflict: 'founder_id,investor_id'
-        });
+        .update(matchData)
+        .eq('founder_id', matchData.founder_id)
+        .eq('investor_id', matchData.investor_id);
 
-      if (upsertError) throw upsertError;
+      if (updateError) {
+        // If update fails (likely because record doesn't exist), try insert
+        const { error: insertError } = await supabase
+          .from('priority_matches')
+          .insert(matchData);
+
+        if (insertError) throw insertError;
+      }
 
       // Update local state
       setUsers(prevUsers => 
@@ -151,7 +158,7 @@ const Dashboard = () => {
               ...user,
               priority_matches: [{
                 ...matchData,
-                id: user.priority_matches?.[0]?.id || '',
+                id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
                 created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString()
               }]
             };

@@ -9,7 +9,166 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      founder_details: {
+        Row: {
+          company_description: string
+          company_stage: string
+          funding_stage: string
+          industry: string
+          pitch_deck_url: string | null
+          profile_id: string
+          target_raise_amount: number | null
+        }
+        Insert: {
+          company_description: string
+          company_stage: string
+          funding_stage: string
+          industry: string
+          pitch_deck_url?: string | null
+          profile_id: string
+          target_raise_amount?: number | null
+        }
+        Update: {
+          company_description?: string
+          company_stage?: string
+          funding_stage?: string
+          industry?: string
+          pitch_deck_url?: string | null
+          profile_id?: string
+          target_raise_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founder_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_details: {
+        Row: {
+          firm_description: string
+          investment_thesis: string | null
+          max_investment_amount: number | null
+          min_investment_amount: number | null
+          preferred_industries: string[] | null
+          preferred_stages: string[] | null
+          profile_id: string
+        }
+        Insert: {
+          firm_description: string
+          investment_thesis?: string | null
+          max_investment_amount?: number | null
+          min_investment_amount?: number | null
+          preferred_industries?: string[] | null
+          preferred_stages?: string[] | null
+          profile_id: string
+        }
+        Update: {
+          firm_description?: string
+          investment_thesis?: string | null
+          max_investment_amount?: number | null
+          min_investment_amount?: number | null
+          preferred_industries?: string[] | null
+          preferred_stages?: string[] | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          founder_id: string | null
+          founder_interest: boolean | null
+          id: string
+          investor_id: string | null
+          investor_interest: boolean | null
+          match_score: number | null
+          matched_at: string
+        }
+        Insert: {
+          founder_id?: string | null
+          founder_interest?: boolean | null
+          id?: string
+          investor_id?: string | null
+          investor_interest?: boolean | null
+          match_score?: number | null
+          matched_at?: string
+        }
+        Update: {
+          founder_id?: string | null
+          founder_interest?: boolean | null
+          id?: string
+          investor_id?: string | null
+          investor_interest?: boolean | null
+          match_score?: number | null
+          matched_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          company_name: string
+          created_at: string
+          first_name: string
+          id: string
+          job_title: string
+          last_name: string
+          linkedin_url: string | null
+          updated_at: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Insert: {
+          bio?: string | null
+          company_name: string
+          created_at?: string
+          first_name: string
+          id: string
+          job_title: string
+          last_name: string
+          linkedin_url?: string | null
+          updated_at?: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Update: {
+          bio?: string | null
+          company_name?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          job_title?: string
+          last_name?: string
+          linkedin_url?: string | null
+          updated_at?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +177,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_type: "founder" | "investor"
     }
     CompositeTypes: {
       [_ in never]: never

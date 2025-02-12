@@ -182,6 +182,7 @@ export type Database = {
           job_title: string
           last_name: string
           linkedin_url: string | null
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_type: Database["public"]["Enums"]["user_type"]
         }
@@ -194,6 +195,7 @@ export type Database = {
           job_title: string
           last_name: string
           linkedin_url?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_type: Database["public"]["Enums"]["user_type"]
         }
@@ -206,6 +208,7 @@ export type Database = {
           job_title?: string
           last_name?: string
           linkedin_url?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
         }
@@ -220,6 +223,7 @@ export type Database = {
     }
     Enums: {
       match_priority: "high" | "medium" | "low"
+      user_role: "admin" | "user"
       user_type: "founder" | "investor"
     }
     CompositeTypes: {

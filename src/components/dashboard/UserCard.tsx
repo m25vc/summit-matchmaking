@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ExternalLink } from "lucide-react";
 import type { Database } from '@/integrations/supabase/types';
 
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
@@ -47,6 +48,17 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
                   <strong>Stages:</strong> {user.investor_details.preferred_stages.join(', ')}
                 </p>
               )}
+              {user.investor_details?.firm_website_url && (
+                <a 
+                  href={user.investor_details.firm_website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Visit Firm Website
+                </a>
+              )}
             </>
           ) : (
             <>
@@ -57,6 +69,17 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
               <p className="text-sm">
                 <strong>Stage:</strong> {user.founder_details?.company_stage}
               </p>
+              {user.founder_details?.company_website_url && (
+                <a 
+                  href={user.founder_details.company_website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Visit Company Website
+                </a>
+              )}
             </>
           )}
           <div className="pt-4">

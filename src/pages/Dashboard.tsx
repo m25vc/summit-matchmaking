@@ -68,18 +68,26 @@ const Dashboard = () => {
         if (profileData) {
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
           
-          // Fetch all priority matches for the current user
+          // Fetch all priority matches for the current user using simple filter
           const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
             .from('priority_matches')
-            .select('*')
-            .or(`founder_id.eq.${user.id},investor_id.eq.${user.id}`);
+            .select('*');
 
-          if (priorityMatchesError) throw priorityMatchesError;
+          if (priorityMatchesError) {
+            console.error('Priority matches error:', priorityMatchesError);
+            throw priorityMatchesError;
+          }
 
-          const highPriorityCount = (priorityMatchesData || []).filter(match => 
-            match.priority === 'high' && 
-            (profileData.user_type === 'founder' ? match.founder_id === user.id : match.investor_id === user.id)
+          const filteredPriorityMatches = priorityMatchesData?.filter(match => 
+            profileData.user_type === 'founder' 
+              ? match.founder_id === user.id 
+              : match.investor_id === user.id
+          ) || [];
+
+          const highPriorityCount = filteredPriorityMatches.filter(match => 
+            match.priority === 'high'
           ).length;
+          
           setHighPriorityCount(highPriorityCount);
 
           // Fetch users of opposite type with their details
@@ -136,6 +144,8 @@ const Dashboard = () => {
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority
       };
+
+      console.log('Upserting match data:', matchData);
 
       const { error } = await supabase
         .from('priority_matches')

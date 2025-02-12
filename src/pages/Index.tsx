@@ -23,16 +23,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-12">
             <h1 className="text-2xl font-bold text-[#c41230]">M25</h1>
-            <div className="hidden md:flex space-x-6 text-gray-600">
-              <a href="#" className="hover:text-gray-900">About</a>
-              <a href="#" className="hover:text-gray-900">Team</a>
-              <a href="#" className="hover:text-gray-900">Portfolio</a>
-              <a href="#" className="hover:text-gray-900">Scope</a>
-              <a href="#" className="hover:text-gray-900">Blog</a>
-              <a href="#" className="hover:text-gray-900">Summit</a>
-              <a href="#" className="hover:text-gray-900">Midwest Startups</a>
-              <a href="#" className="hover:text-gray-900">Contact</a>
-            </div>
+            <span className="text-lg text-gray-600">Summit 2024</span>
           </div>
           <Button 
             variant="outline" 
@@ -47,7 +38,7 @@ const Index = () => {
       {/* Hero Section */}
       <main className="flex-1 relative">
         {/* Background Image */}
-        <div className="absolute inset-0 bg-[url('/path/to/midwest-image.jpg')] bg-cover bg-center">
+        <div className="absolute inset-0 bg-[url('photo-1605810230434-7631ac76ec81')] bg-cover bg-center">
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
@@ -61,11 +52,21 @@ const Index = () => {
               className="space-y-6"
             >
               <h1 className="text-6xl md:text-7xl font-bold text-white max-w-4xl">
-                Seeding the next generation of Midwest unicorns.
+                Connect with the Right Investors at M25 Summit
               </h1>
-              <p className="text-3xl font-semibold text-[#c41230]">
-                Investing in Akron, OH.
+              <p className="text-2xl text-white max-w-2xl">
+                Our intelligent matching platform connects founders with the perfect VCs, 
+                maximizing your networking opportunities at Summit 2024.
               </p>
+              <div className="flex gap-4 pt-6">
+                <Button 
+                  size="lg"
+                  className="bg-[#c41230] hover:bg-[#a00e27] text-white"
+                  onClick={handleSignIn}
+                >
+                  Get Matched Now
+                </Button>
+              </div>
             </motion.div>
 
             <motion.div
@@ -80,7 +81,7 @@ const Index = () => {
                 onClick={handleContact}
               >
                 <MessageCircle className="w-5 h-5" />
-                Contact Us
+                Contact Support
               </Button>
             </motion.div>
           </div>

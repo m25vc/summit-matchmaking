@@ -46,6 +46,7 @@ const AdminDashboard = () => {
   const { data: matches, isLoading: matchesLoading } = useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
+      // First get all matches with their related profiles
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select(`
@@ -64,36 +65,35 @@ const AdminDashboard = () => {
       
       if (matchesError) throw matchesError;
 
-      // Fetch priority matches for each match
-      const matchesWithPriorities = await Promise.all(
-        (matchesData || []).map(async (match) => {
-          const { data: founderPriority } = await supabase
-            .from('priority_matches')
-            .select('priority')
-            .eq('founder_id', match.founder_id)
-            .eq('investor_id', match.investor_id)
-            .single();
+      // Get all priority matches in a single query
+      const { data: allPriorityMatches, error: priorityError } = await supabase
+        .from('priority_matches')
+        .select('*');
 
-          const { data: investorPriority } = await supabase
-            .from('priority_matches')
-            .select('priority')
-            .eq('founder_id', match.founder_id)
-            .eq('investor_id', match.investor_id)
-            .single();
+      if (priorityError) throw priorityError;
 
-          const score = getPriorityScore(
-            founderPriority?.priority || null,
-            investorPriority?.priority || null
-          );
+      // Process matches with their priorities
+      const matchesWithPriorities = (matchesData || []).map((match) => {
+        // Find founder and investor priorities for this match
+        const founderPriority = allPriorityMatches?.find(
+          pm => pm.founder_id === match.founder_id && pm.investor_id === match.investor_id
+        );
+        const investorPriority = allPriorityMatches?.find(
+          pm => pm.founder_id === match.founder_id && pm.investor_id === match.investor_id
+        );
 
-          return {
-            ...match,
-            match_score: score,
-            founder_priority: founderPriority?.priority || null,
-            investor_priority: investorPriority?.priority || null,
-          };
-        })
-      );
+        const score = getPriorityScore(
+          founderPriority?.priority || null,
+          investorPriority?.priority || null
+        );
+
+        return {
+          ...match,
+          match_score: score,
+          founder_priority: founderPriority?.priority || null,
+          investor_priority: investorPriority?.priority || null,
+        };
+      });
 
       return matchesWithPriorities;
     },

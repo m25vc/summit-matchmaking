@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -36,11 +35,23 @@ const Auth = () => {
               company_name: companyName,
               job_title: jobTitle,
               user_type: userType,
-            }
+            },
+            emailRedirectTo: window.location.origin
           }
         });
+        
         if (error) throw error;
-        toast.success("Check your email for the confirmation link!");
+        
+        // Sign in the user immediately after signup
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInError) throw signInError;
+        
+        navigate('/profile-completion');
+        toast.success("Account created successfully!");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,

@@ -10,10 +10,14 @@ import { InvestorForm } from '@/components/forms/InvestorForm';
 import type { FounderFormValues, InvestorFormValues } from '@/schemas/profileSchemas';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
+type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 
 export default function ProfileCompletion() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [founderDetails, setFounderDetails] = useState<FounderDetails | null>(null);
+  const [investorDetails, setInvestorDetails] = useState<InvestorDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,15 +54,7 @@ export default function ProfileCompletion() {
             .maybeSingle();
           
           if (data) {
-            // Pre-fill the form if data exists
-            form.reset({
-              industry: data.industry,
-              companyStage: data.company_stage,
-              fundingStage: data.funding_stage,
-              companyDescription: data.company_description,
-              targetRaiseAmount: data.target_raise_amount?.toString() || '',
-              pitchDeckUrl: data.pitch_deck_url || '',
-            });
+            setFounderDetails(data);
           }
         } else {
           const { data } = await supabase
@@ -68,15 +64,7 @@ export default function ProfileCompletion() {
             .maybeSingle();
           
           if (data) {
-            // Pre-fill the form if data exists
-            form.reset({
-              firmDescription: data.firm_description,
-              investmentThesis: data.investment_thesis || '',
-              minInvestmentAmount: data.min_investment_amount?.toString() || '',
-              maxInvestmentAmount: data.max_investment_amount?.toString() || '',
-              preferredIndustries: (data.preferred_industries || []).join(', '),
-              preferredStages: (data.preferred_stages || []).join(', '),
-            });
+            setInvestorDetails(data);
           }
         }
       } catch (error) {
@@ -152,6 +140,24 @@ export default function ProfileCompletion() {
     return null;
   }
 
+  const founderDefaultValues = founderDetails ? {
+    industry: founderDetails.industry,
+    companyStage: founderDetails.company_stage,
+    fundingStage: founderDetails.funding_stage,
+    companyDescription: founderDetails.company_description,
+    targetRaiseAmount: founderDetails.target_raise_amount?.toString() || '',
+    pitchDeckUrl: founderDetails.pitch_deck_url || '',
+  } : undefined;
+
+  const investorDefaultValues = investorDetails ? {
+    firmDescription: investorDetails.firm_description,
+    investmentThesis: investorDetails.investment_thesis || '',
+    minInvestmentAmount: investorDetails.min_investment_amount?.toString() || '',
+    maxInvestmentAmount: investorDetails.max_investment_amount?.toString() || '',
+    preferredIndustries: (investorDetails.preferred_industries || []).join(', '),
+    preferredStages: (investorDetails.preferred_stages || []).join(', '),
+  } : undefined;
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6 p-6">
@@ -161,9 +167,15 @@ export default function ProfileCompletion() {
         </p>
         
         {profile.user_type === 'founder' ? (
-          <FounderForm onSubmit={onFounderSubmit} />
+          <FounderForm 
+            defaultValues={founderDefaultValues}
+            onSubmit={onFounderSubmit} 
+          />
         ) : (
-          <InvestorForm onSubmit={onInvestorSubmit} />
+          <InvestorForm 
+            defaultValues={investorDefaultValues}
+            onSubmit={onInvestorSubmit} 
+          />
         )}
       </div>
     </DashboardLayout>

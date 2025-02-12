@@ -17,12 +17,7 @@ import { toast } from "sonner";
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type PriorityMatch = {
-  id: string;
-  founder_id: string;
-  investor_id: string;
-  priority: 'high' | 'medium' | 'low';
-};
+type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'];
 
 type UserWithDetails = Profile & {
   investor_details?: InvestorDetails;
@@ -52,22 +47,20 @@ const Dashboard = () => {
         setProfile(profileData);
 
         if (profileData) {
-          // Fetch users of the opposite type (investors see founders, founders see investors)
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
           
-          // First, get all priority matches for the current user
           const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
             .from('priority_matches')
-            .select('*')
-            .eq(profileData.user_type === 'founder' ? 'founder_id' : 'investor_id', user.id);
+            .select('*');
 
           if (priorityMatchesError) throw priorityMatchesError;
 
-          // Count high priority matches
-          const highPriorityCount = (priorityMatchesData || []).filter(match => match.priority === 'high').length;
+          const highPriorityCount = (priorityMatchesData || []).filter(match => 
+            match.priority === 'high' && 
+            (profileData.user_type === 'founder' ? match.founder_id === user.id : match.investor_id === user.id)
+          ).length;
           setHighPriorityCount(highPriorityCount);
 
-          // Then fetch users with their details
           const { data: usersData, error: usersError } = await supabase
             .from('profiles')
             .select(`
@@ -79,13 +72,12 @@ const Dashboard = () => {
 
           if (usersError) throw usersError;
 
-          // Combine users with their priority match data
           const usersWithPriority = (usersData || []).map(user => ({
             ...user,
             priority_matches: priorityMatchesData?.filter(match => 
               profileData.user_type === 'founder' 
-                ? match.investor_id === user.id
-                : match.founder_id === user.id
+                ? match.founder_id === profileData.id && match.investor_id === user.id
+                : match.investor_id === profileData.id && match.founder_id === user.id
             ) || []
           }));
 
@@ -116,15 +108,26 @@ const Dashboard = () => {
     }
 
     try {
-      const matchData = profile.user_type === 'founder' 
-        ? { founder_id: profile.id, investor_id: userId }
-        : { investor_id: profile.id, founder_id: userId };
+      const matchData = {
+        founder_id: profile.user_type === 'founder' ? profile.id : userId,
+        investor_id: profile.user_type === 'founder' ? userId : profile.id,
+        priority
+      };
+
+      const { data: existingMatch, error: fetchError } = await supabase
+        .from('priority_matches')
+        .select('*')
+        .eq('founder_id', matchData.founder_id)
+        .eq('investor_id', matchData.investor_id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       const { error: upsertError } = await supabase
         .from('priority_matches')
         .upsert({
           ...matchData,
-          priority
+          id: existingMatch?.id
         });
 
       if (upsertError) throw upsertError;
@@ -136,9 +139,9 @@ const Dashboard = () => {
             return {
               ...user,
               priority_matches: [{
-                id: user.priority_matches?.[0]?.id || '',
+                id: existingMatch?.id || '',
                 ...matchData,
-                priority
+                created_at: existingMatch?.created_at || new Date().toISOString()
               }]
             };
           }

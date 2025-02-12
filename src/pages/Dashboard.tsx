@@ -1,18 +1,11 @@
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
+import { ProfileHeader } from '@/components/dashboard/ProfileHeader';
+import { UserList } from '@/components/dashboard/UserList';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
@@ -68,7 +61,6 @@ const Dashboard = () => {
         if (profileData) {
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
           
-          // Fetch all priority matches for the current user using simple filter
           const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
             .from('priority_matches')
             .select('*');
@@ -90,7 +82,6 @@ const Dashboard = () => {
           
           setHighPriorityCount(highPriorityCount);
 
-          // Fetch users of opposite type with their details
           const { data: usersData, error: usersError } = await supabase
             .from('profiles')
             .select(`
@@ -102,7 +93,6 @@ const Dashboard = () => {
 
           if (usersError) throw usersError;
 
-          // Map priority matches to users
           const usersWithPriority = (usersData || []).map(user => ({
             ...user,
             priority_matches: priorityMatchesData?.filter(match => 
@@ -202,88 +192,16 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Welcome{profile?.first_name ? `, ${profile.first_name}` : ''}!</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!profile?.first_name && (
-              <Button onClick={() => window.location.href = '/profile'}>
-                Complete Your Profile
-              </Button>
-            )}
-            <Button 
-              variant="outline" 
-              onClick={createTestUsers}
-              className="ml-4"
-            >
-              Create Test Users
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">
-            {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Founders'}
-          </h2>
-          <p className="text-gray-600">
-            You can mark up to 5 {profile?.user_type === 'founder' ? 'investors' : 'founders'} as high priority. Current high priority matches: {highPriorityCount}/5
-          </p>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {users.map((user) => (
-              <Card key={user.id}>
-                <CardHeader>
-                  <CardTitle>{user.first_name} {user.last_name}</CardTitle>
-                  <p className="text-sm text-gray-500">{user.company_name}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {user.user_type === 'investor' ? (
-                      <>
-                        <p>{user.investor_details?.firm_description}</p>
-                        {user.investor_details?.preferred_industries && (
-                          <p className="text-sm">
-                            <strong>Industries:</strong> {user.investor_details.preferred_industries.join(', ')}
-                          </p>
-                        )}
-                        {user.investor_details?.preferred_stages && (
-                          <p className="text-sm">
-                            <strong>Stages:</strong> {user.investor_details.preferred_stages.join(', ')}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <p>{user.founder_details?.company_description}</p>
-                        <p className="text-sm">
-                          <strong>Industry:</strong> {user.founder_details?.industry}
-                        </p>
-                        <p className="text-sm">
-                          <strong>Stage:</strong> {user.founder_details?.company_stage}
-                        </p>
-                      </>
-                    )}
-                    <div className="pt-4">
-                      <Select
-                        value={user.priority_matches?.[0]?.priority || ''}
-                        onValueChange={(value: 'high' | 'medium' | 'low') => handlePriorityChange(user.id, value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Set priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="high">High Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
-                          <SelectItem value="low">Low Priority</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <ProfileHeader 
+          profile={profile} 
+          onCreateTestUsers={createTestUsers} 
+        />
+        <UserList 
+          users={users}
+          profile={profile}
+          highPriorityCount={highPriorityCount}
+          onPriorityChange={handlePriorityChange}
+        />
       </div>
     </DashboardLayout>
   );

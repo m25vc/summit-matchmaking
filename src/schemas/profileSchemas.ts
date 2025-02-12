@@ -7,7 +7,7 @@ export const founderFormSchema = z.object({
   fundingStage: z.string().min(1, "Funding stage is required"),
   companyDescription: z.string().min(10, "Please provide a longer description"),
   targetRaiseAmount: z.string().optional(),
-  pitchDeckUrl: z.string().url().optional().or(z.literal("")),
+  companyWebsiteUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const investorFormSchema = z.object({
@@ -17,6 +17,7 @@ export const investorFormSchema = z.object({
   maxInvestmentAmount: z.string().optional(),
   preferredIndustries: z.string().min(1, "Please specify preferred industries"),
   preferredStages: z.string().min(1, "Please specify preferred stages"),
+  firmWebsiteUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export type FounderFormValues = z.infer<typeof founderFormSchema>;

@@ -111,6 +111,20 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="firmWebsiteUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Firm Website URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Button type="submit">Save Profile</Button>
       </form>
     </Form>

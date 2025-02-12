@@ -13,27 +13,27 @@ export type Database = {
         Row: {
           company_description: string
           company_stage: string
+          company_website_url: string | null
           funding_stage: string
           industry: string
-          pitch_deck_url: string | null
           profile_id: string
           target_raise_amount: number | null
         }
         Insert: {
           company_description: string
           company_stage: string
+          company_website_url?: string | null
           funding_stage: string
           industry: string
-          pitch_deck_url?: string | null
           profile_id: string
           target_raise_amount?: number | null
         }
         Update: {
           company_description?: string
           company_stage?: string
+          company_website_url?: string | null
           funding_stage?: string
           industry?: string
-          pitch_deck_url?: string | null
           profile_id?: string
           target_raise_amount?: number | null
         }
@@ -50,6 +50,7 @@ export type Database = {
       investor_details: {
         Row: {
           firm_description: string
+          firm_website_url: string | null
           investment_thesis: string | null
           max_investment_amount: number | null
           min_investment_amount: number | null
@@ -59,6 +60,7 @@ export type Database = {
         }
         Insert: {
           firm_description: string
+          firm_website_url?: string | null
           investment_thesis?: string | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null
@@ -68,6 +70,7 @@ export type Database = {
         }
         Update: {
           firm_description?: string
+          firm_website_url?: string | null
           investment_thesis?: string | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null

@@ -99,10 +99,10 @@ export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
 
         <FormField
           control={form.control}
-          name="pitchDeckUrl"
+          name="companyWebsiteUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Pitch Deck URL</FormLabel>
+              <FormLabel>Company Website URL</FormLabel>
               <FormControl>
                 <Input placeholder="https://..." {...field} />
               </FormControl>

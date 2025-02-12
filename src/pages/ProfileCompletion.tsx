@@ -35,9 +35,14 @@ export default function ProfileCompletion() {
           .eq('id', user.id)
           .maybeSingle();
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          toast.error("Failed to load profile");
+          return;
+        }
         
         if (!profileData) {
+          console.error('Profile not found');
           toast.error("Profile not found");
           navigate('/auth');
           return;
@@ -53,20 +58,22 @@ export default function ProfileCompletion() {
             .eq('profile_id', user.id)
             .maybeSingle();
           
-          if (founderError && founderError.code !== 'PGRST116') {
+          if (founderError) {
             console.error('Error fetching founder details:', founderError);
+            // Don't show error toast here as this is expected for new users
           } else if (data) {
             setFounderDetails(data);
           }
-        } else {
+        } else if (profileData.user_type === 'investor') {
           const { data, error: investorError } = await supabase
             .from('investor_details')
             .select('*')
             .eq('profile_id', user.id)
             .maybeSingle();
           
-          if (investorError && investorError.code !== 'PGRST116') {
+          if (investorError) {
             console.error('Error fetching investor details:', investorError);
+            // Don't show error toast here as this is expected for new users
           } else if (data) {
             setInvestorDetails(data);
           }
@@ -96,13 +103,17 @@ export default function ProfileCompletion() {
           pitch_deck_url: values.pitchDeckUrl || null,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating founder details:', error);
+        toast.error("Failed to update profile");
+        return;
+      }
 
       toast.success("Profile updated successfully");
       navigate('/dashboard');
     } catch (error) {
-      toast.error("Failed to update profile");
       console.error('Error:', error);
+      toast.error("Failed to update profile");
     }
   };
 
@@ -120,13 +131,17 @@ export default function ProfileCompletion() {
           preferred_stages: values.preferredStages.split(',').map(s => s.trim()),
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating investor details:', error);
+        toast.error("Failed to update profile");
+        return;
+      }
 
       toast.success("Profile updated successfully");
       navigate('/dashboard');
     } catch (error) {
-      toast.error("Failed to update profile");
       console.error('Error:', error);
+      toast.error("Failed to update profile");
     }
   };
 
@@ -167,7 +182,9 @@ export default function ProfileCompletion() {
       <div className="max-w-2xl mx-auto space-y-6 p-6">
         <h1 className="text-2xl font-bold">Complete Your Profile</h1>
         <p className="text-gray-600 mb-6">
-          Please provide additional information to complete your profile
+          {founderDetails || investorDetails 
+            ? "Update your profile information"
+            : "Please provide additional information to complete your profile"}
         </p>
         
         {profile.user_type === 'founder' ? (

@@ -42,18 +42,19 @@ const Dashboard = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
 
+        if (profileError) throw profileError;
         setProfile(profileData);
 
         if (profileData) {
           // Fetch users of the opposite type (investors see founders, founders see investors)
           const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
-          const { data: usersData } = await supabase
+          const { data: usersData, error: usersError } = await supabase
             .from('profiles')
             .select(`
               *,
@@ -63,16 +64,23 @@ const Dashboard = () => {
             `)
             .eq('user_type', oppositeType);
 
+          if (usersError) throw usersError;
+
           // Count high priority matches
-          const { data: highPriorityData } = await supabase
+          const { data: highPriorityData, error: priorityError } = await supabase
             .from('priority_matches')
             .select('*')
             .eq(profileData.user_type === 'founder' ? 'founder_id' : 'investor_id', user.id)
             .eq('priority', 'high');
 
+          if (priorityError) throw priorityError;
+
           setHighPriorityCount(highPriorityData?.length || 0);
           setUsers(usersData || []);
         }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -82,7 +90,10 @@ const Dashboard = () => {
   }, []);
 
   const handlePriorityChange = async (userId: string, priority: 'high' | 'medium' | 'low') => {
-    if (!profile) return;
+    if (!profile) {
+      toast.error("Profile not loaded");
+      return;
+    }
 
     if (priority === 'high' && highPriorityCount >= 5) {
       toast.error("You can only have up to 5 high priority matches");
@@ -94,21 +105,23 @@ const Dashboard = () => {
         ? { founder_id: profile.id, investor_id: userId }
         : { investor_id: profile.id, founder_id: userId };
 
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from('priority_matches')
         .upsert({
           ...matchData,
           priority
         });
 
-      if (error) throw error;
+      if (upsertError) throw upsertError;
 
-      // Refresh the data
-      const { data: highPriorityData } = await supabase
+      // Refresh the high priority count
+      const { data: highPriorityData, error: countError } = await supabase
         .from('priority_matches')
         .select('*')
         .eq(profile.user_type === 'founder' ? 'founder_id' : 'investor_id', profile.id)
         .eq('priority', 'high');
+
+      if (countError) throw countError;
 
       setHighPriorityCount(highPriorityData?.length || 0);
       

@@ -231,30 +231,15 @@ export type Database = {
     Views: {
       match_scores: {
         Row: {
+          created_at: string | null
           founder_id: string | null
           has_mutual_match: boolean | null
           id: string | null
           investor_id: string | null
-          priority1: Database["public"]["Enums"]["match_priority"] | null
-          priority2: Database["public"]["Enums"]["match_priority"] | null
+          priority: Database["public"]["Enums"]["match_priority"] | null
           score: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "priority_matches_founder_id_fkey"
-            columns: ["founder_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "priority_matches_investor_id_fkey"
-            columns: ["investor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {

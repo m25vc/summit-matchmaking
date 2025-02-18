@@ -42,7 +42,8 @@ export const useAdminData = () => {
             priority,
             has_mutual_match,
             score,
-            founder:profiles!match_scores_founder_id_fkey(
+            created_at,
+            founder:profiles(
               id,
               first_name,
               last_name,
@@ -50,7 +51,7 @@ export const useAdminData = () => {
               user_type,
               email
             ),
-            investor:profiles!match_scores_investor_id_fkey(
+            investor:profiles(
               id,
               first_name,
               last_name,

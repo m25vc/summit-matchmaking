@@ -28,17 +28,20 @@ const AdminDashboard = () => {
   const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
     queryKey: ['priority_matches'],
     queryFn: async () => {
+      // Join with auth.users to get emails
       const { data: priorityMatchesData, error: priorityError } = await supabase
         .from('priority_matches')
         .select(`
           *,
           founder:profiles!priority_matches_founder_id_fkey(
+            id,
             first_name,
             last_name,
             company_name,
             user_type
           ),
           investor:profiles!priority_matches_investor_id_fkey(
+            id,
             first_name,
             last_name,
             company_name,
@@ -56,8 +59,23 @@ const AdminDashboard = () => {
         throw priorityError;
       }
 
-      console.log('Priority matches:', priorityMatchesData);
-      return priorityMatchesData;
+      // Get emails from auth.users for founders and investors
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Auth users error:', authError);
+        throw authError;
+      }
+
+      // Add emails to the matches data
+      const matchesWithEmails = priorityMatchesData?.map(match => ({
+        ...match,
+        founder_email: authUsers.users.find(u => u.id === match.founder?.id)?.email,
+        investor_email: authUsers.users.find(u => u.id === match.investor?.id)?.email,
+      }));
+
+      console.log('Priority matches with emails:', matchesWithEmails);
+      return matchesWithEmails;
     },
   });
 
@@ -122,12 +140,20 @@ const AdminDashboard = () => {
                         <span className="text-sm text-gray-500">
                           {match.founder?.company_name}
                         </span>
+                        <br />
+                        <span className="text-sm text-blue-600">
+                          {match.founder_email}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {match.investor?.first_name} {match.investor?.last_name}
                         <br />
                         <span className="text-sm text-gray-500">
                           {match.investor?.company_name}
+                        </span>
+                        <br />
+                        <span className="text-sm text-blue-600">
+                          {match.investor_email}
                         </span>
                       </TableCell>
                       <TableCell>

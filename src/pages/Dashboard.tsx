@@ -24,25 +24,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [highPriorityCount, setHighPriorityCount] = useState(0);
 
-  const createTestUsers = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create-test-users');
-      
-      if (error) {
-        console.error('Error creating test users:', error);
-        toast.error('Failed to create test users');
-        return;
-      }
-      
-      toast.success('Test users created successfully');
-      console.log('Created users:', data);
-      window.location.reload();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to create test users');
-    }
-  };
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -204,10 +185,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ProfileHeader 
-          profile={profile} 
-          onCreateTestUsers={createTestUsers} 
-        />
+        <ProfileHeader profile={profile} />
         <UserList 
           users={users}
           profile={profile}

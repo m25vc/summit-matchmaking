@@ -29,47 +29,40 @@ export const useAdminData = () => {
   });
 
   const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
-    queryKey: ['priority_matches'],
+    queryKey: ['matches'],
     queryFn: async () => {
       try {
-        // Get matches with their scores
+        // Get matches with their scores and related profiles
         const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
-          .select('*');
+          .select(`
+            id,
+            founder_id,
+            investor_id,
+            matched_at,
+            founder_interest,
+            investor_interest,
+            founder:profiles!matches_founder_id_fkey(*),
+            investor:profiles!matches_investor_id_fkey(*)
+          `);
 
         if (matchesError) {
           console.error('Matches error:', matchesError);
           return [];
         }
 
-        // Get profiles
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-
-        if (profilesError) {
-          console.error('Profiles error:', profilesError);
-          return [];
-        }
-
-        // Create a map of profiles by ID for faster lookups
-        const profilesMap = new Map(profilesData?.map(profile => [profile.id, profile]));
-
-        // Combine and calculate scores correctly
+        // Transform the data to match our PriorityMatch type
         const combinedData = matchesData?.map(match => {
           const hasMutualMatch = match.founder_interest && match.investor_interest;
           
-          // Calculate score based on interests
-          const score = hasMutualMatch ? 10 : 0;
-
           return {
             id: match.id,
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: profilesMap.get(match.founder_id ?? '') || null,
-            investor: profilesMap.get(match.investor_id ?? '') || null,
-            score: score,
+            founder: match.founder,
+            investor: match.investor,
+            score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };
         }) ?? [];

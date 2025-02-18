@@ -58,7 +58,7 @@ const Index = () => {
                 The Club M25 Summit
               </h1>
               <p className="text-xl text-white max-w-3xl leading-relaxed">
-                The Club M25 Summit is an annual gathering of our portfolio companies and investors for a two-day event each fall. Designed to elevate founders, foster community, and enhance connectivity, the Summit facilitates thousands of one-on-one meetings alongside engaging activities breakout sessions, speakers and social dinners. Held every year the city of Chicago, this event offers an unparalleled opportunity for startups and investors alike to forge meaningful connections with leading VC firms from across the nation. Use this platform to get matched with other attendees and schedule your one-on-one meetings, ensuring you make the most of your time at the Summit by connecting with the right people based on mutual interests and objectives.
+                The Club M25 Summit is an annual gathering of our portfolio companies and investors for a two-day event each fall. Designed to elevate founders, foster community, and enhance connectivity, the Summit facilitates thousands of one-on-one meetings alongside engaging activities, breakout sessions, speakers, and social dinners. Held every year in the city of Chicago, this event offers an unparalleled opportunity for startups and investors alike to forge meaningful connections with leading VC firms from across the nation. Use this platform to get matched with other attendees and schedule your one-on-one meetings, ensuring you make the most of your time at the Summit by connecting with the right people based on mutual interests and objectives.
               </p>
               <a 
                 href="https://m25vc.com/summit" 

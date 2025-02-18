@@ -80,7 +80,7 @@ export const useAdminData = () => {
         }
 
         // Transform the data to match our PriorityMatch type
-        const combinedData = matchesData?.map(match => {
+        const combinedData = matchesData?.map((match: any) => {
           const hasMutualMatch = match.founder_interest && match.investor_interest;
           
           return {
@@ -88,8 +88,8 @@ export const useAdminData = () => {
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: match.profiles!matches_founder_id_fkey || null,
-            investor: match.profiles!matches_investor_id_fkey || null,
+            founder: match.profiles || null,
+            investor: match.profiles || null,
             score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };

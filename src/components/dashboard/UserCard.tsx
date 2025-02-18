@@ -101,7 +101,7 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
                 <SelectItem value="medium">Medium Priority</SelectItem>
                 <SelectItem value="low">Low Priority</SelectItem>
                 {user.priority_matches?.[0]?.priority && (
-                  <SelectItem value="remove" className="text-red-600">Remove Priority</SelectItem>
+                  <SelectItem value="remove" className="text-red-600">Remove Match</SelectItem>
                 )}
               </SelectContent>
             </Select>

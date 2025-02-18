@@ -28,10 +28,10 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">
-        {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Founders'}
+        {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Matches'}
       </h2>
       <p className="text-gray-600">
-        You can mark up to 5 {profile?.user_type === 'founder' ? 'investors' : 'founders'} as high priority. Current high priority matches: {highPriorityCount}/5
+        You can mark up to 5 people as high priority. Current high priority matches: {highPriorityCount}/5
       </p>
       
       <Tabs defaultValue="new" className="w-full">

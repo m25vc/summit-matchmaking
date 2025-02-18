@@ -30,44 +30,55 @@ export const useAdminData = () => {
   const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
     queryKey: ['priority_matches'],
     queryFn: async () => {
-      const { data: priorityMatchesData, error: priorityError } = await supabase
-        .from('priority_matches')
-        .select(`
-          *,
-          founder:profiles!priority_matches_founder_id_fkey(
-            id,
-            first_name,
-            last_name,
-            company_name,
-            user_type
-          ),
-          investor:profiles!priority_matches_investor_id_fkey(
-            id,
-            first_name,
-            last_name,
-            company_name,
-            user_type
-          ),
-          set_by_user:profiles!priority_matches_set_by_fkey(
-            first_name,
-            last_name,
-            user_type
-          )
-        `).returns<PriorityMatch[]>();
-      
-      if (priorityError) {
-        console.error('Priority matches error:', priorityError);
-        throw priorityError;
+      try {
+        const { data: priorityMatchesData, error: priorityError } = await supabase
+          .from('priority_matches')
+          .select(`
+            *,
+            founder:profiles!priority_matches_founder_id_fkey(
+              id,
+              first_name,
+              last_name,
+              company_name,
+              user_type
+            ),
+            investor:profiles!priority_matches_investor_id_fkey(
+              id,
+              first_name,
+              last_name,
+              company_name,
+              user_type
+            ),
+            set_by_user:profiles!priority_matches_set_by_fkey(
+              first_name,
+              last_name,
+              user_type
+            )
+          `).returns<PriorityMatch[]>();
+        
+        if (priorityError) {
+          console.error('Priority matches error:', priorityError);
+          throw priorityError;
+        }
+
+        // Only try to get admin data if we have service role key
+        if (import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+          const { data: adminData } = await supabaseAdmin.auth.admin.listUsers();
+          const adminUsers = adminData?.users || [];
+
+          return (priorityMatchesData || []).map(match => ({
+            ...match,
+            founder_email: adminUsers.find(u => u.id === match.founder?.id)?.email,
+            investor_email: adminUsers.find(u => u.id === match.investor?.id)?.email,
+          }));
+        }
+
+        // Return matches without emails if no admin access
+        return priorityMatchesData || [];
+      } catch (error) {
+        console.error('Error fetching priority matches:', error);
+        return [];
       }
-
-      const { data: adminData } = await supabaseAdmin.auth.admin.listUsers();
-      const adminUsers = adminData?.users || [];
-
-      return (priorityMatchesData || []).map(match => ({
-        ...match,
-        founder_email: adminUsers.find(u => u.id === match.founder?.id)?.email,
-        investor_email: adminUsers.find(u => u.id === match.investor?.id)?.email,
-      }));
     },
   });
 

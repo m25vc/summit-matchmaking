@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -19,31 +20,6 @@ const Auth = () => {
   const [jobTitle, setJobTitle] = useState('');
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
   const [loading, setLoading] = useState(false);
-
-  const createTestUsers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.functions.invoke('create-test-users');
-      
-      if (error) {
-        console.error('Error creating test users:', error);
-        toast.error('Failed to create test users');
-        return;
-      }
-      
-      toast.success('Test users created successfully');
-      console.log('Created users:', data);
-      
-      // Auto-fill the first test user's credentials
-      setEmail('founder1@test.com');
-      setPassword('testpass123');
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to create test users');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,23 +259,13 @@ const Auth = () => {
             )}
           </div>
 
-          <div className="space-y-4">
+          <div>
             <Button
               type="submit"
               className="w-full"
               disabled={loading}
             >
               {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={createTestUsers}
-              disabled={loading}
-            >
-              Create Test Users
             </Button>
           </div>
         </form>

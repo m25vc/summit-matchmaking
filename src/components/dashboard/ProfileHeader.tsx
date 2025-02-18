@@ -8,10 +8,9 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface ProfileHeaderProps {
   profile: Profile | null;
-  onCreateTestUsers: () => Promise<void>;
 }
 
-export const ProfileHeader = ({ profile, onCreateTestUsers }: ProfileHeaderProps) => {
+export const ProfileHeader = ({ profile }: ProfileHeaderProps) => {
   return (
     <div className="space-y-6">
       <Card>
@@ -24,13 +23,6 @@ export const ProfileHeader = ({ profile, onCreateTestUsers }: ProfileHeaderProps
               Complete Your Profile
             </Button>
           )}
-          <Button 
-            variant="outline" 
-            onClick={onCreateTestUsers}
-            className="ml-4"
-          >
-            Create Test Users
-          </Button>
         </CardContent>
       </Card>
 

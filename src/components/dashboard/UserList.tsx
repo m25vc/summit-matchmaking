@@ -18,7 +18,7 @@ interface UserListProps {
   users: UserWithDetails[];
   profile: Profile | null;
   highPriorityCount: number;
-  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low') => Promise<void>;
+  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
 }
 
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {

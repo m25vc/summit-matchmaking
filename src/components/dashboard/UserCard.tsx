@@ -23,7 +23,7 @@ type UserWithDetails = Profile & {
 
 interface UserCardProps {
   user: UserWithDetails;
-  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low') => Promise<void>;
+  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
 }
 
 export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
@@ -85,7 +85,13 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
           <div className="pt-4">
             <Select
               value={user.priority_matches?.[0]?.priority || ''}
-              onValueChange={(value: 'high' | 'medium' | 'low') => onPriorityChange(user.id, value)}
+              onValueChange={(value: 'high' | 'medium' | 'low' | 'remove') => {
+                if (value === 'remove') {
+                  onPriorityChange(user.id, null);
+                } else {
+                  onPriorityChange(user.id, value);
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Set priority" />
@@ -94,6 +100,9 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
                 <SelectItem value="high">High Priority</SelectItem>
                 <SelectItem value="medium">Medium Priority</SelectItem>
                 <SelectItem value="low">Low Priority</SelectItem>
+                {user.priority_matches?.[0]?.priority && (
+                  <SelectItem value="remove" className="text-red-600">Remove Priority</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

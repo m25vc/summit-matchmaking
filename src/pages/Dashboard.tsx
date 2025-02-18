@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,7 +104,7 @@ const Dashboard = () => {
     fetchProfile();
   }, []);
 
-  const handlePriorityChange = async (userId: string, priority: 'high' | 'medium' | 'low') => {
+  const handlePriorityChange = async (userId: string, priority: 'high' | 'medium' | 'low' | null) => {
     if (!profile) {
       toast.error("Profile not loaded");
       return;
@@ -119,6 +118,36 @@ const Dashboard = () => {
     }
 
     try {
+      if (priority === null) {
+        // Delete the priority match
+        const { error } = await supabase
+          .from('priority_matches')
+          .delete()
+          .eq('founder_id', profile.user_type === 'founder' ? profile.id : userId)
+          .eq('investor_id', profile.user_type === 'founder' ? userId : profile.id);
+
+        if (error) throw error;
+
+        setUsers(prevUsers => 
+          prevUsers.map(user => {
+            if (user.id === userId) {
+              const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
+              if (wasHighPriority) {
+                setHighPriorityCount(prev => prev - 1);
+              }
+              return {
+                ...user,
+                priority_matches: []
+              };
+            }
+            return user;
+          })
+        );
+
+        toast.success("Priority match removed");
+        return;
+      }
+
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,

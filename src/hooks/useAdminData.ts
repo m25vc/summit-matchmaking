@@ -66,8 +66,8 @@ export const useAdminData = () => {
           return [];
         }
 
-        // Return basic data without emails if no admin key
-        if (!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+        // If we don't have an admin client, return basic data without emails
+        if (!supabaseAdmin) {
           return priorityMatchesData;
         }
 

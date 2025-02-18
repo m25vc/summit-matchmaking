@@ -33,17 +33,17 @@ export const useAdminData = () => {
     queryKey: ['priority_matches'],
     queryFn: async () => {
       try {
-        // First, get the match scores
-        const { data: matchScoresData, error: matchScoresError } = await supabase
-          .from('match_scores')
+        // Get all priority matches to check for mutual matches
+        const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
+          .from('priority_matches')
           .select('*');
 
-        if (matchScoresError) {
-          console.error('Match scores error:', matchScoresError);
+        if (priorityMatchesError) {
+          console.error('Priority matches error:', priorityMatchesError);
           return [];
         }
 
-        // Then, get all profiles
+        // Get all profiles for reference
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
@@ -56,14 +56,60 @@ export const useAdminData = () => {
         // Create a map of profiles by ID for faster lookups
         const profilesMap = new Map(profilesData?.map(profile => [profile.id, profile]));
 
-        // Combine the data
-        const combinedData = matchScoresData?.map(match => ({
-          ...match,
-          founder: profilesMap.get(match.founder_id ?? '') || null,
-          investor: profilesMap.get(match.investor_id ?? '') || null,
-        })) ?? [];
+        // Create a map to store mutual matches
+        const mutualMatches = new Map();
 
-        return combinedData;
+        // Process priority matches to identify mutual matches
+        priorityMatchesData?.forEach(match => {
+          const key = [match.founder_id, match.investor_id].sort().join('-');
+          if (!mutualMatches.has(key)) {
+            mutualMatches.set(key, { matches: [], count: 0 });
+          }
+          mutualMatches.get(key).matches.push(match);
+          mutualMatches.get(key).count++;
+        });
+
+        // Calculate scores and prepare final data
+        const processedMatches = priorityMatchesData?.map(match => {
+          const key = [match.founder_id, match.investor_id].sort().join('-');
+          const mutualMatch = mutualMatches.get(key);
+          const hasMutualMatch = mutualMatch?.count === 2;
+
+          // Calculate score based on priorities and mutual match
+          let score = 0;
+          if (hasMutualMatch) {
+            score += 10; // Base score for mutual match
+          }
+
+          // Add priority scores
+          if (match.priority === 'high') score += 3;
+          else if (match.priority === 'medium') score += 2;
+          else if (match.priority === 'low') score += 1;
+
+          // Add the other party's priority score if it exists
+          const otherMatch = mutualMatch?.matches.find(m => 
+            m.id !== match.id && 
+            ((m.founder_id === match.investor_id && m.investor_id === match.founder_id) ||
+             (m.founder_id === match.founder_id && m.investor_id === match.investor_id))
+          );
+          
+          if (otherMatch) {
+            if (otherMatch.priority === 'high') score += 3;
+            else if (otherMatch.priority === 'medium') score += 2;
+            else if (otherMatch.priority === 'low') score += 1;
+          }
+
+          return {
+            ...match,
+            founder: profilesMap.get(match.founder_id) || null,
+            investor: profilesMap.get(match.investor_id) || null,
+            score,
+            has_mutual_match: hasMutualMatch
+          };
+        }) ?? [];
+
+        // Sort by score in descending order
+        return processedMatches.sort((a, b) => b.score - a.score);
       } catch (error) {
         console.error('Error fetching priority matches:', error);
         return [];

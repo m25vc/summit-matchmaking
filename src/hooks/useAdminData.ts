@@ -32,7 +32,6 @@ export const useAdminData = () => {
     queryKey: ['matches'],
     queryFn: async () => {
       try {
-        // Get matches with their scores and related profiles
         const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
           .select(`
@@ -42,7 +41,7 @@ export const useAdminData = () => {
             matched_at,
             founder_interest,
             investor_interest,
-            profiles!matches_founder_id_fkey (
+            founder:founder_id(
               id, 
               first_name, 
               last_name, 
@@ -56,7 +55,7 @@ export const useAdminData = () => {
               updated_at,
               user_type
             ),
-            profiles!matches_investor_id_fkey (
+            investor:investor_id(
               id, 
               first_name, 
               last_name, 
@@ -88,8 +87,8 @@ export const useAdminData = () => {
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: match.profiles || null,
-            investor: match.profiles || null,
+            founder: match.founder,
+            investor: match.investor,
             score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };

@@ -41,7 +41,7 @@ export const useAdminData = () => {
             matched_at,
             founder_interest,
             investor_interest,
-            founder:founder_id(
+            founder:profiles!matches_founder_id_fkey (
               id, 
               first_name, 
               last_name, 
@@ -55,7 +55,7 @@ export const useAdminData = () => {
               updated_at,
               user_type
             ),
-            investor:investor_id(
+            investor:profiles!matches_investor_id_fkey (
               id, 
               first_name, 
               last_name, 

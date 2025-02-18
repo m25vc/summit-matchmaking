@@ -59,8 +59,6 @@ const Dashboard = () => {
         setProfile(profileData);
 
         if (profileData) {
-          const oppositeType = profileData.user_type === 'founder' ? 'investor' : 'founder';
-          
           const { data: priorityMatchesData, error: priorityMatchesError } = await supabase
             .from('priority_matches')
             .select('*');
@@ -82,14 +80,24 @@ const Dashboard = () => {
           
           setHighPriorityCount(highPriorityCount);
 
-          const { data: usersData, error: usersError } = await supabase
+          // Fetch potential matches based on user type
+          let query = supabase
             .from('profiles')
             .select(`
               *,
               investor_details (*),
               founder_details (*)
-            `)
-            .eq('user_type', oppositeType);
+            `);
+
+          if (profileData.user_type === 'founder') {
+            // Founders can only match with investors
+            query = query.eq('user_type', 'investor');
+          } else {
+            // Investors can match with both founders and other investors (except themselves)
+            query = query.neq('id', user.id);
+          }
+
+          const { data: usersData, error: usersError } = await query;
 
           if (usersError) throw usersError;
 
@@ -98,7 +106,8 @@ const Dashboard = () => {
             priority_matches: priorityMatchesData?.filter(match => 
               profileData.user_type === 'founder' 
                 ? match.founder_id === profileData.id && match.investor_id === user.id
-                : match.investor_id === profileData.id && match.founder_id === user.id
+                : match.investor_id === profileData.id && 
+                  (match.founder_id === user.id || match.investor_id === user.id)
             ) || []
           }));
 
@@ -133,7 +142,7 @@ const Dashboard = () => {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority,
-        set_by: profile.id // Add the set_by field with the current user's ID
+        set_by: profile.id
       };
 
       console.log('Upserting match data:', matchData);

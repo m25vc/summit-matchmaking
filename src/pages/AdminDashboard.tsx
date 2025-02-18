@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Database } from '@/integrations/supabase/types';
+import type { User } from '@supabase/supabase-js';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
@@ -20,6 +21,12 @@ type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
   set_by_user: Profile | null;
   founder_email?: string;
   investor_email?: string;
+};
+
+type AdminUserList = {
+  users: User[];
+  aud: string;
+  total_users: number;
 };
 
 const AdminDashboard = () => {
@@ -38,7 +45,6 @@ const AdminDashboard = () => {
   const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
     queryKey: ['priority_matches'],
     queryFn: async () => {
-      // Join with auth.users to get emails
       const { data: priorityMatchesData, error: priorityError } = await supabase
         .from('priority_matches')
         .select(`
@@ -69,19 +75,20 @@ const AdminDashboard = () => {
         throw priorityError;
       }
 
-      // Get emails from auth.users for founders and investors
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers() as { 
+        data: AdminUserList; 
+        error: null | Error;
+      };
       
       if (authError) {
         console.error('Auth users error:', authError);
         throw authError;
       }
 
-      // Add emails to the matches data
       const matchesWithEmails = (priorityMatchesData || []).map(match => ({
         ...match,
-        founder_email: authData?.users.find(u => u.id === match.founder?.id)?.email,
-        investor_email: authData?.users.find(u => u.id === match.investor?.id)?.email,
+        founder_email: authData.users.find(u => u.id === match.founder?.id)?.email,
+        investor_email: authData.users.find(u => u.id === match.investor?.id)?.email,
       })) as PriorityMatch[];
 
       console.log('Priority matches with emails:', matchesWithEmails);

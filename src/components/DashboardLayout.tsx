@@ -45,8 +45,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/dashboard" className="text-xl font-bold">M25 Summit</Link>
+            <div className="flex items-center space-x-4">
+              <img 
+                src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
+                alt="M25 Logo" 
+                className="h-8 w-auto"
+              />
+              <Link to="/dashboard" className="text-xl font-bold">Club M25 Summit</Link>
             </div>
             <div className="flex items-center space-x-4">
               {isAdmin && (

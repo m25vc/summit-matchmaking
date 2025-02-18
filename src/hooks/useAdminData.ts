@@ -58,23 +58,32 @@ export const useAdminData = () => {
         
         if (priorityError) {
           console.error('Priority matches error:', priorityError);
-          throw priorityError;
+          return [];
         }
 
-        // Only try to get admin data if we have service role key
-        if (import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+        // Return matches without trying to get emails if there's no data
+        if (!priorityMatchesData) {
+          return [];
+        }
+
+        // Return basic data without emails if no admin key
+        if (!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+          return priorityMatchesData;
+        }
+
+        try {
           const { data: adminData } = await supabaseAdmin.auth.admin.listUsers();
           const adminUsers = adminData?.users || [];
 
-          return (priorityMatchesData || []).map(match => ({
+          return priorityMatchesData.map(match => ({
             ...match,
             founder_email: adminUsers.find(u => u.id === match.founder?.id)?.email,
             investor_email: adminUsers.find(u => u.id === match.investor?.id)?.email,
           }));
+        } catch (adminError) {
+          console.error('Admin access error:', adminError);
+          return priorityMatchesData;
         }
-
-        // Return matches without emails if no admin access
-        return priorityMatchesData || [];
       } catch (error) {
         console.error('Error fetching priority matches:', error);
         return [];

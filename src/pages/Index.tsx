@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,7 +21,11 @@ const Index = () => {
       <nav className="w-full px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-12">
-            <h1 className="text-2xl font-bold text-[#c41230]">M25</h1>
+            <img 
+              src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
+              alt="M25 Logo" 
+              className="h-8 w-auto"
+            />
             <span className="text-lg text-gray-600">The Club M25 Summit</span>
           </div>
           <Button 

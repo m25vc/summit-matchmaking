@@ -9,7 +9,13 @@ const AdminDashboard = () => {
   const { profiles, priorityMatches, isLoading } = useAdminData();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto px-4">
+          <div>Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (

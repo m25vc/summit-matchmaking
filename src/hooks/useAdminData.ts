@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseAdmin } from '@/integrations/supabase/adminClient';
 import type { Database } from '@/integrations/supabase/types';
+import type { User } from '@supabase/supabase-js';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
@@ -59,17 +60,13 @@ export const useAdminData = () => {
         throw priorityError;
       }
 
-      const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (adminError) {
-        console.error('Admin users error:', adminError);
-        throw adminError;
-      }
+      const { data: adminData } = await supabaseAdmin.auth.admin.listUsers();
+      const adminUsers = adminData?.users || [];
 
       return (priorityMatchesData || []).map(match => ({
         ...match,
-        founder_email: adminData.users.find(u => u.id === match.founder?.id)?.email,
-        investor_email: adminData.users.find(u => u.id === match.investor?.id)?.email,
+        founder_email: adminUsers.find(u => u.id === match.founder?.id)?.email,
+        investor_email: adminUsers.find(u => u.id === match.investor?.id)?.email,
       }));
     },
   });

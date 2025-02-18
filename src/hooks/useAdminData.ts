@@ -8,7 +8,6 @@ export type PriorityMatch = {
   id: string;
   founder_id: string;
   investor_id: string;
-  priority: Database['public']['Enums']['match_priority'];
   created_at: string;
   founder: Profile | null;
   investor: Profile | null;

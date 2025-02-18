@@ -13,7 +13,7 @@ const Index = () => {
   };
 
   const handleContact = () => {
-    toast.info("Contact functionality coming soon!");
+    window.location.href = "mailto:jay@m25vc.com";
   };
 
   return (

@@ -23,6 +23,23 @@ interface UserListProps {
   onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
 }
 
+const INDUSTRY_OPTIONS = [
+  'SaaS',
+  'Fintech',
+  'Healthcare',
+  'E-commerce',
+  'Enterprise',
+  'Other'
+] as const;
+
+const STAGE_OPTIONS = [
+  'Pre-seed',
+  'Seed',
+  'Series A',
+  'Series B+',
+  'Other'
+] as const;
+
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
@@ -30,37 +47,26 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
 
-  // Get unique industries and stages from all users
-  const industries = Array.from(new Set(users.flatMap(user => {
-    if (user.user_type === 'investor' && user.investor_details?.preferred_industries) {
-      return user.investor_details.preferred_industries;
-    } else if (user.user_type === 'founder' && user.founder_details?.industry) {
-      return [user.founder_details.industry];
-    }
-    return [];
-  })));
-
-  const stages = Array.from(new Set(users.flatMap(user => {
-    if (user.user_type === 'investor' && user.investor_details?.preferred_stages) {
-      return user.investor_details.preferred_stages;
-    } else if (user.user_type === 'founder' && user.founder_details?.company_stage) {
-      return [user.founder_details.company_stage];
-    }
-    return [];
-  })));
-
   // Filter users based on selected filters
   const filteredNewUsers = newUsers.filter(user => {
+    const userIndustry = user.user_type === 'investor' 
+      ? user.investor_details?.preferred_industries?.[0] 
+      : user.founder_details?.industry;
+    
+    const userStage = user.user_type === 'investor'
+      ? user.investor_details?.preferred_stages?.[0]
+      : user.founder_details?.company_stage;
+
     const matchesIndustry = industryFilter === 'all' || (
-      user.user_type === 'investor' 
-        ? user.investor_details?.preferred_industries?.includes(industryFilter)
-        : user.founder_details?.industry === industryFilter
+      industryFilter === 'Other' 
+        ? !INDUSTRY_OPTIONS.slice(0, -1).includes(userIndustry as any)
+        : userIndustry === industryFilter
     );
 
     const matchesStage = stageFilter === 'all' || (
-      user.user_type === 'investor'
-        ? user.investor_details?.preferred_stages?.includes(stageFilter)
-        : user.founder_details?.company_stage === stageFilter
+      stageFilter === 'Other'
+        ? !STAGE_OPTIONS.slice(0, -1).includes(userStage as any)
+        : userStage === stageFilter
     );
 
     return matchesIndustry && matchesStage;
@@ -98,7 +104,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Industries</SelectItem>
-                  {industries.map((industry) => (
+                  {INDUSTRY_OPTIONS.map((industry) => (
                     <SelectItem key={industry} value={industry}>
                       {industry}
                     </SelectItem>
@@ -117,7 +123,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Stages</SelectItem>
-                  {stages.map((stage) => (
+                  {STAGE_OPTIONS.map((stage) => (
                     <SelectItem key={stage} value={stage}>
                       {stage}
                     </SelectItem>

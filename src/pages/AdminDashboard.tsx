@@ -11,6 +11,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Database } from '@/integrations/supabase/types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
+  founder: Profile | null;
+  investor: Profile | null;
+  set_by_user: Profile | null;
+  founder_email?: string;
+  investor_email?: string;
+};
 
 const AdminDashboard = () => {
   const { data: profiles, isLoading: profilesLoading } = useQuery({
@@ -60,7 +70,7 @@ const AdminDashboard = () => {
       }
 
       // Get emails from auth.users for founders and investors
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) {
         console.error('Auth users error:', authError);
@@ -68,11 +78,11 @@ const AdminDashboard = () => {
       }
 
       // Add emails to the matches data
-      const matchesWithEmails = priorityMatchesData?.map(match => ({
+      const matchesWithEmails = (priorityMatchesData || []).map(match => ({
         ...match,
-        founder_email: authUsers.users.find(u => u.id === match.founder?.id)?.email,
-        investor_email: authUsers.users.find(u => u.id === match.investor?.id)?.email,
-      }));
+        founder_email: authData?.users.find(u => u.id === match.founder?.id)?.email,
+        investor_email: authData?.users.find(u => u.id === match.investor?.id)?.email,
+      })) as PriorityMatch[];
 
       console.log('Priority matches with emails:', matchesWithEmails);
       return matchesWithEmails;

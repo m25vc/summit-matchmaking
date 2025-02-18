@@ -8,6 +8,7 @@ export type PriorityMatch = {
   id: string;
   founder_id: string;
   investor_id: string;
+  priority: Database['public']['Enums']['match_priority'];
   created_at: string;
   founder: Profile | null;
   investor: Profile | null;
@@ -29,76 +30,42 @@ export const useAdminData = () => {
   });
 
   const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
-    queryKey: ['matches'],
+    queryKey: ['priority_matches'],
     queryFn: async () => {
       try {
-        const { data: matchesData, error: matchesError } = await supabase
-          .from('matches')
-          .select(`
-            id,
-            founder_id,
-            investor_id,
-            matched_at,
-            founder_interest,
-            investor_interest,
-            founder:profiles(
-              id, 
-              first_name, 
-              last_name, 
-              email, 
-              company_name,
-              bio,
-              created_at,
-              job_title,
-              linkedin_url,
-              role,
-              updated_at,
-              user_type
-            ),
-            investor:profiles(
-              id, 
-              first_name, 
-              last_name, 
-              email, 
-              company_name,
-              bio,
-              created_at,
-              job_title,
-              linkedin_url,
-              role,
-              updated_at,
-              user_type
-            )
-          `);
+        // First, get the match scores
+        const { data: matchScoresData, error: matchScoresError } = await supabase
+          .from('match_scores')
+          .select('*');
 
-        console.log('Raw matches data:', matchesData);
-
-        if (matchesError) {
-          console.error('Matches error:', matchesError);
+        if (matchScoresError) {
+          console.error('Match scores error:', matchScoresError);
           return [];
         }
 
-        // Transform the data to match our PriorityMatch type
-        const combinedData = matchesData?.map((match: any) => {
-          const hasMutualMatch = match.founder_interest && match.investor_interest;
-          
-          return {
-            id: match.id,
-            founder_id: match.founder_id,
-            investor_id: match.investor_id,
-            created_at: match.matched_at,
-            founder: match.founder,
-            investor: match.investor,
-            score: hasMutualMatch ? 10 : 0,
-            has_mutual_match: hasMutualMatch
-          };
-        }) ?? [];
+        // Then, get all profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
 
-        console.log('Transformed data:', combinedData);
+        if (profilesError) {
+          console.error('Profiles error:', profilesError);
+          return [];
+        }
+
+        // Create a map of profiles by ID for faster lookups
+        const profilesMap = new Map(profilesData?.map(profile => [profile.id, profile]));
+
+        // Combine the data
+        const combinedData = matchScoresData?.map(match => ({
+          ...match,
+          founder: profilesMap.get(match.founder_id ?? '') || null,
+          investor: profilesMap.get(match.investor_id ?? '') || null,
+        })) ?? [];
 
         return combinedData;
       } catch (error) {
-        console.error('Error fetching matches:', error);
+        console.error('Error fetching priority matches:', error);
         return [];
       }
     },

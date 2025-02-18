@@ -22,7 +22,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     // Convert matches to CSV format
     const headers = ['Founder Name', 'Founder Company', 'Founder Email', 
                     'Investor Name', 'Investor Company', 'Investor Email',
-                    'Priority', 'Mutual Match', 'Score', 'Date'];
+                    'Mutual Match', 'Score', 'Date'];
     
     const rows = matches.map(match => [
       `${match.founder?.first_name} ${match.founder?.last_name}`,
@@ -31,7 +31,6 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
       `${match.investor?.first_name} ${match.investor?.last_name}`,
       match.investor?.company_name,
       match.investor?.email,
-      match.priority,
       match.has_mutual_match ? 'Yes' : 'No',
       match.score,
       new Date(match.created_at).toLocaleDateString()
@@ -68,7 +67,6 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
             <TableRow>
               <TableHead>Founder</TableHead>
               <TableHead>Investor</TableHead>
-              <TableHead>Priority</TableHead>
               <TableHead>Score</TableHead>
             </TableRow>
           </TableHeader>
@@ -95,15 +93,6 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
                   <br />
                   <span className="text-sm text-blue-600">
                     {match.investor?.email}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className={`font-medium ${
-                    match.priority === 'high' ? 'text-green-600' :
-                    match.priority === 'medium' ? 'text-yellow-600' :
-                    match.priority === 'low' ? 'text-red-600' : 'text-gray-500'
-                  }`}>
-                    {match.priority}
                   </span>
                 </TableCell>
                 <TableCell>

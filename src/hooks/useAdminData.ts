@@ -42,7 +42,7 @@ export const useAdminData = () => {
             matched_at,
             founder_interest,
             investor_interest,
-            founder:profiles!founder_id(
+            profiles!matches_founder_id_fkey (
               id, 
               first_name, 
               last_name, 
@@ -56,7 +56,7 @@ export const useAdminData = () => {
               updated_at,
               user_type
             ),
-            investor:profiles!investor_id(
+            profiles!matches_investor_id_fkey (
               id, 
               first_name, 
               last_name, 
@@ -88,8 +88,8 @@ export const useAdminData = () => {
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: match.founder || null,
-            investor: match.investor || null,
+            founder: match.profiles!matches_founder_id_fkey || null,
+            investor: match.profiles!matches_investor_id_fkey || null,
             score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };

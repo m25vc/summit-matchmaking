@@ -1,6 +1,6 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseAdmin } from '@/integrations/supabase/adminClient';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Table,
@@ -21,12 +21,6 @@ type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
   set_by_user: Profile | null;
   founder_email?: string;
   investor_email?: string;
-};
-
-type AdminUserList = {
-  users: User[];
-  aud: string;
-  total_users: number;
 };
 
 const AdminDashboard = () => {
@@ -75,20 +69,19 @@ const AdminDashboard = () => {
         throw priorityError;
       }
 
-      // Fetch users with proper type handling
-      const { data: authData } = await supabase.auth.admin.listUsers();
+      const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.listUsers();
       
-      if (!authData) {
-        throw new Error('Failed to fetch user data');
+      if (adminError) {
+        console.error('Admin users error:', adminError);
+        throw adminError;
       }
 
       const matchesWithEmails = (priorityMatchesData || []).map(match => ({
         ...match,
-        founder_email: authData.users.find(u => u.id === match.founder?.id)?.email,
-        investor_email: authData.users.find(u => u.id === match.investor?.id)?.email,
+        founder_email: adminData.users.find(u => u.id === match.founder?.id)?.email,
+        investor_email: adminData.users.find(u => u.id === match.investor?.id)?.email,
       })) as PriorityMatch[];
 
-      console.log('Priority matches with emails:', matchesWithEmails);
       return matchesWithEmails;
     },
   });

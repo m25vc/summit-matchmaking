@@ -4,7 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
+export type PriorityMatch = {
+  id: string;
+  founder_id: string;
+  investor_id: string;
+  priority: Database['public']['Enums']['match_priority'];
+  created_at: string;
   founder: Profile | null;
   investor: Profile | null;
   score: number;
@@ -34,8 +39,7 @@ export const useAdminData = () => {
             id,
             founder_id,
             investor_id,
-            priority1,
-            priority2,
+            priority,
             has_mutual_match,
             score,
             founder:profiles!match_scores_founder_id_fkey(

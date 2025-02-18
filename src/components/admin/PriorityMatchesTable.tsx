@@ -22,7 +22,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     // Convert matches to CSV format
     const headers = ['Founder Name', 'Founder Company', 'Founder Email', 
                     'Investor Name', 'Investor Company', 'Investor Email',
-                    'Priority 1', 'Priority 2', 'Mutual Match', 'Score', 'Date'];
+                    'Priority', 'Mutual Match', 'Score', 'Date'];
     
     const rows = matches.map(match => [
       `${match.founder?.first_name} ${match.founder?.last_name}`,
@@ -31,8 +31,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
       `${match.investor?.first_name} ${match.investor?.last_name}`,
       match.investor?.company_name,
       match.investor?.email,
-      match.priority1,
-      match.priority2,
+      match.priority,
       match.has_mutual_match ? 'Yes' : 'No',
       match.score,
       new Date(match.created_at).toLocaleDateString()
@@ -69,8 +68,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
             <TableRow>
               <TableHead>Founder</TableHead>
               <TableHead>Investor</TableHead>
-              <TableHead>Priority 1</TableHead>
-              <TableHead>Priority 2</TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Score</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,20 +99,11 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
                 </TableCell>
                 <TableCell>
                   <span className={`font-medium ${
-                    match.priority1 === 'high' ? 'text-green-600' :
-                    match.priority1 === 'medium' ? 'text-yellow-600' :
-                    match.priority1 === 'low' ? 'text-red-600' : 'text-gray-500'
+                    match.priority === 'high' ? 'text-green-600' :
+                    match.priority === 'medium' ? 'text-yellow-600' :
+                    match.priority === 'low' ? 'text-red-600' : 'text-gray-500'
                   }`}>
-                    {match.priority1}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className={`font-medium ${
-                    match.priority2 === 'high' ? 'text-green-600' :
-                    match.priority2 === 'medium' ? 'text-yellow-600' :
-                    match.priority2 === 'low' ? 'text-red-600' : 'text-gray-500'
-                  }`}>
-                    {match.priority2}
+                    {match.priority}
                   </span>
                 </TableCell>
                 <TableCell>

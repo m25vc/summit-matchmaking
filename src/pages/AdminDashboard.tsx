@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseAdmin } from '@/integrations/supabase/adminClient';
@@ -22,6 +21,14 @@ type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
   set_by_user: Profile | null;
   founder_email?: string;
   investor_email?: string;
+};
+
+type PriorityMatchResponse = {
+  data: (Omit<PriorityMatch, 'founder_email' | 'investor_email'>)[] | null;
+  error: null;
+} | {
+  data: null;
+  error: Error;
 };
 
 const AdminDashboard = () => {
@@ -63,7 +70,7 @@ const AdminDashboard = () => {
             last_name,
             user_type
           )
-        `) as unknown as { data: PriorityMatch[] | null, error: null } | { data: null, error: Error };
+        `) as PriorityMatchResponse;
       
       if (priorityError) {
         console.error('Priority matches error:', priorityError);
@@ -83,7 +90,7 @@ const AdminDashboard = () => {
         investor_email: adminData.users.find(u => u.id === match.investor?.id)?.email,
       }));
 
-      return matchesWithEmails;
+      return matchesWithEmails as PriorityMatch[];
     },
   });
 

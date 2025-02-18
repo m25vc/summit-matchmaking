@@ -13,15 +13,11 @@ interface ProfileHeaderProps {
 export const ProfileHeader = ({ profile }: ProfileHeaderProps) => {
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          {!profile?.first_name && (
-            <Button onClick={() => window.location.href = '/profile'}>
-              Complete Your Profile
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      {!profile?.first_name && (
+        <Button onClick={() => window.location.href = '/profile'}>
+          Complete Your Profile
+        </Button>
+      )}
 
       <Card className="bg-blue-50">
         <CardHeader>

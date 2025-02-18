@@ -23,7 +23,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-12">
             <h1 className="text-2xl font-bold text-[#c41230]">M25</h1>
-            <span className="text-lg text-gray-600">Summit 2024</span>
+            <span className="text-lg text-gray-600">The Club M25 Summit</span>
           </div>
           <Button 
             variant="outline" 
@@ -52,11 +52,10 @@ const Index = () => {
               className="space-y-6"
             >
               <h1 className="text-6xl md:text-7xl font-bold text-white max-w-4xl">
-                Connect with the Right Investors at M25 Summit
+                The Club M25 Summit
               </h1>
-              <p className="text-2xl text-white max-w-2xl">
-                Our intelligent matching platform connects founders with the perfect VCs, 
-                maximizing your networking opportunities at Summit 2024.
+              <p className="text-xl text-white max-w-3xl leading-relaxed">
+                The Club M25 Summit is an annual gathering of our portfolio companies and investors for a two-day event each fall. Designed to elevate founders, foster community, and enhance connectivity, the Summit facilitates thousands of one-on-one meetings alongside engaging activities breakout sessions, speakers and social dinners. Held every year the city of Chicago, this event offers an unparalleled opportunity for startups and investors alike to forge meaningful connections with leading VC firms from across the nation.
               </p>
               <div className="flex gap-4 pt-6">
                 <Button 

@@ -2,6 +2,8 @@
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from 'react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
@@ -22,8 +24,47 @@ interface UserListProps {
 }
 
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
+  const [industryFilter, setIndustryFilter] = useState<string>('all');
+  const [stageFilter, setStageFilter] = useState<string>('all');
+
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
+
+  // Get unique industries and stages from all users
+  const industries = Array.from(new Set(users.flatMap(user => {
+    if (user.user_type === 'investor' && user.investor_details?.preferred_industries) {
+      return user.investor_details.preferred_industries;
+    } else if (user.user_type === 'founder' && user.founder_details?.industry) {
+      return [user.founder_details.industry];
+    }
+    return [];
+  })));
+
+  const stages = Array.from(new Set(users.flatMap(user => {
+    if (user.user_type === 'investor' && user.investor_details?.preferred_stages) {
+      return user.investor_details.preferred_stages;
+    } else if (user.user_type === 'founder' && user.founder_details?.company_stage) {
+      return [user.founder_details.company_stage];
+    }
+    return [];
+  })));
+
+  // Filter users based on selected filters
+  const filteredNewUsers = newUsers.filter(user => {
+    const matchesIndustry = industryFilter === 'all' || (
+      user.user_type === 'investor' 
+        ? user.investor_details?.preferred_industries?.includes(industryFilter)
+        : user.founder_details?.industry === industryFilter
+    );
+
+    const matchesStage = stageFilter === 'all' || (
+      user.user_type === 'investor'
+        ? user.investor_details?.preferred_stages?.includes(stageFilter)
+        : user.founder_details?.company_stage === stageFilter
+    );
+
+    return matchesIndustry && matchesStage;
+  });
 
   return (
     <div className="space-y-6">
@@ -45,17 +86,58 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
         </TabsList>
         
         <TabsContent value="new">
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Industry</label>
+              <Select
+                value={industryFilter}
+                onValueChange={setIndustryFilter}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Industries</SelectItem>
+                  {industries.map((industry) => (
+                    <SelectItem key={industry} value={industry}>
+                      {industry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Stage</label>
+              <Select
+                value={stageFilter}
+                onValueChange={setStageFilter}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stages</SelectItem>
+                  {stages.map((stage) => (
+                    <SelectItem key={stage} value={stage}>
+                      {stage}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {newUsers.map((user) => (
+            {filteredNewUsers.map((user) => (
               <UserCard 
                 key={user.id} 
                 user={user} 
                 onPriorityChange={onPriorityChange}
               />
             ))}
-            {newUsers.length === 0 && (
+            {filteredNewUsers.length === 0 && (
               <p className="col-span-full text-center text-gray-500 py-8">
-                No new matches available
+                No matches found with the selected filters
               </p>
             )}
           </div>

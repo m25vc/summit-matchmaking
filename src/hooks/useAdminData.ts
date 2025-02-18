@@ -42,11 +42,23 @@ export const useAdminData = () => {
             matched_at,
             founder_interest,
             investor_interest,
-            founder:profiles(id, first_name, last_name, email, company_name),
-            investor:profiles(id, first_name, last_name, email, company_name)
+            profiles!matches_founder_id_fkey (
+              id, 
+              first_name, 
+              last_name, 
+              email, 
+              company_name
+            ),
+            profiles!matches_investor_id_fkey (
+              id, 
+              first_name, 
+              last_name, 
+              email, 
+              company_name
+            )
           `);
 
-        console.log('Matches data:', matchesData); // Debug log
+        console.log('Raw matches data:', matchesData);
 
         if (matchesError) {
           console.error('Matches error:', matchesError);
@@ -62,14 +74,14 @@ export const useAdminData = () => {
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: match.founder,
-            investor: match.investor,
+            founder: match.profiles || null,
+            investor: match.profiles_2 || null,
             score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };
         }) ?? [];
 
-        console.log('Transformed data:', combinedData); // Debug log
+        console.log('Transformed data:', combinedData);
 
         return combinedData;
       } catch (error) {

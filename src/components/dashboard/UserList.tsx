@@ -37,10 +37,10 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
       <Tabs defaultValue="new" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="new">
-            New Matches ({newUsers.length})
+            Discover ({newUsers.length})
           </TabsTrigger>
           <TabsTrigger value="priority">
-            Priority List ({priorityUsers.length})
+            My Shortlist ({priorityUsers.length})
           </TabsTrigger>
         </TabsList>
         

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
@@ -60,6 +60,15 @@ const Index = () => {
               <p className="text-xl text-white max-w-3xl leading-relaxed">
                 The Club M25 Summit is an annual gathering of our portfolio companies and investors for a two-day event each fall. Designed to elevate founders, foster community, and enhance connectivity, the Summit facilitates thousands of one-on-one meetings alongside engaging activities breakout sessions, speakers and social dinners. Held every year the city of Chicago, this event offers an unparalleled opportunity for startups and investors alike to forge meaningful connections with leading VC firms from across the nation. Use this platform to get matched with other attendees and schedule your one-on-one meetings, ensuring you make the most of your time at the Summit by connecting with the right people based on mutual interests and objectives.
               </p>
+              <a 
+                href="https://m25vc.com/summit" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center text-white hover:text-gray-200 transition-colors"
+              >
+                <ExternalLink className="w-5 h-5 mr-2" />
+                Learn more about the Summit on M25's website
+              </a>
               <div className="flex gap-4 pt-6">
                 <Button 
                   size="lg"

@@ -33,17 +33,17 @@ export const useAdminData = () => {
     queryKey: ['priority_matches'],
     queryFn: async () => {
       try {
-        // First, get the match scores
-        const { data: matchScoresData, error: matchScoresError } = await supabase
-          .from('match_scores')
+        // Get matches with their scores
+        const { data: matchesData, error: matchesError } = await supabase
+          .from('matches')
           .select('*');
 
-        if (matchScoresError) {
-          console.error('Match scores error:', matchScoresError);
+        if (matchesError) {
+          console.error('Matches error:', matchesError);
           return [];
         }
 
-        // Then, get all profiles
+        // Get profiles
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
@@ -56,16 +56,28 @@ export const useAdminData = () => {
         // Create a map of profiles by ID for faster lookups
         const profilesMap = new Map(profilesData?.map(profile => [profile.id, profile]));
 
-        // Combine the data
-        const combinedData = matchScoresData?.map(match => ({
-          ...match,
-          founder: profilesMap.get(match.founder_id ?? '') || null,
-          investor: profilesMap.get(match.investor_id ?? '') || null,
-        })) ?? [];
+        // Combine and calculate scores correctly
+        const combinedData = matchesData?.map(match => {
+          const hasMutualMatch = match.founder_interest && match.investor_interest;
+          
+          // Calculate score based on interests
+          const score = hasMutualMatch ? 10 : 0;
+
+          return {
+            id: match.id,
+            founder_id: match.founder_id,
+            investor_id: match.investor_id,
+            created_at: match.matched_at,
+            founder: profilesMap.get(match.founder_id ?? '') || null,
+            investor: profilesMap.get(match.investor_id ?? '') || null,
+            score: score,
+            has_mutual_match: hasMutualMatch
+          };
+        }) ?? [];
 
         return combinedData;
       } catch (error) {
-        console.error('Error fetching priority matches:', error);
+        console.error('Error fetching matches:', error);
         return [];
       }
     },

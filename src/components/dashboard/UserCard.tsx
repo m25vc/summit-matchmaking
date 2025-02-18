@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
 import type { Database } from '@/integrations/supabase/types';
+import { Badge } from "@/components/ui/badge";
 
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
@@ -30,8 +31,15 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
   return (
     <Card key={user.id}>
       <CardHeader>
-        <CardTitle>{user.first_name} {user.last_name}</CardTitle>
-        <p className="text-sm text-gray-500">{user.company_name}</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>{user.first_name} {user.last_name}</CardTitle>
+            <p className="text-sm text-gray-500">{user.company_name}</p>
+          </div>
+          <Badge variant={user.user_type === 'investor' ? 'secondary' : 'default'}>
+            {user.user_type === 'investor' ? 'Investor' : 'Founder'}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

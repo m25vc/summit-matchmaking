@@ -7,7 +7,8 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
   founder: Profile | null;
   investor: Profile | null;
-  set_by_user: Profile | null;
+  score: number;
+  has_mutual_match: boolean;
 };
 
 export const useAdminData = () => {
@@ -28,10 +29,16 @@ export const useAdminData = () => {
     queryFn: async () => {
       try {
         const { data: priorityMatchesData, error: priorityError } = await supabase
-          .from('priority_matches')
+          .from('match_scores')
           .select(`
-            *,
-            founder:profiles!priority_matches_founder_id_fkey(
+            id,
+            founder_id,
+            investor_id,
+            priority1,
+            priority2,
+            has_mutual_match,
+            score,
+            founder:profiles!match_scores_founder_id_fkey(
               id,
               first_name,
               last_name,
@@ -39,17 +46,11 @@ export const useAdminData = () => {
               user_type,
               email
             ),
-            investor:profiles!priority_matches_investor_id_fkey(
+            investor:profiles!match_scores_investor_id_fkey(
               id,
               first_name,
               last_name,
               company_name,
-              user_type,
-              email
-            ),
-            set_by_user:profiles!priority_matches_set_by_fkey(
-              first_name,
-              last_name,
               user_type,
               email
             )

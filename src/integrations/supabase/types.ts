@@ -229,9 +229,43 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      match_scores: {
+        Row: {
+          founder_id: string | null
+          has_mutual_match: boolean | null
+          id: string | null
+          investor_id: string | null
+          priority1: Database["public"]["Enums"]["match_priority"] | null
+          priority2: Database["public"]["Enums"]["match_priority"] | null
+          score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priority_matches_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_matches_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      calculate_match_score: {
+        Args: {
+          has_mutual_match: boolean
+          priority1: Database["public"]["Enums"]["match_priority"]
+          priority2: Database["public"]["Enums"]["match_priority"]
+        }
+        Returns: number
+      }
       make_user_admin: {
         Args: {
           user_email: string

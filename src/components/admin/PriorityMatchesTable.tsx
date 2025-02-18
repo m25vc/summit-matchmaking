@@ -22,7 +22,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     // Convert matches to CSV format
     const headers = ['Founder Name', 'Founder Company', 'Founder Email', 
                     'Investor Name', 'Investor Company', 'Investor Email',
-                    'Priority', 'Set By', 'Set By Role', 'Set By Email', 'Date'];
+                    'Priority 1', 'Priority 2', 'Mutual Match', 'Score', 'Date'];
     
     const rows = matches.map(match => [
       `${match.founder?.first_name} ${match.founder?.last_name}`,
@@ -31,10 +31,10 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
       `${match.investor?.first_name} ${match.investor?.last_name}`,
       match.investor?.company_name,
       match.investor?.email,
-      match.priority,
-      `${match.set_by_user?.first_name} ${match.set_by_user?.last_name}`,
-      match.set_by_user?.user_type,
-      match.set_by_user?.email,
+      match.priority1,
+      match.priority2,
+      match.has_mutual_match ? 'Yes' : 'No',
+      match.score,
       new Date(match.created_at).toLocaleDateString()
     ]);
 
@@ -69,9 +69,9 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
             <TableRow>
               <TableHead>Founder</TableHead>
               <TableHead>Investor</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Set By</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Priority 1</TableHead>
+              <TableHead>Priority 2</TableHead>
+              <TableHead>Score</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,26 +101,31 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
                 </TableCell>
                 <TableCell>
                   <span className={`font-medium ${
-                    match.priority === 'high' ? 'text-green-600' :
-                    match.priority === 'medium' ? 'text-yellow-600' :
-                    match.priority === 'low' ? 'text-red-600' : 'text-gray-500'
+                    match.priority1 === 'high' ? 'text-green-600' :
+                    match.priority1 === 'medium' ? 'text-yellow-600' :
+                    match.priority1 === 'low' ? 'text-red-600' : 'text-gray-500'
                   }`}>
-                    {match.priority}
+                    {match.priority1}
                   </span>
                 </TableCell>
                 <TableCell>
-                  {match.set_by_user?.first_name} {match.set_by_user?.last_name}
-                  <br />
-                  <span className="text-sm text-gray-500">
-                    ({match.set_by_user?.user_type})
-                  </span>
-                  <br />
-                  <span className="text-sm text-blue-600">
-                    {match.set_by_user?.email}
+                  <span className={`font-medium ${
+                    match.priority2 === 'high' ? 'text-green-600' :
+                    match.priority2 === 'medium' ? 'text-yellow-600' :
+                    match.priority2 === 'low' ? 'text-red-600' : 'text-gray-500'
+                  }`}>
+                    {match.priority2}
                   </span>
                 </TableCell>
                 <TableCell>
-                  {new Date(match.created_at).toLocaleDateString()}
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg">{match.score}</span>
+                    {match.has_mutual_match && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        Mutual Match
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

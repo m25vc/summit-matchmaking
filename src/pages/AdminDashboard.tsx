@@ -25,7 +25,7 @@ type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'] & {
 };
 
 type PriorityMatchResponse = {
-  data: (Omit<PriorityMatch, 'founder_email' | 'investor_email'>)[] | null;
+  data: PriorityMatch[] | null;
   error: null;
 } | {
   data: null;
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
             last_name,
             user_type
           )
-        `);
+        `).returns<PriorityMatch[]>();
       
       if (priorityError) {
         console.error('Priority matches error:', priorityError);
@@ -85,9 +85,7 @@ const AdminDashboard = () => {
         throw adminError;
       }
 
-      const matches = priorityMatchesData as (Omit<PriorityMatch, 'founder_email' | 'investor_email'>)[];
-      
-      const matchesWithEmails = matches.map(match => ({
+      const matchesWithEmails = (priorityMatchesData || []).map(match => ({
         ...match,
         founder_email: adminData.users.find(u => u.id === match.founder?.id)?.email,
         investor_email: adminData.users.find(u => u.id === match.investor?.id)?.email,

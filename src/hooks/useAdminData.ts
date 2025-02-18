@@ -42,9 +42,11 @@ export const useAdminData = () => {
             matched_at,
             founder_interest,
             investor_interest,
-            founder:profiles!matches_founder_id_fkey(*),
-            investor:profiles!matches_investor_id_fkey(*)
+            founder:profiles(id, first_name, last_name, email, company_name),
+            investor:profiles(id, first_name, last_name, email, company_name)
           `);
+
+        console.log('Matches data:', matchesData); // Debug log
 
         if (matchesError) {
           console.error('Matches error:', matchesError);
@@ -66,6 +68,8 @@ export const useAdminData = () => {
             has_mutual_match: hasMutualMatch
           };
         }) ?? [];
+
+        console.log('Transformed data:', combinedData); // Debug log
 
         return combinedData;
       } catch (error) {

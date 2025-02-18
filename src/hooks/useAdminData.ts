@@ -33,40 +33,37 @@ export const useAdminData = () => {
     queryKey: ['priority_matches'],
     queryFn: async () => {
       try {
-        const { data: priorityMatchesData, error: priorityError } = await supabase
+        // First, get the match scores
+        const { data: matchScoresData, error: matchScoresError } = await supabase
           .from('match_scores')
-          .select(`
-            id,
-            founder_id,
-            investor_id,
-            priority,
-            has_mutual_match,
-            score,
-            created_at,
-            founder:profiles(
-              id,
-              first_name,
-              last_name,
-              company_name,
-              user_type,
-              email
-            ),
-            investor:profiles(
-              id,
-              first_name,
-              last_name,
-              company_name,
-              user_type,
-              email
-            )
-          `).returns<PriorityMatch[]>();
-        
-        if (priorityError) {
-          console.error('Priority matches error:', priorityError);
+          .select('*');
+
+        if (matchScoresError) {
+          console.error('Match scores error:', matchScoresError);
           return [];
         }
 
-        return priorityMatchesData || [];
+        // Then, get all profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+
+        if (profilesError) {
+          console.error('Profiles error:', profilesError);
+          return [];
+        }
+
+        // Create a map of profiles by ID for faster lookups
+        const profilesMap = new Map(profilesData?.map(profile => [profile.id, profile]));
+
+        // Combine the data
+        const combinedData = matchScoresData?.map(match => ({
+          ...match,
+          founder: profilesMap.get(match.founder_id ?? '') || null,
+          investor: profilesMap.get(match.investor_id ?? '') || null,
+        })) ?? [];
+
+        return combinedData;
       } catch (error) {
         console.error('Error fetching priority matches:', error);
         return [];

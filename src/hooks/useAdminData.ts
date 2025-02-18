@@ -47,14 +47,28 @@ export const useAdminData = () => {
               first_name, 
               last_name, 
               email, 
-              company_name
+              company_name,
+              bio,
+              created_at,
+              job_title,
+              linkedin_url,
+              role,
+              updated_at,
+              user_type
             ),
             profiles!matches_investor_id_fkey (
               id, 
               first_name, 
               last_name, 
               email, 
-              company_name
+              company_name,
+              bio,
+              created_at,
+              job_title,
+              linkedin_url,
+              role,
+              updated_at,
+              user_type
             )
           `);
 
@@ -74,8 +88,8 @@ export const useAdminData = () => {
             founder_id: match.founder_id,
             investor_id: match.investor_id,
             created_at: match.matched_at,
-            founder: match.profiles || null,
-            investor: match.profiles_2 || null,
+            founder: match.profiles!matches_founder_id_fkey || null,
+            investor: match.profiles!matches_investor_id_fkey || null,
             score: hasMutualMatch ? 10 : 0,
             has_mutual_match: hasMutualMatch
           };

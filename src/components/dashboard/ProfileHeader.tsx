@@ -14,10 +14,7 @@ export const ProfileHeader = ({ profile }: ProfileHeaderProps) => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Welcome{profile?.first_name ? `, ${profile.first_name}` : ''}!</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {!profile?.first_name && (
             <Button onClick={() => window.location.href = '/profile'}>
               Complete Your Profile

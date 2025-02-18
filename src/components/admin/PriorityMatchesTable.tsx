@@ -7,8 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { PriorityMatch } from '@/hooks/useAdminData';
 
 interface PriorityMatchesTableProps {
@@ -18,13 +16,6 @@ interface PriorityMatchesTableProps {
 export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => {
   return (
     <div className="space-y-4">
-      <Alert variant="warning" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Email addresses are only visible with admin service role key configured.
-        </AlertDescription>
-      </Alert>
-
       <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
@@ -45,12 +36,20 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
                   <span className="text-sm text-gray-500">
                     {match.founder?.company_name}
                   </span>
+                  <br />
+                  <span className="text-sm text-blue-600">
+                    {match.founder?.email}
+                  </span>
                 </TableCell>
                 <TableCell>
                   {match.investor?.first_name} {match.investor?.last_name}
                   <br />
                   <span className="text-sm text-gray-500">
                     {match.investor?.company_name}
+                  </span>
+                  <br />
+                  <span className="text-sm text-blue-600">
+                    {match.investor?.email}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -67,6 +66,10 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
                   <br />
                   <span className="text-sm text-gray-500">
                     ({match.set_by_user?.user_type})
+                  </span>
+                  <br />
+                  <span className="text-sm text-blue-600">
+                    {match.set_by_user?.email}
                   </span>
                 </TableCell>
                 <TableCell>

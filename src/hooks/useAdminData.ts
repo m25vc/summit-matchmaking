@@ -36,19 +36,22 @@ export const useAdminData = () => {
               first_name,
               last_name,
               company_name,
-              user_type
+              user_type,
+              email
             ),
             investor:profiles!priority_matches_investor_id_fkey(
               id,
               first_name,
               last_name,
               company_name,
-              user_type
+              user_type,
+              email
             ),
             set_by_user:profiles!priority_matches_set_by_fkey(
               first_name,
               last_name,
-              user_type
+              user_type,
+              email
             )
           `).returns<PriorityMatch[]>();
         

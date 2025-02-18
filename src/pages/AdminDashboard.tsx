@@ -75,14 +75,11 @@ const AdminDashboard = () => {
         throw priorityError;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers() as { 
-        data: AdminUserList; 
-        error: null | Error;
-      };
+      // Fetch users with proper type handling
+      const { data: authData } = await supabase.auth.admin.listUsers();
       
-      if (authError) {
-        console.error('Auth users error:', authError);
-        throw authError;
+      if (!authData) {
+        throw new Error('Failed to fetch user data');
       }
 
       const matchesWithEmails = (priorityMatchesData || []).map(match => ({

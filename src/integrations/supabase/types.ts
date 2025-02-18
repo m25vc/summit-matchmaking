@@ -160,15 +160,8 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "priority_matches_founder_id_fkey"
+            foreignKeyName: "priority_matches_initiator_id_fkey"
             columns: ["founder_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "priority_matches_investor_id_fkey"
-            columns: ["investor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -176,6 +169,13 @@ export type Database = {
           {
             foreignKeyName: "priority_matches_set_by_fkey"
             columns: ["set_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_matches_target_id_fkey"
+            columns: ["investor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

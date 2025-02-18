@@ -20,17 +20,19 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     if (!matches) return;
 
     // Convert matches to CSV format
-    const headers = ['Founder Name', 'Founder Company', 'Founder Email', 
-                    'Investor Name', 'Investor Company', 'Investor Email',
+    const headers = ['Initiator Name', 'Initiator Company', 'Initiator Type', 'Initiator Email', 
+                    'Target Name', 'Target Company', 'Target Type', 'Target Email',
                     'Mutual Match', 'Score', 'Date'];
     
     const rows = matches.map(match => [
-      `${match.founder?.first_name} ${match.founder?.last_name}`,
-      match.founder?.company_name,
-      match.founder?.email,
-      `${match.investor?.first_name} ${match.investor?.last_name}`,
-      match.investor?.company_name,
-      match.investor?.email,
+      `${match.initiator?.first_name} ${match.initiator?.last_name}`,
+      match.initiator?.company_name,
+      match.initiator?.user_type,
+      match.initiator?.email,
+      `${match.target?.first_name} ${match.target?.last_name}`,
+      match.target?.company_name,
+      match.target?.user_type,
+      match.target?.email,
       match.has_mutual_match ? 'Yes' : 'No',
       match.score,
       new Date(match.created_at).toLocaleDateString()
@@ -65,8 +67,8 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Founder</TableHead>
-              <TableHead>Investor</TableHead>
+              <TableHead>Initiator</TableHead>
+              <TableHead>Target</TableHead>
               <TableHead>Score</TableHead>
             </TableRow>
           </TableHeader>
@@ -74,25 +76,33 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
             {matches?.map((match) => (
               <TableRow key={match.id}>
                 <TableCell>
-                  {match.founder?.first_name} {match.founder?.last_name}
+                  {match.initiator?.first_name} {match.initiator?.last_name}
                   <br />
                   <span className="text-sm text-gray-500">
-                    {match.founder?.company_name}
+                    {match.initiator?.company_name}
+                  </span>
+                  <br />
+                  <span className="text-xs text-gray-400">
+                    {match.initiator?.user_type}
                   </span>
                   <br />
                   <span className="text-sm text-blue-600">
-                    {match.founder?.email}
+                    {match.initiator?.email}
                   </span>
                 </TableCell>
                 <TableCell>
-                  {match.investor?.first_name} {match.investor?.last_name}
+                  {match.target?.first_name} {match.target?.last_name}
                   <br />
                   <span className="text-sm text-gray-500">
-                    {match.investor?.company_name}
+                    {match.target?.company_name}
+                  </span>
+                  <br />
+                  <span className="text-xs text-gray-400">
+                    {match.target?.user_type}
                   </span>
                   <br />
                   <span className="text-sm text-blue-600">
-                    {match.investor?.email}
+                    {match.target?.email}
                   </span>
                 </TableCell>
                 <TableCell>

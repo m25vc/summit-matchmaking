@@ -10,8 +10,8 @@ export type PriorityMatch = {
   investor_id: string;
   priority: Database['public']['Enums']['match_priority'];
   created_at: string;
-  founder: Profile | null;
-  investor: Profile | null;
+  initiator: Profile | null;
+  target: Profile | null;
   score: number;
   has_mutual_match: boolean;
 };
@@ -99,10 +99,13 @@ export const useAdminData = () => {
             else if (otherMatch.priority === 'low') score += 1;
           }
 
+          const initiator = profilesMap.get(match.founder_id);
+          const target = profilesMap.get(match.investor_id);
+
           return {
             ...match,
-            founder: profilesMap.get(match.founder_id) || null,
-            investor: profilesMap.get(match.investor_id) || null,
+            initiator,
+            target,
             score,
             has_mutual_match: hasMutualMatch
           };

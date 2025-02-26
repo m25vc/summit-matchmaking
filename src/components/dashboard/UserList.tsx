@@ -1,9 +1,8 @@
-
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
@@ -40,12 +39,15 @@ const STAGE_OPTIONS = [
   'Other'
 ] as const;
 
+type SortOption = 'newest' | 'alphabetical' | 'company' | 'random';
+
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
   const [mainTab, setMainTab] = useState<string>('discover');
   const [userTypeTab, setUserTypeTab] = useState<string>('founders');
   const [priorityTypeTab, setPriorityTypeTab] = useState<string>('founders');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
@@ -88,8 +90,26 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
     });
   };
 
-  const filteredFounders = getFilteredUsers(founderUsers);
-  const filteredInvestors = getFilteredUsers(investorUsers);
+  const getSortedUsers = (users: UserWithDetails[]) => {
+    return [...users].sort((a, b) => {
+      switch (sortBy) {
+        case 'alphabetical':
+          return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+        case 'company':
+          return (a.company_name || '').localeCompare(b.company_name || '');
+        case 'random':
+          return Math.random() - 0.5;
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  };
+
+  const filteredFounders = useMemo(() => getSortedUsers(getFilteredUsers(founderUsers)), [founderUsers, industryFilter, stageFilter, sortBy]);
+  const filteredInvestors = useMemo(() => getSortedUsers(getFilteredUsers(investorUsers)), [investorUsers, industryFilter, stageFilter, sortBy]);
+  const sortedPriorityFounders = useMemo(() => getSortedUsers(priorityFounders), [priorityFounders, sortBy]);
+  const sortedPriorityInvestors = useMemo(() => getSortedUsers(priorityInvestors), [priorityInvestors, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +144,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
             </Tabs>
           )}
 
-          <div className="mb-6 grid gap-4 md:grid-cols-2">
+          <div className="mb-6 grid gap-4 md:grid-cols-3">
             <div>
               <label className="text-sm font-medium mb-2 block">Industry</label>
               <Select
@@ -163,6 +183,23 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Sort by</label>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => setSortBy(value as SortOption)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                  <SelectItem value="company">Company name</SelectItem>
+                  <SelectItem value="random">Random</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -185,7 +222,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 ))
               )
             ) : (
-              getFilteredUsers(newUsers).map((user) => (
+              getSortedUsers(getFilteredUsers(newUsers)).map((user) => (
                 <UserCard 
                   key={user.id} 
                   user={user} 
@@ -196,7 +233,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
             {((profile?.user_type === 'investor' && 
               ((userTypeTab === 'founders' && filteredFounders.length === 0) || 
                (userTypeTab === 'investors' && filteredInvestors.length === 0))) ||
-              (profile?.user_type !== 'investor' && getFilteredUsers(newUsers).length === 0)) && (
+              (profile?.user_type !== 'investor' && getSortedUsers(getFilteredUsers(newUsers)).length === 0)) && (
               <p className="col-span-full text-center text-gray-500 py-8">
                 No matches found with the selected filters
               </p>
@@ -218,10 +255,28 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
             </Tabs>
           )}
 
+          <div className="mb-6">
+            <label className="text-sm font-medium mb-2 block">Sort by</label>
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as SortOption)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                <SelectItem value="company">Company name</SelectItem>
+                <SelectItem value="random">Random</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {profile?.user_type === 'investor' ? (
               priorityTypeTab === 'founders' ? (
-                priorityFounders.map((user) => (
+                sortedPriorityFounders.map((user) => (
                   <UserCard 
                     key={user.id} 
                     user={user} 
@@ -229,7 +284,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                   />
                 ))
               ) : (
-                priorityInvestors.map((user) => (
+                sortedPriorityInvestors.map((user) => (
                   <UserCard 
                     key={user.id} 
                     user={user} 
@@ -238,7 +293,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 ))
               )
             ) : (
-              priorityUsers.map((user) => (
+              getSortedUsers(priorityUsers).map((user) => (
                 <UserCard 
                   key={user.id} 
                   user={user} 

@@ -45,6 +45,7 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
   const [stageFilter, setStageFilter] = useState<string>('all');
   const [mainTab, setMainTab] = useState<string>('discover');
   const [userTypeTab, setUserTypeTab] = useState<string>('founders');
+  const [priorityTypeTab, setPriorityTypeTab] = useState<string>('founders');
 
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
@@ -52,6 +53,10 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
   // Separate users by type
   const founderUsers = newUsers.filter(user => user.user_type === 'founder');
   const investorUsers = newUsers.filter(user => user.user_type === 'investor');
+
+  // Separate priority users by type
+  const priorityFounders = priorityUsers.filter(user => user.user_type === 'founder');
+  const priorityInvestors = priorityUsers.filter(user => user.user_type === 'investor');
 
   const getFilteredUsers = (users: UserWithDetails[]) => {
     return users.filter(user => {
@@ -200,15 +205,51 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
         </TabsContent>
 
         <TabsContent value="priority">
+          {profile?.user_type === 'investor' && (
+            <Tabs value={priorityTypeTab} onValueChange={setPriorityTypeTab} className="w-full mb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="founders">
+                  Founders ({priorityFounders.length})
+                </TabsTrigger>
+                <TabsTrigger value="investors">
+                  Investors ({priorityInvestors.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {priorityUsers.map((user) => (
-              <UserCard 
-                key={user.id} 
-                user={user} 
-                onPriorityChange={onPriorityChange}
-              />
-            ))}
-            {priorityUsers.length === 0 && (
+            {profile?.user_type === 'investor' ? (
+              priorityTypeTab === 'founders' ? (
+                priorityFounders.map((user) => (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ))
+              ) : (
+                priorityInvestors.map((user) => (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ))
+              )
+            ) : (
+              priorityUsers.map((user) => (
+                <UserCard 
+                  key={user.id} 
+                  user={user} 
+                  onPriorityChange={onPriorityChange}
+                />
+              ))
+            )}
+            {((profile?.user_type === 'investor' && 
+              ((priorityTypeTab === 'founders' && priorityFounders.length === 0) || 
+               (priorityTypeTab === 'investors' && priorityInvestors.length === 0))) ||
+              (profile?.user_type !== 'investor' && priorityUsers.length === 0)) && (
               <p className="col-span-full text-center text-gray-500 py-8">
                 No priority matches yet
               </p>

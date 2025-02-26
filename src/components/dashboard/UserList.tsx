@@ -39,7 +39,7 @@ const STAGE_OPTIONS = [
   'Other'
 ] as const;
 
-type SortOption = 'newest' | 'alphabetical' | 'company' | 'random';
+type SortOption = 'newest' | 'alphabetical' | 'company';
 
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
   const [industryFilter, setIndustryFilter] = useState<string>('all');
@@ -97,8 +97,6 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
           return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
         case 'company':
           return (a.company_name || '').localeCompare(b.company_name || '');
-        case 'random':
-          return Math.random() - 0.5;
         case 'newest':
         default:
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -196,7 +194,6 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                   <SelectItem value="newest">Newest first</SelectItem>
                   <SelectItem value="alphabetical">Alphabetical</SelectItem>
                   <SelectItem value="company">Company name</SelectItem>
-                  <SelectItem value="random">Random</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -268,7 +265,6 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
                 <SelectItem value="newest">Newest first</SelectItem>
                 <SelectItem value="alphabetical">Alphabetical</SelectItem>
                 <SelectItem value="company">Company name</SelectItem>
-                <SelectItem value="random">Random</SelectItem>
               </SelectContent>
             </Select>
           </div>

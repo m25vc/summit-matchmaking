@@ -43,40 +43,48 @@ const STAGE_OPTIONS = [
 export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }: UserListProps) => {
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const [mainTab, setMainTab] = useState<string>('discover');
+  const [userTypeTab, setUserTypeTab] = useState<string>('founders');
 
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
 
-  // Filter users based on selected filters
-  const filteredNewUsers = newUsers.filter(user => {
-    // For founders viewing investors: check investor's preferred industries/stages
-    // For investors viewing founders: check founder's industry/stage
-    const userIndustry = profile?.user_type === 'founder'
-      ? user.investor_details?.preferred_industries?.[0]
-      : user.founder_details?.industry;
-    
-    const userStage = profile?.user_type === 'founder'
-      ? user.investor_details?.preferred_stages?.[0]
-      : user.founder_details?.company_stage;
+  // Separate users by type
+  const founderUsers = newUsers.filter(user => user.user_type === 'founder');
+  const investorUsers = newUsers.filter(user => user.user_type === 'investor');
 
-    const matchesIndustry = industryFilter === 'all' || (
-      industryFilter === 'Other'
-        ? !INDUSTRY_OPTIONS.slice(0, -1).includes(userIndustry as any)
-        : profile?.user_type === 'founder'
-          ? user.investor_details?.preferred_industries?.includes(industryFilter)
-          : userIndustry === industryFilter
-    );
+  const getFilteredUsers = (users: UserWithDetails[]) => {
+    return users.filter(user => {
+      const userIndustry = profile?.user_type === 'founder'
+        ? user.investor_details?.preferred_industries?.[0]
+        : user.founder_details?.industry;
+      
+      const userStage = profile?.user_type === 'founder'
+        ? user.investor_details?.preferred_stages?.[0]
+        : user.founder_details?.company_stage;
 
-    const matchesStage = stageFilter === 'all' || (
-      stageFilter === 'Other'
-        ? !STAGE_OPTIONS.slice(0, -1).includes(userStage as any)
-        : profile?.user_type === 'founder'
-          ? user.investor_details?.preferred_stages?.includes(stageFilter)
-          : userStage === stageFilter
-    );
+      const matchesIndustry = industryFilter === 'all' || (
+        industryFilter === 'Other'
+          ? !INDUSTRY_OPTIONS.slice(0, -1).includes(userIndustry as any)
+          : profile?.user_type === 'founder'
+            ? user.investor_details?.preferred_industries?.includes(industryFilter)
+            : userIndustry === industryFilter
+      );
 
-    return matchesIndustry && matchesStage;
-  });
+      const matchesStage = stageFilter === 'all' || (
+        stageFilter === 'Other'
+          ? !STAGE_OPTIONS.slice(0, -1).includes(userStage as any)
+          : profile?.user_type === 'founder'
+            ? user.investor_details?.preferred_stages?.includes(stageFilter)
+            : userStage === stageFilter
+      );
+
+      return matchesIndustry && matchesStage;
+    });
+  };
+
+  const filteredFounders = getFilteredUsers(founderUsers);
+  const filteredInvestors = getFilteredUsers(investorUsers);
 
   return (
     <div className="space-y-6">
@@ -87,9 +95,9 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
         You can mark up to 5 people as high priority. Current high priority matches: {highPriorityCount}/5
       </p>
       
-      <Tabs defaultValue="new" className="w-full">
+      <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="new">
+          <TabsTrigger value="discover">
             Discover ({newUsers.length})
           </TabsTrigger>
           <TabsTrigger value="priority">
@@ -97,7 +105,20 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="new">
+        <TabsContent value="discover">
+          {profile?.user_type === 'investor' && (
+            <Tabs value={userTypeTab} onValueChange={setUserTypeTab} className="w-full mb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="founders">
+                  Founders ({founderUsers.length})
+                </TabsTrigger>
+                <TabsTrigger value="investors">
+                  Investors ({investorUsers.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <div className="mb-6 grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium mb-2 block">Industry</label>
@@ -140,14 +161,37 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredNewUsers.map((user) => (
-              <UserCard 
-                key={user.id} 
-                user={user} 
-                onPriorityChange={onPriorityChange}
-              />
-            ))}
-            {filteredNewUsers.length === 0 && (
+            {profile?.user_type === 'investor' ? (
+              userTypeTab === 'founders' ? (
+                filteredFounders.map((user) => (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ))
+              ) : (
+                filteredInvestors.map((user) => (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ))
+              )
+            ) : (
+              getFilteredUsers(newUsers).map((user) => (
+                <UserCard 
+                  key={user.id} 
+                  user={user} 
+                  onPriorityChange={onPriorityChange}
+                />
+              ))
+            )}
+            {((profile?.user_type === 'investor' && 
+              ((userTypeTab === 'founders' && filteredFounders.length === 0) || 
+               (userTypeTab === 'investors' && filteredInvestors.length === 0))) ||
+              (profile?.user_type !== 'investor' && getFilteredUsers(newUsers).length === 0)) && (
               <p className="col-span-full text-center text-gray-500 py-8">
                 No matches found with the selected filters
               </p>
@@ -175,4 +219,3 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
     </div>
   );
 };
-

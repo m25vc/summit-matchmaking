@@ -1,3 +1,4 @@
+
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -119,11 +120,17 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
       </p>
       
       <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="discover">
+        <TabsList className="grid w-full grid-cols-2 p-2 bg-muted/20">
+          <TabsTrigger 
+            value="discover"
+            className="text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
+          >
             Discover ({newUsers.length})
           </TabsTrigger>
-          <TabsTrigger value="priority">
+          <TabsTrigger 
+            value="priority"
+            className="text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
+          >
             My Shortlist ({priorityUsers.length})
           </TabsTrigger>
         </TabsList>
@@ -131,11 +138,17 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
         <TabsContent value="discover">
           {profile?.user_type === 'investor' && (
             <Tabs value={userTypeTab} onValueChange={setUserTypeTab} className="w-full mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="founders">
+              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
+                <TabsTrigger 
+                  value="founders"
+                  className="text-sm data-[state=active]:bg-background"
+                >
                   Founders ({founderUsers.length})
                 </TabsTrigger>
-                <TabsTrigger value="investors">
+                <TabsTrigger 
+                  value="investors"
+                  className="text-sm data-[state=active]:bg-background"
+                >
                   Investors ({investorUsers.length})
                 </TabsTrigger>
               </TabsList>
@@ -241,11 +254,17 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
         <TabsContent value="priority">
           {profile?.user_type === 'investor' && (
             <Tabs value={priorityTypeTab} onValueChange={setPriorityTypeTab} className="w-full mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="founders">
+              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
+                <TabsTrigger 
+                  value="founders"
+                  className="text-sm data-[state=active]:bg-background"
+                >
                   Founders ({priorityFounders.length})
                 </TabsTrigger>
-                <TabsTrigger value="investors">
+                <TabsTrigger 
+                  value="investors"
+                  className="text-sm data-[state=active]:bg-background"
+                >
                   Investors ({priorityInvestors.length})
                 </TabsTrigger>
               </TabsList>

@@ -49,24 +49,30 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
 
   // Filter users based on selected filters
   const filteredNewUsers = newUsers.filter(user => {
-    const userIndustry = user.user_type === 'investor' 
-      ? user.investor_details?.preferred_industries?.[0] 
+    // For founders viewing investors: check investor's preferred industries/stages
+    // For investors viewing founders: check founder's industry/stage
+    const userIndustry = profile?.user_type === 'founder'
+      ? user.investor_details?.preferred_industries?.[0]
       : user.founder_details?.industry;
     
-    const userStage = user.user_type === 'investor'
+    const userStage = profile?.user_type === 'founder'
       ? user.investor_details?.preferred_stages?.[0]
       : user.founder_details?.company_stage;
 
     const matchesIndustry = industryFilter === 'all' || (
-      industryFilter === 'Other' 
+      industryFilter === 'Other'
         ? !INDUSTRY_OPTIONS.slice(0, -1).includes(userIndustry as any)
-        : userIndustry === industryFilter
+        : profile?.user_type === 'founder'
+          ? user.investor_details?.preferred_industries?.includes(industryFilter)
+          : userIndustry === industryFilter
     );
 
     const matchesStage = stageFilter === 'all' || (
       stageFilter === 'Other'
         ? !STAGE_OPTIONS.slice(0, -1).includes(userStage as any)
-        : userStage === stageFilter
+        : profile?.user_type === 'founder'
+          ? user.investor_details?.preferred_stages?.includes(stageFilter)
+          : userStage === stageFilter
     );
 
     return matchesIndustry && matchesStage;
@@ -169,3 +175,4 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
     </div>
   );
 };
+

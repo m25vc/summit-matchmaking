@@ -37,18 +37,21 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
     switch (priority) {
       case 'high':
         return {
-          borderColor: 'border-red-400',
-          bgColor: 'bg-red-50',
+          borderColor: 'border-green-400',
+          bgColor: 'bg-green-50',
+          textColor: 'text-green-700'
         };
       case 'medium':
         return {
-          borderColor: 'border-amber-400',
-          bgColor: 'bg-amber-50',
+          borderColor: 'border-yellow-400',
+          bgColor: 'bg-yellow-50',
+          textColor: 'text-yellow-700'
         };
       case 'low':
         return {
-          borderColor: 'border-blue-400',
-          bgColor: 'bg-blue-50',
+          borderColor: 'border-red-400',
+          bgColor: 'bg-red-50',
+          textColor: 'text-red-700'
         };
       default:
         return {};
@@ -133,15 +136,15 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
                 }
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className={priorityStyles.textColor}>
                 <SelectValue placeholder="Set priority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="high">High Priority</SelectItem>
-                <SelectItem value="medium">Medium Priority</SelectItem>
-                <SelectItem value="low">Low Priority</SelectItem>
+                <SelectItem value="high" className="text-green-700">High Priority</SelectItem>
+                <SelectItem value="medium" className="text-yellow-700">Medium Priority</SelectItem>
+                <SelectItem value="low" className="text-red-700">Low Priority</SelectItem>
                 {user.priority_matches?.[0]?.priority && (
-                  <SelectItem value="remove" className="text-red-600">Remove Match</SelectItem>
+                  <SelectItem value="remove" className="text-gray-900">Remove Match</SelectItem>
                 )}
               </SelectContent>
             </Select>

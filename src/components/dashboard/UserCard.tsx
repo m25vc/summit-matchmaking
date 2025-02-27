@@ -28,8 +28,40 @@ interface UserCardProps {
 }
 
 export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
+  // Define colors based on priority
+  const getPriorityStyles = () => {
+    const priority = user.priority_matches?.[0]?.priority;
+    
+    if (!priority) return {};
+    
+    switch (priority) {
+      case 'high':
+        return {
+          borderColor: 'border-red-400',
+          bgColor: 'bg-red-50',
+        };
+      case 'medium':
+        return {
+          borderColor: 'border-amber-400',
+          bgColor: 'bg-amber-50',
+        };
+      case 'low':
+        return {
+          borderColor: 'border-blue-400',
+          bgColor: 'bg-blue-50',
+        };
+      default:
+        return {};
+    }
+  };
+
+  const priorityStyles = getPriorityStyles();
+
   return (
-    <Card key={user.id}>
+    <Card 
+      key={user.id}
+      className={`${priorityStyles.borderColor || ''} ${priorityStyles.bgColor || ''} transition-colors`}
+    >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>

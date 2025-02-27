@@ -8,6 +8,11 @@ export const founderFormSchema = z.object({
   companyDescription: z.string().min(10, "Please provide a longer description"),
   targetRaiseAmount: z.string().optional(),
   companyWebsiteUrl: z.string().url().optional().or(z.literal("")),
+  lastRoundRaised: z.string().optional(),
+  currentRevenue: z.string().optional(),
+  nextRaisePlanned: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
+  additionalNotes: z.string().optional(),
 });
 
 export const investorFormSchema = z.object({
@@ -18,6 +23,11 @@ export const investorFormSchema = z.object({
   preferredIndustries: z.string().min(1, "Please specify preferred industries"),
   preferredStages: z.string().min(1, "Please specify preferred stages"),
   firmWebsiteUrl: z.string().url().optional().or(z.literal("")),
+  firmHQ: z.string().optional(),
+  geographicFocus: z.string().optional(),
+  checkSize: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
+  additionalNotes: z.string().optional(),
 });
 
 export type FounderFormValues = z.infer<typeof founderFormSchema>;

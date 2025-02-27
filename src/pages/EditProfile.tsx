@@ -100,6 +100,11 @@ export default function EditProfile() {
           company_description: values.companyDescription,
           target_raise_amount: values.targetRaiseAmount ? parseInt(values.targetRaiseAmount) : null,
           company_website_url: values.companyWebsiteUrl || null,
+          last_round_raised: values.lastRoundRaised || null,
+          current_revenue: values.currentRevenue || null,
+          next_raise_planned: values.nextRaisePlanned || null,
+          linkedin_url: values.linkedinUrl || null,
+          additional_notes: values.additionalNotes || null,
         });
 
       if (error) {
@@ -129,6 +134,11 @@ export default function EditProfile() {
           preferred_industries: values.preferredIndustries.split(',').map(s => s.trim()),
           preferred_stages: values.preferredStages.split(',').map(s => s.trim()),
           firm_website_url: values.firmWebsiteUrl || null,
+          firm_hq: values.firmHQ || null,
+          geographic_focus: values.geographicFocus || null,
+          check_size: values.checkSize || null,
+          linkedin_url: values.linkedinUrl || null,
+          additional_notes: values.additionalNotes || null,
         });
 
       if (error) {
@@ -166,6 +176,11 @@ export default function EditProfile() {
     companyDescription: founderDetails.company_description,
     targetRaiseAmount: founderDetails.target_raise_amount?.toString() || '',
     companyWebsiteUrl: founderDetails.company_website_url || '',
+    lastRoundRaised: founderDetails.last_round_raised || '',
+    currentRevenue: founderDetails.current_revenue || '',
+    nextRaisePlanned: founderDetails.next_raise_planned || '',
+    linkedinUrl: founderDetails.linkedin_url || '',
+    additionalNotes: founderDetails.additional_notes || '',
   } : undefined;
 
   const investorDefaultValues = investorDetails ? {
@@ -176,6 +191,11 @@ export default function EditProfile() {
     preferredIndustries: (investorDetails.preferred_industries || []).join(', '),
     preferredStages: (investorDetails.preferred_stages || []).join(', '),
     firmWebsiteUrl: investorDetails.firm_website_url || '',
+    firmHQ: investorDetails.firm_hq || '',
+    geographicFocus: investorDetails.geographic_focus || '',
+    checkSize: investorDetails.check_size || '',
+    linkedinUrl: investorDetails.linkedin_url || '',
+    additionalNotes: investorDetails.additional_notes || '',
   } : undefined;
 
   return (

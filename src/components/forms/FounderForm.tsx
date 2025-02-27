@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { founderFormSchema, type FounderFormValues } from "@/schemas/profileSchemas";
 
 interface FounderFormProps {
@@ -27,6 +28,24 @@ export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="companyDescription"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Describe your company..."
+                  className="min-h-[120px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="industry"
@@ -71,12 +90,40 @@ export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
 
         <FormField
           control={form.control}
-          name="companyDescription"
+          name="lastRoundRaised"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company Description</FormLabel>
+              <FormLabel>Most Recent Round Raised</FormLabel>
               <FormControl>
-                <Input placeholder="Describe your company..." {...field} />
+                <Input placeholder="e.g. Seed, Series A" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="currentRevenue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Annual Revenue Range</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. $100K-$500K" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nextRaisePlanned"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>When Do You Plan to Raise Again?</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Q4 2024" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,6 +152,38 @@ export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
               <FormLabel>Company Website URL</FormLabel>
               <FormControl>
                 <Input placeholder="https://..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="linkedinUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>LinkedIn Profile URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://linkedin.com/in/..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="additionalNotes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Additional Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Any additional information you'd like to share..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

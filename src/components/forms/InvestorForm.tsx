@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { investorFormSchema, type InvestorFormValues } from "@/schemas/profileSchemas";
 
 interface InvestorFormProps {
@@ -34,7 +35,25 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
             <FormItem>
               <FormLabel>Firm Description</FormLabel>
               <FormControl>
-                <Input placeholder="Describe your investment firm..." {...field} />
+                <Textarea
+                  placeholder="Describe your investment firm..."
+                  className="min-h-[120px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="firmHQ"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Firm HQ Location</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Chicago, IL" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -48,35 +67,11 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
             <FormItem>
               <FormLabel>Investment Thesis</FormLabel>
               <FormControl>
-                <Input placeholder="Describe your investment thesis..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="minInvestmentAmount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Minimum Investment Amount (in thousands)</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="e.g. 50 for $50k" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="maxInvestmentAmount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Maximum Investment Amount (in thousands)</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="e.g. 500 for $500k" {...field} />
+                <Textarea
+                  placeholder="Describe your investment thesis..."
+                  className="min-h-[100px]"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -113,12 +108,100 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
 
         <FormField
           control={form.control}
+          name="geographicFocus"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Geographic Focus</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Midwest, Global" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="checkSize"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Typical Check Size</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. $50K-$500K" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="minInvestmentAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Minimum Investment Amount (in thousands)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="e.g. 50 for $50k" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="maxInvestmentAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Maximum Investment Amount (in thousands)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="e.g. 500 for $500k" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="firmWebsiteUrl"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Firm Website URL</FormLabel>
               <FormControl>
                 <Input placeholder="https://..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="linkedinUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>LinkedIn Profile URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://linkedin.com/in/..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="additionalNotes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Additional Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Any additional information you'd like to share..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

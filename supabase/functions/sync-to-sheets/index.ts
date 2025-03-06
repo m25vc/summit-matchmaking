@@ -34,66 +34,93 @@ async function getGoogleAuthToken() {
       iat,
     }
     
-    console.log("Importing private key...")
-    // Import the private key and create a signing key
-    const privateKey = await crypto.subtle.importKey(
-      'pkcs8',
-      new TextEncoder().encode(GOOGLE_SHEETS_PRIVATE_KEY),
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    )
+    console.log("Preparing private key...")
     
-    console.log("Creating JWT...")
-    // Create and sign the JWT
-    const jwt = await create({ alg: 'RS256', typ: 'JWT' }, payload, privateKey)
-    
-    console.log("Exchanging JWT for access token...")
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }),
-    })
-    
-    const tokenData = await tokenResponse.json()
-    
-    if (!tokenResponse.ok) {
-      console.error('Token error:', tokenData)
-      throw new Error(`Failed to get Google auth token: ${tokenData.error}: ${tokenData.error_description}`)
+    // Remove header and footer if present and decode base64
+    let privateKeyContent = GOOGLE_SHEETS_PRIVATE_KEY;
+    if (privateKeyContent.includes('-----BEGIN PRIVATE KEY-----')) {
+      privateKeyContent = privateKeyContent
+        .replace('-----BEGIN PRIVATE KEY-----', '')
+        .replace('-----END PRIVATE KEY-----', '')
+        .replace(/\s+/g, '');
     }
     
-    console.log("Successfully obtained access token")
-    return tokenData.access_token
+    // Import the private key using crypto APIs
+    console.log("Importing private key...")
+    try {
+      // First, try to decode the base64 key
+      const binaryKey = Uint8Array.from(atob(privateKeyContent), c => c.charCodeAt(0));
+      
+      // Import the key
+      const privateKey = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryKey,
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-256'
+        },
+        false,
+        ['sign']
+      );
+      
+      console.log("Key successfully imported, creating JWT...");
+      
+      // Create and sign the JWT
+      const jwt = await create({ alg: 'RS256', typ: 'JWT' }, payload, privateKey);
+      
+      console.log("JWT created, exchanging for access token...");
+      
+      // Exchange JWT for access token
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: jwt,
+        }),
+      });
+      
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenResponse.ok) {
+        console.error('Token error response:', tokenData);
+        throw new Error(`Failed to get Google auth token: ${tokenData.error}: ${tokenData.error_description}`);
+      }
+      
+      console.log("Successfully obtained access token");
+      return tokenData.access_token;
+    } catch (importError) {
+      console.error("Error importing key:", importError);
+      throw new Error(`Failed to import private key: ${importError.message}`);
+    }
   } catch (error) {
-    console.error("Error in getGoogleAuthToken:", error)
-    throw error
+    console.error("Error in getGoogleAuthToken:", error);
+    throw error;
   }
 }
 
 serve(async (req) => {
-  console.log("Function invoked with method:", req.method)
+  console.log("Function invoked with method:", req.method);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    console.log("Parsing request body...")
+    console.log("Parsing request body...");
     // Get matches data from the request
-    const { matches } = await req.json()
+    const data = await req.json();
     
-    if (!matches || !Array.isArray(matches)) {
-      throw new Error('Invalid or missing matches data in request')
+    if (!data.matches || !Array.isArray(data.matches)) {
+      console.error("Invalid request data:", data);
+      throw new Error('Invalid or missing matches data in request');
     }
     
-    console.log(`Processing ${matches.length} matches...`)
+    const matches = data.matches;
+    console.log(`Processing ${matches.length} matches...`);
     
     // Format the match data for Google Sheets
     // Each row will contain: 
@@ -108,7 +135,7 @@ serve(async (req) => {
       match.score || 0,
       match.has_mutual_match ? 'Yes' : 'No',
       new Date(match.created_at).toISOString()
-    ])
+    ]);
     
     // Add headers as the first row
     const headers = [
@@ -121,18 +148,18 @@ serve(async (req) => {
       'Score', 
       'Mutual Match',
       'Date'
-    ]
+    ];
     
-    values.unshift(headers)
+    values.unshift(headers);
 
-    console.log("Getting Google OAuth token...")
-    const accessToken = await getGoogleAuthToken()
+    console.log("Getting Google OAuth token...");
+    const accessToken = await getGoogleAuthToken();
 
     // Update Google Sheets with OAuth2 token
-    console.log(`Updating Google Sheet ${SPREADSHEET_ID}...`)
-    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/PriorityMatches!A1:I${values.length}?valueInputOption=RAW`
+    console.log(`Updating Google Sheet ${SPREADSHEET_ID}...`);
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/PriorityMatches!A1:I${values.length}?valueInputOption=RAW`;
     
-    console.log("Sending request to Google Sheets API:", sheetUrl)
+    console.log("Sending request to Google Sheets API...");
     const response = await fetch(sheetUrl, {
       method: 'PUT',
       headers: {
@@ -144,32 +171,32 @@ serve(async (req) => {
         majorDimension: 'ROWS',
         values,
       }),
-    })
+    });
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Google Sheets API Error:', response.status, errorText)
-      let errorData = {}
+      const errorText = await response.text();
+      console.error('Google Sheets API Error:', response.status, errorText);
+      let errorData = {};
       try {
-        errorData = JSON.parse(errorText)
+        errorData = JSON.parse(errorText);
       } catch (e) {
-        console.error('Could not parse error response as JSON')
+        console.error('Could not parse error response as JSON');
       }
-      throw new Error(`Failed to update Google Sheets: ${response.status} ${JSON.stringify(errorData)}`)
+      throw new Error(`Failed to update Google Sheets: ${response.status} ${JSON.stringify(errorData)}`);
     }
 
-    const result = await response.json()
-    console.log(`Google Sheets update successful: Updated ${result.updatedCells} cells`)
+    const result = await response.json();
+    console.log(`Google Sheets update successful: Updated ${result.updatedCells} cells`);
 
     return new Response(
       JSON.stringify({ success: true, updatedCells: result.updatedCells }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    );
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    );
   }
-})
+});

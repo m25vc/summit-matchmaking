@@ -18,19 +18,40 @@ serve(async (req) => {
   try {
     // Get matches data from the request
     const { matches } = await req.json()
-
-    // Format data for Google Sheets
+    
+    // Format the match data for Google Sheets
+    // Each row will contain: 
+    // [Initiator Name, Initiator Company, Initiator Email, Target Name, Target Company, Target Email, Score, Mutual Match]
     const values = matches.map((match: any) => [
-      match.founder_id,
-      match.investor_id,
-      match.priority,
-      match.created_at,
-      match.set_by
+      `${match.initiator?.first_name || ''} ${match.initiator?.last_name || ''}`, 
+      match.initiator?.company_name || '',
+      match.initiator?.email || '',
+      `${match.target?.first_name || ''} ${match.target?.last_name || ''}`,
+      match.target?.company_name || '',
+      match.target?.email || '',
+      match.score || 0,
+      match.has_mutual_match ? 'Yes' : 'No',
+      new Date(match.created_at).toISOString()
     ])
+    
+    // Add headers as the first row
+    const headers = [
+      'Initiator Name', 
+      'Initiator Company', 
+      'Initiator Email', 
+      'Target Name', 
+      'Target Company', 
+      'Target Email', 
+      'Score', 
+      'Mutual Match',
+      'Date'
+    ]
+    
+    values.unshift(headers)
 
     // Update Google Sheets
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Matches!A2:E${values.length + 1}?valueInputOption=RAW`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/PriorityMatches!A1:I${values.length}?valueInputOption=RAW`,
       {
         method: 'PUT',
         headers: {
@@ -38,7 +59,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          range: `Matches!A2:E${values.length + 1}`,
+          range: `PriorityMatches!A1:I${values.length}`,
           majorDimension: 'ROWS',
           values,
         }),
@@ -46,7 +67,9 @@ serve(async (req) => {
     )
 
     if (!response.ok) {
-      throw new Error('Failed to update Google Sheets')
+      const errorData = await response.json()
+      console.error('Google Sheets API Error:', errorData)
+      throw new Error(`Failed to update Google Sheets: ${response.status} ${JSON.stringify(errorData)}`)
     }
 
     return new Response(

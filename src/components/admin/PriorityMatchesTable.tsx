@@ -8,7 +8,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 import type { PriorityMatch } from '@/hooks/useAdminData';
 
 interface PriorityMatchesTableProps {
@@ -16,6 +19,8 @@ interface PriorityMatchesTableProps {
 }
 
 export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+  
   const exportToExcel = () => {
     if (!matches) return;
 
@@ -54,12 +59,39 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     document.body.removeChild(link);
   };
 
+  const syncToGoogleSheets = async () => {
+    if (!matches) return;
+    
+    setIsSyncing(true);
+    
+    try {
+      const { error } = await supabase.functions.invoke('sync-to-sheets', {
+        body: { matches }
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast.success("Successfully synced matches to Google Sheets!");
+    } catch (error) {
+      console.error("Error syncing to Google Sheets:", error);
+      toast.error("Failed to sync matches to Google Sheets. Please try again.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-2">
         <Button onClick={exportToExcel} className="gap-2">
           <FileSpreadsheet className="h-4 w-4" />
           Export to Excel
+        </Button>
+        <Button onClick={syncToGoogleSheets} className="gap-2" disabled={isSyncing}>
+          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          Sync to Google Sheets
         </Button>
       </div>
 

@@ -1,13 +1,67 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { createJWT } from "https://deno.land/x/djwt@v2.8/mod.ts"
 
-const GOOGLE_SHEETS_API_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')
+const PRIVATE_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')
 const SPREADSHEET_ID = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID')
+const CLIENT_EMAIL = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Create a JWT token for Google API authentication
+async function getGoogleAuthToken() {
+  if (!PRIVATE_KEY || !CLIENT_EMAIL) {
+    throw new Error('Missing required environment variables for Google Sheets authentication')
+  }
+
+  const privateKey = PRIVATE_KEY.replace(/\\n/g, '\n')
+  
+  const now = Math.floor(Date.now() / 1000)
+  const payload = {
+    iss: CLIENT_EMAIL,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  }
+
+  const header = { alg: "RS256", typ: "JWT" }
+  
+  // Create JWT assertion
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    new TextEncoder().encode(privateKey),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  )
+  
+  const jwt = await createJWT(header, payload, key)
+  
+  // Exchange JWT for access token
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  })
+  
+  const tokenData = await tokenResponse.json()
+  
+  if (!tokenResponse.ok) {
+    console.error('Token exchange error:', tokenData)
+    throw new Error(`Failed to get access token: ${JSON.stringify(tokenData)}`)
+  }
+  
+  return tokenData.access_token
 }
 
 serve(async (req) => {
@@ -49,13 +103,16 @@ serve(async (req) => {
     
     values.unshift(headers)
 
+    // Get Google API access token
+    const accessToken = await getGoogleAuthToken()
+
     // Update Google Sheets
     const response = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/PriorityMatches!A1:I${values.length}?valueInputOption=RAW`,
       {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${GOOGLE_SHEETS_API_KEY}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

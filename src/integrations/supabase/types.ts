@@ -11,29 +11,44 @@ export type Database = {
     Tables: {
       founder_details: {
         Row: {
+          additional_notes: string | null
           company_description: string
           company_stage: string
           company_website_url: string | null
+          current_revenue: string | null
           funding_stage: string
           industry: string
+          last_round_raised: string | null
+          linkedin_url: string | null
+          next_raise_planned: string | null
           profile_id: string
           target_raise_amount: number | null
         }
         Insert: {
+          additional_notes?: string | null
           company_description: string
           company_stage: string
           company_website_url?: string | null
+          current_revenue?: string | null
           funding_stage: string
           industry: string
+          last_round_raised?: string | null
+          linkedin_url?: string | null
+          next_raise_planned?: string | null
           profile_id: string
           target_raise_amount?: number | null
         }
         Update: {
+          additional_notes?: string | null
           company_description?: string
           company_stage?: string
           company_website_url?: string | null
+          current_revenue?: string | null
           funding_stage?: string
           industry?: string
+          last_round_raised?: string | null
+          linkedin_url?: string | null
+          next_raise_planned?: string | null
           profile_id?: string
           target_raise_amount?: number | null
         }
@@ -49,9 +64,14 @@ export type Database = {
       }
       investor_details: {
         Row: {
+          additional_notes: string | null
+          check_size: string | null
           firm_description: string
+          firm_hq: string | null
           firm_website_url: string | null
+          geographic_focus: string | null
           investment_thesis: string | null
+          linkedin_url: string | null
           max_investment_amount: number | null
           min_investment_amount: number | null
           preferred_industries: string[] | null
@@ -59,9 +79,14 @@ export type Database = {
           profile_id: string
         }
         Insert: {
+          additional_notes?: string | null
+          check_size?: string | null
           firm_description: string
+          firm_hq?: string | null
           firm_website_url?: string | null
+          geographic_focus?: string | null
           investment_thesis?: string | null
+          linkedin_url?: string | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null
           preferred_industries?: string[] | null
@@ -69,9 +94,14 @@ export type Database = {
           profile_id: string
         }
         Update: {
+          additional_notes?: string | null
+          check_size?: string | null
           firm_description?: string
+          firm_hq?: string | null
           firm_website_url?: string | null
+          geographic_focus?: string | null
           investment_thesis?: string | null
+          linkedin_url?: string | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null
           preferred_industries?: string[] | null

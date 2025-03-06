@@ -7,6 +7,7 @@ import { create } from "https://deno.land/x/djwt@v2.8/mod.ts"
 const GOOGLE_SHEETS_PRIVATE_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')?.replace(/\\n/g, '\n')
 const GOOGLE_SHEETS_CLIENT_EMAIL = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL')
 const SPREADSHEET_ID = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID')
+const SHEET_NAME = 'Matches' // Default sheet name, will be created if it doesn't exist
 
 // CORS headers for browser requests
 const corsHeaders = {
@@ -101,6 +102,67 @@ async function getGoogleAuthToken() {
   }
 }
 
+// Function to ensure the sheet exists
+async function ensureSheetExists(accessToken, spreadsheetId, sheetName) {
+  console.log(`Checking if sheet ${sheetName} exists in spreadsheet ${spreadsheetId}...`);
+  
+  // First, get the spreadsheet to check if the sheet exists
+  const getUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+  const getResponse = await fetch(getUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+  
+  if (!getResponse.ok) {
+    const errorText = await getResponse.text();
+    console.error('Error getting spreadsheet:', getResponse.status, errorText);
+    throw new Error(`Failed to get spreadsheet: ${getResponse.status} ${errorText}`);
+  }
+  
+  const spreadsheet = await getResponse.json();
+  const sheetExists = spreadsheet.sheets.some(sheet => 
+    sheet.properties.title === sheetName
+  );
+  
+  if (sheetExists) {
+    console.log(`Sheet ${sheetName} already exists.`);
+    return;
+  }
+  
+  console.log(`Sheet ${sheetName} doesn't exist. Creating it...`);
+  
+  // Sheet doesn't exist, so create it
+  const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
+  const updateResponse = await fetch(updateUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: sheetName,
+            },
+          },
+        },
+      ],
+    }),
+  });
+  
+  if (!updateResponse.ok) {
+    const errorText = await updateResponse.text();
+    console.error('Error creating sheet:', updateResponse.status, errorText);
+    throw new Error(`Failed to create sheet: ${updateResponse.status} ${errorText}`);
+  }
+  
+  console.log(`Successfully created sheet ${sheetName}.`);
+}
+
 serve(async (req) => {
   console.log("Function invoked with method:", req.method);
   
@@ -155,9 +217,12 @@ serve(async (req) => {
     console.log("Getting Google OAuth token...");
     const accessToken = await getGoogleAuthToken();
 
+    // Ensure the sheet exists
+    await ensureSheetExists(accessToken, SPREADSHEET_ID, SHEET_NAME);
+
     // Update Google Sheets with OAuth2 token
-    console.log(`Updating Google Sheet ${SPREADSHEET_ID}...`);
-    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/PriorityMatches!A1:I${values.length}?valueInputOption=RAW`;
+    console.log(`Updating Google Sheet ${SPREADSHEET_ID}, sheet ${SHEET_NAME}...`);
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:I${values.length}?valueInputOption=RAW`;
     
     console.log("Sending request to Google Sheets API...");
     const response = await fetch(sheetUrl, {
@@ -167,7 +232,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        range: `PriorityMatches!A1:I${values.length}`,
+        range: `${SHEET_NAME}!A1:I${values.length}`,
         majorDimension: 'ROWS',
         values,
       }),

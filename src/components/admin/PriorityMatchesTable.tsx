@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, RefreshCw, Check } from "lucide-react";
+import { FileSpreadsheet, RefreshCw, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,7 @@ interface PriorityMatchesTableProps {
 
 export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
+  const spreadsheetUrl = "https://docs.google.com/spreadsheets/d/1jDbdceLqnQ3uNDgZ7Xq-cdzdcCWbRyU7JQZ_IEnUExw";
   
   const exportToExcel = () => {
     if (!matches) return;
@@ -87,7 +88,17 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
       <div className="flex justify-between mb-4 items-center">
         <div className="flex items-center gap-2">
           <Check className="h-5 w-5 text-green-500" />
-          <span className="text-sm text-green-700">Automatic syncing to Google Sheets is enabled</span>
+          <span className="text-sm text-green-700">
+            Automatic syncing to Google Sheets is enabled
+          </span>
+          <a 
+            href={spreadsheetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm ml-2"
+          >
+            View Spreadsheet <ExternalLink className="h-3 w-3 ml-1" />
+          </a>
         </div>
         <div className="flex gap-2">
           <Button onClick={exportToExcel} className="gap-2">

@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, RefreshCw } from "lucide-react";
+import { FileSpreadsheet, RefreshCw, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
@@ -84,15 +84,21 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end mb-4 gap-2">
-        <Button onClick={exportToExcel} className="gap-2">
-          <FileSpreadsheet className="h-4 w-4" />
-          Export to Excel
-        </Button>
-        <Button onClick={syncToGoogleSheets} className="gap-2" disabled={isSyncing}>
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          Sync to Google Sheets
-        </Button>
+      <div className="flex justify-between mb-4 items-center">
+        <div className="flex items-center gap-2">
+          <Check className="h-5 w-5 text-green-500" />
+          <span className="text-sm text-green-700">Automatic syncing to Google Sheets is enabled</span>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={exportToExcel} className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Export to Excel
+          </Button>
+          <Button onClick={syncToGoogleSheets} className="gap-2" disabled={isSyncing}>
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            Manual Sync
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">

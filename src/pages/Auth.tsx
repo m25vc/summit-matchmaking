@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,6 +39,31 @@ const Auth = () => {
   const [lastRoundRaised, setLastRoundRaised] = useState('');
   const [nextRaisePlanned, setNextRaisePlanned] = useState('');
   
+  // Check for authentication on component mount and handle redirect from OAuth
+  useEffect(() => {
+    // Check if there's an access token in the URL (from OAuth redirect)
+    const checkForAuthSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (data?.session) {
+        // Check if user needs to complete their profile
+        const { data: profileData } = await supabase
+          .from(data.session.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
+          .select('*')
+          .eq('profile_id', data.session.user.id)
+          .single();
+
+        if (!profileData) {
+          navigate('/profile');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    };
+
+    checkForAuthSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -75,7 +101,7 @@ const Auth = () => {
                   }
               )
             },
-            emailRedirectTo: window.location.origin
+            emailRedirectTo: `${window.location.origin}/auth`
           }
         });
         
@@ -120,7 +146,8 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           queryParams: {
@@ -132,9 +159,14 @@ const Auth = () => {
       });
       
       if (error) throw error;
+      
+      // The user will be redirected to Google for authentication,
+      // and then back to the redirectTo URL
     } catch (error) {
-      console.error('Error:', error);
-      toast.error(error.message);
+      console.error('Error signing in with Google:', error);
+      toast.error(error.message || 'Error signing in with Google');
+    } finally {
+      setLoading(false);
     }
   };
 

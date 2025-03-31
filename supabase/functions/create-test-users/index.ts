@@ -97,97 +97,143 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Clear existing data first
-    console.log('Clearing existing data...')
-    const { error: deleteMatchesError } = await supabase
-      .from('priority_matches')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000')
     
-    if (deleteMatchesError) console.error('Error deleting matches:', deleteMatchesError)
+    const body = await req.json()
+    const action = body.action || 'create' // Default to creating test users
 
-    // Delete all existing users
-    console.log('Deleting existing users...')
-    const { data: existingUsers } = await supabase.auth.admin.listUsers()
-    for (const user of existingUsers.users) {
-      const { error } = await supabase.auth.admin.deleteUser(user.id)
-      if (error) console.error('Error deleting user:', error)
-    }
-
-    // Create new test users
-    console.log('Creating new test users...')
-    const createdUsers = []
-    for (const testUser of testUsers) {
-      // Create auth user
-      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-        email: testUser.email,
-        password: testUser.password,
-        email_confirm: true,
-        user_metadata: testUser.user_metadata
-      })
-
-      if (userError) {
-        console.error('Error creating user:', userError)
-        continue
-      }
-
-      console.log('Created user:', userData.user.id)
-      createdUsers.push({
-        userId: userData.user.id,
-        email: testUser.email,
-        userType: testUser.user_metadata.user_type
-      })
-
-      // Add profile details
-      if (testUser.user_metadata.user_type === 'founder') {
-        const { error: founderError } = await supabase
-          .from('founder_details')
-          .insert({
-            profile_id: userData.user.id,
-            ...testUser.profile_data
-          })
-        
-        if (founderError) console.error('Error creating founder details:', founderError)
-      } else {
-        const { error: investorError } = await supabase
-          .from('investor_details')
-          .insert({
-            profile_id: userData.user.id,
-            ...testUser.profile_data
-          })
-        
-        if (investorError) console.error('Error creating investor details:', investorError)
-      }
-    }
-
-    // Create some priority matches
-    console.log('Creating priority matches...')
-    const founders = createdUsers.filter(u => u.userType === 'founder')
-    const investors = createdUsers.filter(u => u.userType === 'investor')
-
-    for (let i = 0; i < founders.length && i < investors.length; i++) {
-      const { error: matchError } = await supabase
-        .from('priority_matches')
-        .insert({
-          founder_id: founders[i].userId,
-          investor_id: investors[i].userId,
-          priority: i === 0 ? 'high' : 'medium'
-        })
+    if (action === 'clear') {
+      console.log('Clearing all test data...')
       
-      if (matchError) console.error('Error creating match:', matchError)
-    }
+      // Clear existing data first
+      const { error: deleteMatchesError } = await supabase
+        .from('priority_matches')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+      
+      if (deleteMatchesError) console.error('Error deleting matches:', deleteMatchesError)
 
-    return new Response(
-      JSON.stringify({ 
-        message: 'Test users created successfully',
-        users: createdUsers
-      }), 
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+      // Delete all existing users - except the current admin user
+      console.log('Deleting existing users...')
+      const { data: existingUsers } = await supabase.auth.admin.listUsers()
+      
+      for (const user of existingUsers.users) {
+        // Skip admin users - you can identify them by checking the user's role
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        if (userProfile?.role === 'admin') {
+          console.log(`Skipping admin user: ${user.email}`)
+          continue
+        }
+        
+        const { error } = await supabase.auth.admin.deleteUser(user.id)
+        if (error) console.error('Error deleting user:', error)
       }
-    )
+
+      return new Response(
+        JSON.stringify({ 
+          message: 'All test data cleared successfully'
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      )
+    } else {
+      // Clear existing data first
+      console.log('Clearing existing data...')
+      const { error: deleteMatchesError } = await supabase
+        .from('priority_matches')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+      
+      if (deleteMatchesError) console.error('Error deleting matches:', deleteMatchesError)
+
+      // Delete all existing users
+      console.log('Deleting existing users...')
+      const { data: existingUsers } = await supabase.auth.admin.listUsers()
+      for (const user of existingUsers.users) {
+        const { error } = await supabase.auth.admin.deleteUser(user.id)
+        if (error) console.error('Error deleting user:', error)
+      }
+
+      // Create new test users
+      console.log('Creating new test users...')
+      const createdUsers = []
+      for (const testUser of testUsers) {
+        // Create auth user
+        const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+          email: testUser.email,
+          password: testUser.password,
+          email_confirm: true,
+          user_metadata: testUser.user_metadata
+        })
+
+        if (userError) {
+          console.error('Error creating user:', userError)
+          continue
+        }
+
+        console.log('Created user:', userData.user.id)
+        createdUsers.push({
+          userId: userData.user.id,
+          email: testUser.email,
+          userType: testUser.user_metadata.user_type
+        })
+
+        // Add profile details
+        if (testUser.user_metadata.user_type === 'founder') {
+          const { error: founderError } = await supabase
+            .from('founder_details')
+            .insert({
+              profile_id: userData.user.id,
+              ...testUser.profile_data
+            })
+          
+          if (founderError) console.error('Error creating founder details:', founderError)
+        } else {
+          const { error: investorError } = await supabase
+            .from('investor_details')
+            .insert({
+              profile_id: userData.user.id,
+              ...testUser.profile_data
+            })
+          
+          if (investorError) console.error('Error creating investor details:', investorError)
+        }
+      }
+
+      // Create some priority matches
+      console.log('Creating priority matches...')
+      const founders = createdUsers.filter(u => u.userType === 'founder')
+      const investors = createdUsers.filter(u => u.userType === 'investor')
+
+      for (let i = 0; i < founders.length && i < investors.length; i++) {
+        const { error: matchError } = await supabase
+          .from('priority_matches')
+          .insert({
+            founder_id: founders[i].userId,
+            investor_id: investors[i].userId,
+            priority: i === 0 ? 'high' : 'medium'
+          })
+        
+        if (matchError) console.error('Error creating match:', matchError)
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          message: 'Test users created successfully',
+          users: createdUsers
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      )
+    }
   } catch (error) {
     console.error('Error in create-test-users function:', error)
     return new Response(

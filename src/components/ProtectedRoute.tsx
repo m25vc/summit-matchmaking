@@ -10,10 +10,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    let mounted = true;
+    
+    // We'll only check auth once on component mount
     const checkAuth = async () => {
       try {
         // First check current session
         const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
         
         if (session?.user) {
           console.log("ProtectedRoute: User is authenticated");
@@ -23,27 +28,33 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           setUser(null);
         }
       } catch (error) {
+        if (!mounted) return;
         console.error("ProtectedRoute: Error checking session:", error);
         setUser(null);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Set up auth listener only for session changes
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
       console.log(`ProtectedRoute: Auth state change: ${event}`);
-      if (event === 'SIGNED_IN') {
-        setUser(session?.user || null);
+      if (event === 'SIGNED_IN' && session) {
+        setUser(session.user);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
     });
 
-    // Initial check
+    // Perform initial auth check
     checkAuth();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

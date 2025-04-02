@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,7 +21,7 @@ const Auth = () => {
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const authChecked = useRef(false);
   
   // Investor fields
   const [firmName, setFirmName] = useState('');
@@ -42,20 +41,36 @@ const Auth = () => {
   const [nextRaisePlanned, setNextRaisePlanned] = useState('');
   
   useEffect(() => {
-    // Prevent multiple checks
-    if (hasCheckedAuth) return;
+    // Use a ref to ensure we only check auth status once
+    if (authChecked.current) {
+      return;
+    }
+    
+    let mounted = true;
+    authChecked.current = true;
 
     const checkForAuthSession = async () => {
+      // Add a small delay to avoid race conditions with ProtectedRoute
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       try {
         console.log("Auth: Checking auth session");
         const { data } = await supabase.auth.getSession();
         
+        if (!mounted) return;
+        
         if (data?.session) {
           console.log("Auth: User is authenticated, checking profile");
           try {
-            const profileTable = data.session.user.user_metadata.user_type === 'founder' 
+            const profileTable = data.session.user.user_metadata?.user_type === 'founder' 
               ? 'founder_details' 
               : 'investor_details';
+              
+            if (!profileTable) {
+              console.log("Auth: No user_type found, keeping on auth page");
+              setIsAuthChecking(false);
+              return;
+            }
               
             const { data: profileData } = await supabase
               .from(profileTable)
@@ -79,15 +94,18 @@ const Auth = () => {
           setIsAuthChecking(false);
         }
       } catch (error) {
+        if (!mounted) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
-      } finally {
-        setHasCheckedAuth(true);
       }
     };
 
     checkForAuthSession();
-  }, [navigate, hasCheckedAuth]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +156,7 @@ const Auth = () => {
         
         if (signInError) throw signInError;
         
+        authChecked.current = false; // Reset auth check to allow redirect
         navigate('/profile');
         toast.success("Account created successfully!");
       } else {
@@ -147,8 +166,11 @@ const Auth = () => {
         });
         if (error) throw error;
         
+        // Reset auth check to allow redirect to work
+        authChecked.current = false;
+        
         const { data: profileData } = await supabase
-          .from(data.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
+          .from(data.user.user_metadata?.user_type === 'founder' ? 'founder_details' : 'investor_details')
           .select('*')
           .eq('profile_id', data.user.id)
           .maybeSingle();
@@ -165,7 +187,7 @@ const Auth = () => {
     }
   };
 
-  if (isAuthChecking && !hasCheckedAuth) {
+  if (isAuthChecking) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">
@@ -179,7 +201,7 @@ const Auth = () => {
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">

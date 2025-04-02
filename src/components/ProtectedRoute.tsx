@@ -33,7 +33,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
       } finally {
         if (mounted) {
-          setIsLoading(false);
+          // Add a small delay before setting loading to false to avoid flashing
+          setTimeout(() => {
+            if (mounted) {
+              setIsLoading(false);
+            }
+          }, 100);
         }
       }
     };
@@ -45,8 +50,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       console.log(`ProtectedRoute: Auth state change: ${event}`);
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
+        
+        // For SIGNED_IN events, we don't want to immediately set isLoading to false
+        // since the Auth page needs time to process the session first
+        setTimeout(() => {
+          if (mounted) {
+            setIsLoading(false);
+          }
+        }, 300);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setIsLoading(false);
+      } else {
+        // For other events, we can set isLoading to false
+        setIsLoading(false);
       }
     });
 

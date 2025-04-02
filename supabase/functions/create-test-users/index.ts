@@ -216,7 +216,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (founderPriorityMatchesError) {
       console.error('Error deleting founder priority matches:', founderPriorityMatchesError);
-      throw new Error('Failed to delete priority matches where founder_id references users');
+      throw new Error(`Failed to delete priority matches where founder_id references users: ${JSON.stringify(founderPriorityMatchesError).replace(/\n/g, ' ')}`);
     }
     
     // 2. Delete priority matches where investor_id is in userIds
@@ -227,7 +227,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (investorPriorityMatchesError) {
       console.error('Error deleting investor priority matches:', investorPriorityMatchesError);
-      throw new Error('Failed to delete priority matches where investor_id references users');
+      throw new Error(`Failed to delete priority matches where investor_id references users: ${JSON.stringify(investorPriorityMatchesError).replace(/\n/g, ' ')}`);
     }
     
     // 3. Delete priority matches where set_by is in userIds
@@ -238,7 +238,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (setByPriorityMatchesError) {
       console.error('Error deleting set_by priority matches:', setByPriorityMatchesError);
-      throw new Error('Failed to delete priority matches where set_by references users');
+      throw new Error(`Failed to delete priority matches where set_by references users: ${JSON.stringify(setByPriorityMatchesError).replace(/\n/g, ' ')}`);
     }
     
     console.log('All priority matches deleted successfully');
@@ -252,7 +252,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (founderMatchesError) {
       console.error('Error deleting founder matches:', founderMatchesError);
-      throw new Error('Failed to delete matches where user is founder');
+      throw new Error(`Failed to delete matches where user is founder: ${JSON.stringify(founderMatchesError).replace(/\n/g, ' ')}`);
     } else {
       console.log('Founder matches deleted successfully');
     }
@@ -264,7 +264,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (investorMatchesError) {
       console.error('Error deleting investor matches:', investorMatchesError);
-      throw new Error('Failed to delete matches where user is investor');
+      throw new Error(`Failed to delete matches where user is investor: ${JSON.stringify(investorMatchesError).replace(/\n/g, ' ')}`);
     } else {
       console.log('Investor matches deleted successfully');
     }
@@ -278,7 +278,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (founderDetailsError) {
       console.error('Error deleting founder details:', founderDetailsError);
-      throw new Error('Failed to delete founder details');
+      throw new Error(`Failed to delete founder details: ${JSON.stringify(founderDetailsError).replace(/\n/g, ' ')}`);
     } else {
       console.log('Founder details deleted');
     }
@@ -290,7 +290,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (investorDetailsError) {
       console.error('Error deleting investor details:', investorDetailsError);
-      throw new Error('Failed to delete investor details');
+      throw new Error(`Failed to delete investor details: ${JSON.stringify(investorDetailsError).replace(/\n/g, ' ')}`);
     } else {
       console.log('Investor details deleted');
     }
@@ -304,7 +304,7 @@ async function deleteUserData(supabase, userIds) {
     
     if (profilesError) {
       console.error('Error deleting profiles:', profilesError);
-      throw new Error('Failed to delete user profiles');
+      throw new Error(`Failed to delete user profiles: ${JSON.stringify(profilesError).replace(/\n/g, ' ')}`);
     }
     console.log('User profiles deleted successfully');
 

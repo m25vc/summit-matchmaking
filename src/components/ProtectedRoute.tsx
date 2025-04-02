@@ -10,26 +10,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Use a single source of truth for auth state
     const checkAuth = async () => {
       try {
         // First check current session
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log("ProtectedRoute: User is authenticated");
+          setUser(session.user);
+        } else {
+          console.log("ProtectedRoute: No authenticated user found");
+          setUser(null);
+        }
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("ProtectedRoute: Error checking session:", error);
         setUser(null);
       } finally {
-        // Only set loading to false after initial check completes
         setIsLoading(false);
       }
     };
 
-    // Set up auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    // Set up auth listener only for session changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`ProtectedRoute: Auth state change: ${event}`);
+      if (event === 'SIGNED_IN') {
+        setUser(session?.user || null);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
     });
 
+    // Initial check
     checkAuth();
 
     return () => {
@@ -53,6 +64,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
+    console.log("ProtectedRoute: Redirecting to auth");
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

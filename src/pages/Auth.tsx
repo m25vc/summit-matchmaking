@@ -22,6 +22,7 @@ const Auth = () => {
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   
   // Investor fields
   const [firmName, setFirmName] = useState('');
@@ -41,12 +42,16 @@ const Auth = () => {
   const [nextRaisePlanned, setNextRaisePlanned] = useState('');
   
   useEffect(() => {
+    // Prevent multiple checks
+    if (hasCheckedAuth) return;
+
     const checkForAuthSession = async () => {
       try {
+        console.log("Auth: Checking auth session");
         const { data } = await supabase.auth.getSession();
         
         if (data?.session) {
-          // User is authenticated, check if profile is complete
+          console.log("Auth: User is authenticated, checking profile");
           try {
             const profileTable = data.session.user.user_metadata.user_type === 'founder' 
               ? 'founder_details' 
@@ -59,25 +64,30 @@ const Auth = () => {
               .maybeSingle();
 
             if (!profileData) {
+              console.log("Auth: Profile not complete, redirecting to profile completion");
               navigate('/profile');
             } else {
+              console.log("Auth: Profile complete, redirecting to dashboard");
               navigate('/dashboard');
             }
           } catch (error) {
-            console.error("Error checking profile:", error);
+            console.error("Auth: Error checking profile:", error);
             setIsAuthChecking(false);
           }
         } else {
+          console.log("Auth: No authenticated user");
           setIsAuthChecking(false);
         }
       } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
+      } finally {
+        setHasCheckedAuth(true);
       }
     };
 
     checkForAuthSession();
-  }, [navigate]);
+  }, [navigate, hasCheckedAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +165,7 @@ const Auth = () => {
     }
   };
 
-  if (isAuthChecking) {
+  if (isAuthChecking && !hasCheckedAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">

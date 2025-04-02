@@ -1,3 +1,4 @@
+
 // Add Deno serve and CORS handling
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -203,20 +204,28 @@ async function deleteUserData(supabase, userIds) {
   console.log(`Deleting data for ${userIds.length} users in the correct order...`);
 
   try {
-    // First delete matches table data (no longer used)
+    // First delete matches table data - directly using delete operation
     console.log('Deleting matches data...');
-    const { error: matchesError } = await supabase.rpc(
-      'execute_sql',
-      { 
-        sql_query: `DELETE FROM matches WHERE founder_id IN ('${userIds.join("','")}') OR investor_id IN ('${userIds.join("','")}')` 
-      }
-    );
+    const { error: founderMatchesError } = await supabase
+      .from('matches')
+      .delete()
+      .in('founder_id', userIds);
     
-    if (matchesError) {
-      console.error('Error deleting matches:', matchesError);
-      throw new Error(`Error deleting matches: ${matchesError.message}`);
+    if (founderMatchesError) {
+      console.error('Error deleting founder matches:', founderMatchesError);
     } else {
-      console.log('Matches deleted successfully');
+      console.log('Founder matches deleted successfully');
+    }
+
+    const { error: investorMatchesError } = await supabase
+      .from('matches')
+      .delete()
+      .in('investor_id', userIds);
+    
+    if (investorMatchesError) {
+      console.error('Error deleting investor matches:', investorMatchesError);
+    } else {
+      console.log('Investor matches deleted successfully');
     }
 
     // Delete priority matches

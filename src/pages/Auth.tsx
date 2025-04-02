@@ -16,6 +16,8 @@ const Auth = () => {
   
   // Track if component is mounted to avoid state updates after unmount
   const isMounted = useRef(true);
+  // Track if auth check has been performed
+  const authCheckPerformed = useRef(false);
   
   useEffect(() => {
     // Set isMounted to true when component mounts
@@ -23,6 +25,10 @@ const Auth = () => {
     
     // Function to check authentication state
     const checkAuthState = async () => {
+      // Avoid running multiple times
+      if (authCheckPerformed.current) return;
+      authCheckPerformed.current = true;
+      
       try {
         console.log("Auth: Checking auth session");
         const { data } = await supabase.auth.getSession();
@@ -91,6 +97,8 @@ const Auth = () => {
       // Only handle sign in/out events here
       if (event === 'SIGNED_IN' && session) {
         console.log('Auth: User signed in via state change');
+        // Don't trigger another full auth check here, just handle the navigation
+        navigate('/profile');
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: User signed out via state change');
         setIsAuthChecking(false);
@@ -107,6 +115,8 @@ const Auth = () => {
 
   const handleAuthSuccess = () => {
     console.log("Auth: Auth success handler called");
+    // We don't need to trigger another auth check here
+    // Just navigate directly
     navigate('/profile');
   };
 

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,11 +58,9 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         timeoutRef.current = null;
       }
       
-      // Add a small delay before executing onSuccess to ensure auth state is updated
-      setTimeout(() => {
-        console.log("Auth: Executing onSuccess callback");
-        onSuccess();
-      }, 500);
+      // Execute onSuccess callback directly
+      console.log("Auth: Executing onSuccess callback");
+      onSuccess();
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
       toast.error(error.message || "Failed to sign in");

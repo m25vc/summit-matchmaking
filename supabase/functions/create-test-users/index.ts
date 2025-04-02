@@ -1,3 +1,4 @@
+
 // Add Deno serve and CORS handling
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -183,63 +184,85 @@ async function clearAllData(supabase) {
 async function deleteUserData(supabase, userIds) {
   console.log(`Deleting data for ${userIds.length} users in the correct order...`);
 
-  // Delete priority matches first
-  await Promise.all([
-    // Delete founder's matches
-    supabase
-      .from('priority_matches')
+  try {
+    // First delete matches table data (no longer used)
+    console.log('Deleting matches data...');
+    const { error: matchesError } = await supabase
+      .from('matches')
       .delete()
-      .in('founder_id', userIds)
-      .then(({ error }) => {
-        if (error) console.error('Error deleting founder priority matches:', error);
-        else console.log('Founder priority matches deleted');
-      }),
-    // Delete investor's matches
-    supabase
-      .from('priority_matches')
-      .delete()
-      .in('investor_id', userIds)
-      .then(({ error }) => {
-        if (error) console.error('Error deleting investor priority matches:', error);
-        else console.log('Investor priority matches deleted');
-      })
-  ]);
+      .or(`founder_id.in.(${userIds.join(',')}),investor_id.in.(${userIds.join(',')})`);
+    
+    if (matchesError) {
+      console.error('Error deleting matches:', matchesError);
+      // Continue with other deletions even if this fails
+    } else {
+      console.log('Matches deleted successfully');
+    }
 
-  // Then delete founder_details and investor_details
-  await Promise.all([
-    supabase
-      .from('founder_details')
-      .delete()
-      .in('profile_id', userIds)
-      .then(({ error }) => {
-        if (error) console.error('Error deleting founder details:', error);
-        else console.log('Founder details deleted');
-      }),
-    supabase
-      .from('investor_details')
-      .delete()
-      .in('profile_id', userIds)
-      .then(({ error }) => {
-        if (error) console.error('Error deleting investor details:', error);
-        else console.log('Investor details deleted');
-      })
-  ]);
+    // Delete priority matches
+    console.log('Deleting priority matches...');
+    await Promise.all([
+      // Delete founder's matches
+      supabase
+        .from('priority_matches')
+        .delete()
+        .in('founder_id', userIds)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting founder priority matches:', error);
+          else console.log('Founder priority matches deleted');
+        }),
+      // Delete investor's matches
+      supabase
+        .from('priority_matches')
+        .delete()
+        .in('investor_id', userIds)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting investor priority matches:', error);
+          else console.log('Investor priority matches deleted');
+        })
+    ]);
 
-  // Finally delete profiles (they should now have no dependencies)
-  const { error: profilesError } = await supabase
-    .from('profiles')
-    .delete()
-    .in('id', userIds);
-  
-  if (profilesError) {
-    console.error('Error deleting profiles:', profilesError);
-    throw new Error('Failed to delete user profiles');
+    // Then delete founder_details and investor_details
+    console.log('Deleting profile details...');
+    await Promise.all([
+      supabase
+        .from('founder_details')
+        .delete()
+        .in('profile_id', userIds)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting founder details:', error);
+          else console.log('Founder details deleted');
+        }),
+      supabase
+        .from('investor_details')
+        .delete()
+        .in('profile_id', userIds)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting investor details:', error);
+          else console.log('Investor details deleted');
+        })
+    ]);
+
+    // Finally delete profiles (they should now have no dependencies)
+    console.log('Deleting user profiles...');
+    const { error: profilesError } = await supabase
+      .from('profiles')
+      .delete()
+      .in('id', userIds);
+    
+    if (profilesError) {
+      console.error('Error deleting profiles:', profilesError);
+      throw new Error('Failed to delete user profiles');
+    }
+    console.log('User profiles deleted successfully');
+
+    // We don't delete from auth.users table because that will happen
+    // automatically via cascade when the profiles are deleted
+    console.log('All user data deleted successfully');
+  } catch (error) {
+    console.error('Error in deleteUserData:', error);
+    throw error; // Rethrow to be handled by the calling function
   }
-  console.log('User profiles deleted');
-
-  // We don't delete from auth.users table because that will happen
-  // automatically via cascade when the profiles are deleted
-  console.log('All user data deleted successfully');
 }
 
 // Required for Supabase Edge Functions

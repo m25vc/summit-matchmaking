@@ -50,13 +50,15 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       
       toast.success("All data has been cleared successfully (except your admin account).");
       
-      // Notify parent that data was cleared and force a full page reload
+      // Notify parent that data was cleared
       onDataCleared();
-      // Force a complete page reload to ensure fresh data
-      window.location.reload();
-    } catch (error) {
+      // Force a complete page reload after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error: any) {
       console.error("Failed to clear all data:", error);
-      toast.error(error.message || "Failed to clear all data. Please try again.");
+      toast.error(`Error clearing data: ${error.message || "Unknown error"}`);
     } finally {
       setIsClearing(false);
     }
@@ -89,13 +91,15 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       
       toast.success("All test users and data have been cleared successfully.");
       
-      // Notify parent that data was cleared and force a full page reload
+      // Notify parent that data was cleared
       onDataCleared();
-      // Force a complete page reload to ensure fresh data
-      window.location.reload();
-    } catch (error) {
+      // Force a complete page reload after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error: any) {
       console.error("Failed to clear test data:", error);
-      toast.error(error.message || "Failed to clear test data. Please try again.");
+      toast.error(`Error clearing test data: ${error.message || "Unknown error"}`);
     } finally {
       setIsClearing(false);
     }

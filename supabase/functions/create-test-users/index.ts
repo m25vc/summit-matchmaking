@@ -101,38 +101,87 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const action = body.action || 'create' // Default to creating test users
 
-    if (action === 'clear') {
-      console.log('Clearing all test data...')
+    // Function to safely delete priority matches and users
+    async function clearData(clearAllUsers = false) {
+      console.log(`Clearing ${clearAllUsers ? 'all' : 'test'} data...`)
       
-      // Clear existing data first
+      // First delete all priority matches to avoid FK constraints
       const { error: deleteMatchesError } = await supabase
         .from('priority_matches')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
       
-      if (deleteMatchesError) console.error('Error deleting matches:', deleteMatchesError)
+      if (deleteMatchesError) {
+        console.error('Error deleting matches:', deleteMatchesError)
+      } else {
+        console.log('Successfully deleted all priority matches')
+      }
 
-      // Delete all existing users - except the current admin user
-      console.log('Deleting existing users...')
+      // Now get and delete users
       const { data: existingUsers } = await supabase.auth.admin.listUsers()
       
       for (const user of existingUsers.users) {
-        // Skip admin users - you can identify them by checking the user's role
+        // Get the user's profile to check if they're an admin
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single()
         
+        // Skip admin users
         if (userProfile?.role === 'admin') {
           console.log(`Skipping admin user: ${user.email}`)
           continue
         }
         
-        const { error } = await supabase.auth.admin.deleteUser(user.id)
-        if (error) console.error('Error deleting user:', error)
-      }
+        // If we're only clearing test users, skip non-test emails
+        if (!clearAllUsers && !user.email?.includes('test.com')) {
+          console.log(`Skipping non-test user: ${user.email}`)
+          continue
+        }
 
+        // Delete the user
+        try {
+          // First delete from profiles table to avoid FK constraint issues
+          const { error: profileDeleteError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', user.id)
+          
+          if (profileDeleteError) {
+            console.error(`Error deleting profile for ${user.email}:`, profileDeleteError)
+          }
+
+          // Then delete the auth user
+          const { error: authDeleteError } = await supabase.auth.admin.deleteUser(user.id)
+          if (authDeleteError) {
+            console.error(`Error deleting user ${user.email}:`, authDeleteError)
+          } else {
+            console.log(`Successfully deleted user: ${user.email}`)
+          }
+        } catch (error) {
+          console.error(`Error in deletion process for ${user.email}:`, error)
+        }
+      }
+    }
+
+    if (action === 'clear-all') {
+      // Clear ALL data except admin users
+      await clearData(true)
+      
+      return new Response(
+        JSON.stringify({ 
+          message: 'All data cleared successfully (except admin users)'
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      )
+    } else if (action === 'clear') {
+      // Clear only test data
+      await clearData(false)
+      
       return new Response(
         JSON.stringify({ 
           message: 'All test data cleared successfully'
@@ -144,21 +193,7 @@ Deno.serve(async (req) => {
       )
     } else {
       // Clear existing data first
-      console.log('Clearing existing data...')
-      const { error: deleteMatchesError } = await supabase
-        .from('priority_matches')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-      
-      if (deleteMatchesError) console.error('Error deleting matches:', deleteMatchesError)
-
-      // Delete all existing users
-      console.log('Deleting existing users...')
-      const { data: existingUsers } = await supabase.auth.admin.listUsers()
-      for (const user of existingUsers.users) {
-        const { error } = await supabase.auth.admin.deleteUser(user.id)
-        if (error) console.error('Error deleting user:', error)
-      }
+      await clearData(false)
 
       // Create new test users
       console.log('Creating new test users...')
@@ -217,7 +252,8 @@ Deno.serve(async (req) => {
           .insert({
             founder_id: founders[i].userId,
             investor_id: investors[i].userId,
-            priority: i === 0 ? 'high' : 'medium'
+            priority: i === 0 ? 'high' : 'medium',
+            set_by: founders[i].userId
           })
         
         if (matchError) console.error('Error creating match:', matchError)

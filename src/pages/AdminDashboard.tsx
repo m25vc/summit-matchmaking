@@ -24,7 +24,7 @@ const AdminDashboard = () => {
     const interval = setInterval(() => {
       console.log("Auto-refreshing admin data...");
       refetch();
-    }, 10000); // Refresh every 10 seconds
+    }, 5000); // Refresh every 5 seconds (increased frequency for better responsiveness)
     
     return () => clearInterval(interval);
   }, [refetch]);

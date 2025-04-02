@@ -52,9 +52,8 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       
       // Notify parent that data was cleared and force a full page reload
       onDataCleared();
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Force a complete page reload to ensure fresh data
+      window.location.reload();
     } catch (error) {
       console.error("Failed to clear all data:", error);
       toast.error(error.message || "Failed to clear all data. Please try again.");
@@ -92,9 +91,8 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       
       // Notify parent that data was cleared and force a full page reload
       onDataCleared();
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Force a complete page reload to ensure fresh data
+      window.location.reload();
     } catch (error) {
       console.error("Failed to clear test data:", error);
       toast.error(error.message || "Failed to clear test data. Please try again.");

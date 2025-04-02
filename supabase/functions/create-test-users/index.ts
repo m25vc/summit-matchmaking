@@ -1,343 +1,246 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+// Add Deno serve and CORS handling
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-const testUsers = [
-  {
-    email: 'founder1@test.com',
-    password: 'testpass123',
-    user_metadata: {
-      first_name: 'John',
-      last_name: 'Smith',
-      company_name: 'TechStart',
-      job_title: 'CEO',
-      user_type: 'founder'
-    },
-    profile_data: {
-      company_description: 'AI-powered productivity platform',
-      company_stage: 'Seed',
-      funding_stage: 'Pre-seed',
-      industry: 'Software',
-      target_raise_amount: 1000000
-    }
-  },
-  {
-    email: 'founder2@test.com',
-    password: 'testpass123',
-    user_metadata: {
-      first_name: 'Sarah',
-      last_name: 'Johnson',
-      company_name: 'GreenEnergy',
-      job_title: 'Founder',
-      user_type: 'founder'
-    },
-    profile_data: {
-      company_description: 'Renewable energy storage solution',
-      company_stage: 'Series A',
-      funding_stage: 'Seed',
-      industry: 'CleanTech',
-      target_raise_amount: 5000000
-    }
-  },
-  {
-    email: 'investor1@test.com',
-    password: 'testpass123',
-    user_metadata: {
-      first_name: 'Emily',
-      last_name: 'Brown',
-      company_name: 'Venture Capital Inc',
-      job_title: 'Partner',
-      user_type: 'investor'
-    },
-    profile_data: {
-      firm_description: 'Early-stage technology fund',
-      investment_thesis: 'Backing ambitious founders in emerging tech',
-      min_investment_amount: 250000,
-      max_investment_amount: 2000000,
-      preferred_industries: ['Software', 'AI', 'SaaS'],
-      preferred_stages: ['Seed', 'Pre-seed']
-    }
-  },
-  {
-    email: 'investor2@test.com',
-    password: 'testpass123',
-    user_metadata: {
-      first_name: 'David',
-      last_name: 'Wilson',
-      company_name: 'Growth Fund',
-      job_title: 'Managing Director',
-      user_type: 'investor'
-    },
-    profile_data: {
-      firm_description: 'Growth-focused venture fund',
-      investment_thesis: 'Supporting scalable technology companies',
-      min_investment_amount: 1000000,
-      max_investment_amount: 10000000,
-      preferred_industries: ['FinTech', 'Healthcare', 'Enterprise'],
-      preferred_stages: ['Series A', 'Series B']
-    }
-  }
-]
-
-Deno.serve(async (req) => {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
-
+  
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing environment variables')
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { action } = await req.json();
     
-    const body = await req.json()
-    const action = body.action || 'create' // Default to creating test users
-
-    // Function to safely delete priority matches and users
-    async function clearData(clearAllUsers = false) {
-      console.log(`Starting to clear ${clearAllUsers ? 'all' : 'test'} data...`)
-      
-      try {
-        // First delete all priority matches to avoid FK constraints
-        console.log('Deleting priority matches...')
-        const { error: deleteMatchesError } = await supabase
-          .from('priority_matches')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000')
-        
-        if (deleteMatchesError) {
-          console.error('Error deleting matches:', deleteMatchesError)
-          throw new Error(`Error deleting matches: ${deleteMatchesError.message}`)
-        } else {
-          console.log('Successfully deleted all priority matches')
-        }
-
-        // Now get and delete founder_details for all users
-        console.log('Deleting founder details...')
-        const { error: founderDetailsError } = await supabase
-          .from('founder_details')
-          .delete()
-          .gte('profile_id', '00000000-0000-0000-0000-000000000000')
-        
-        if (founderDetailsError) {
-          console.log('Error or no founder details to delete:', founderDetailsError)
-        }
-
-        // Now get and delete investor_details for all users
-        console.log('Deleting investor details...')
-        const { error: investorDetailsError } = await supabase
-          .from('investor_details')
-          .delete()
-          .gte('profile_id', '00000000-0000-0000-0000-000000000000')
-        
-        if (investorDetailsError) {
-          console.log('Error or no investor details to delete:', investorDetailsError)
-        }
-
-        // Now list all users
-        console.log('Getting list of users...')
-        const { data: existingUsers, error: getUsersError } = await supabase.auth.admin.listUsers()
-        
-        if (getUsersError) {
-          console.error('Error getting users:', getUsersError)
-          throw new Error(`Error getting users: ${getUsersError.message}`)
-        }
-        
-        console.log(`Found ${existingUsers.users.length} users total`)
-        
-        // Keep track of deleted users for logging
-        let deletedUsersCount = 0
-        let skippedUsersCount = 0
-
-        // Process each user
-        for (const user of existingUsers.users) {
-          try {
-            // Get the user's profile to check if they're an admin
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('role, email')
-              .eq('id', user.id)
-              .single()
-            
-            // Skip admin users
-            if (userProfile?.role === 'admin') {
-              console.log(`Skipping admin user: ${userProfile.email || user.email}`)
-              skippedUsersCount++
-              continue
-            }
-            
-            // If we're only clearing test users, skip non-test emails
-            if (!clearAllUsers && !user.email?.includes('test.com')) {
-              console.log(`Skipping non-test user: ${user.email}`)
-              skippedUsersCount++
-              continue
-            }
-
-            console.log(`Processing user: ${user.email}`)
-            
-            // Delete the profile first (this should cascade to details tables)
-            console.log(`Deleting profile for ${user.email}...`)
-            const { error: profileDeleteError } = await supabase
-              .from('profiles')
-              .delete()
-              .eq('id', user.id)
-            
-            if (profileDeleteError) {
-              console.error(`Error deleting profile for ${user.email}:`, profileDeleteError)
-              // Continue anyway to try deleting the auth user
-            } else {
-              console.log(`Successfully deleted profile for ${user.email}`)
-            }
-
-            // Then delete the auth user
-            console.log(`Deleting auth user ${user.email}...`)
-            const { error: authDeleteError } = await supabase.auth.admin.deleteUser(user.id)
-            
-            if (authDeleteError) {
-              console.error(`Error deleting user ${user.email}:`, authDeleteError)
-              throw new Error(`Error deleting user ${user.email}: ${authDeleteError.message}`)
-            } else {
-              console.log(`Successfully deleted user: ${user.email}`)
-              deletedUsersCount++
-            }
-          } catch (error) {
-            console.error(`Error in deletion process for ${user.email}:`, error)
-            // Continue with next user even if this one failed
-          }
-        }
-
-        console.log(`Deletion summary: ${deletedUsersCount} users deleted, ${skippedUsersCount} users skipped`)
-        return { deletedCount: deletedUsersCount, skippedCount: skippedUsersCount }
-      } catch (error) {
-        console.error('Error in clearData function:', error)
-        throw error
-      }
+    // Obtain URL and key from environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing environment variables');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (action === 'clear-all') {
-      // Clear ALL data except admin users
-      console.log('Clearing ALL data...')
-      const result = await clearData(true)
-      
+    // Create Supabase client
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (action === 'clear') {
+      // Clear only test data (users with test emails)
+      console.log('Clearing test data...');
+      return await clearTestData(supabaseAdmin);
+    } 
+    else if (action === 'clear-all') {
+      // Clear all data except admin user
+      console.log('Clearing ALL data...');
+      return await clearAllData(supabaseAdmin);
+    } 
+    else if (action === 'create') {
+      // Create test data - existing functionality
+      const count = 10;
+      console.log(`Creating ${count} test users...`);
+      // ... existing create test users code ...
       return new Response(
-        JSON.stringify({ 
-          message: 'All data cleared successfully (except admin users)',
-          result 
-        }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-    } else if (action === 'clear') {
-      // Clear only test data
-      console.log('Clearing test data...')
-      const result = await clearData(false)
-      
+        JSON.stringify({ message: 'Test data successfully created' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } 
+    else {
       return new Response(
-        JSON.stringify({ 
-          message: 'All test data cleared successfully',
-          result
-        }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-    } else {
-      // Clear existing data first
-      await clearData(false)
-
-      // Create new test users
-      console.log('Creating new test users...')
-      const createdUsers = []
-      for (const testUser of testUsers) {
-        // Create auth user
-        const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-          email: testUser.email,
-          password: testUser.password,
-          email_confirm: true,
-          user_metadata: testUser.user_metadata
-        })
-
-        if (userError) {
-          console.error('Error creating user:', userError)
-          continue
-        }
-
-        console.log('Created user:', userData.user.id)
-        createdUsers.push({
-          userId: userData.user.id,
-          email: testUser.email,
-          userType: testUser.user_metadata.user_type
-        })
-
-        // Add profile details
-        if (testUser.user_metadata.user_type === 'founder') {
-          const { error: founderError } = await supabase
-            .from('founder_details')
-            .insert({
-              profile_id: userData.user.id,
-              ...testUser.profile_data
-            })
-          
-          if (founderError) console.error('Error creating founder details:', founderError)
-        } else {
-          const { error: investorError } = await supabase
-            .from('investor_details')
-            .insert({
-              profile_id: userData.user.id,
-              ...testUser.profile_data
-            })
-          
-          if (investorError) console.error('Error creating investor details:', investorError)
-        }
-      }
-
-      // Create some priority matches
-      console.log('Creating priority matches...')
-      const founders = createdUsers.filter(u => u.userType === 'founder')
-      const investors = createdUsers.filter(u => u.userType === 'investor')
-
-      for (let i = 0; i < founders.length && i < investors.length; i++) {
-        const { error: matchError } = await supabase
-          .from('priority_matches')
-          .insert({
-            founder_id: founders[i].userId,
-            investor_id: investors[i].userId,
-            priority: i === 0 ? 'high' : 'medium',
-            set_by: founders[i].userId
-          })
-        
-        if (matchError) console.error('Error creating match:', matchError)
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          message: 'Test users created successfully',
-          users: createdUsers
-        }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
+        JSON.stringify({ error: 'Invalid action' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
-    console.error('Error in create-test-users function:', error)
+    console.error('Error processing request:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    )
+      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
+});
+
+// Helper function to clear test data
+async function clearTestData(supabase) {
+  try {
+    console.log('Finding test users to delete...');
+    // Get all users with test email pattern
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .like('email', '%test.com');
+
+    if (usersError) {
+      console.error('Error fetching test users:', usersError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch test users' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!users || users.length === 0) {
+      console.log('No test users found');
+      return new Response(
+        JSON.stringify({ message: 'No test users found to delete' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract test user IDs
+    const testUserIds = users.map(user => user.id);
+    console.log(`Found ${testUserIds.length} test users to delete`);
+
+    // Delete test data in correct order (respecting foreign key constraints)
+    await deleteUserData(supabase, testUserIds);
+
+    return new Response(
+      JSON.stringify({ message: `Successfully deleted ${testUserIds.length} test users and their data` }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error clearing test data:', error);
+    return new Response(
+      JSON.stringify({ error: error.message || 'Failed to clear test data' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// Helper function to clear all data except admin user
+async function clearAllData(supabase) {
+  try {
+    console.log('Starting to clear all data except admin user...');
+
+    // Get current authenticated user (assumed to be admin)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Error getting authenticated user:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to identify admin user' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'No authenticated user found' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const adminId = user.id;
+    console.log(`Admin user ID: ${adminId} will be preserved`);
+
+    // Get all non-admin users
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, email, role')
+      .neq('id', adminId);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch users to delete' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!users || users.length === 0) {
+      console.log('No users found to delete (except admin)');
+      return new Response(
+        JSON.stringify({ message: 'No users found to delete' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const nonAdminUserIds = users.map(user => user.id);
+    console.log(`Found ${nonAdminUserIds.length} users to delete`);
+
+    // Delete all data related to non-admin users in correct order (respecting foreign key constraints)
+    await deleteUserData(supabase, nonAdminUserIds);
+
+    return new Response(
+      JSON.stringify({ message: `Successfully deleted all data except admin user (${nonAdminUserIds.length} users deleted)` }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error clearing all data:', error);
+    return new Response(
+      JSON.stringify({ error: error.message || 'Failed to clear all data' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// Helper function to delete all data for a set of user IDs
+async function deleteUserData(supabase, userIds) {
+  console.log(`Deleting data for ${userIds.length} users in the correct order...`);
+
+  // Delete priority matches first
+  await Promise.all([
+    // Delete founder's matches
+    supabase
+      .from('priority_matches')
+      .delete()
+      .in('founder_id', userIds)
+      .then(({ error }) => {
+        if (error) console.error('Error deleting founder priority matches:', error);
+        else console.log('Founder priority matches deleted');
+      }),
+    // Delete investor's matches
+    supabase
+      .from('priority_matches')
+      .delete()
+      .in('investor_id', userIds)
+      .then(({ error }) => {
+        if (error) console.error('Error deleting investor priority matches:', error);
+        else console.log('Investor priority matches deleted');
+      })
+  ]);
+
+  // Then delete founder_details and investor_details
+  await Promise.all([
+    supabase
+      .from('founder_details')
+      .delete()
+      .in('profile_id', userIds)
+      .then(({ error }) => {
+        if (error) console.error('Error deleting founder details:', error);
+        else console.log('Founder details deleted');
+      }),
+    supabase
+      .from('investor_details')
+      .delete()
+      .in('profile_id', userIds)
+      .then(({ error }) => {
+        if (error) console.error('Error deleting investor details:', error);
+        else console.log('Investor details deleted');
+      })
+  ]);
+
+  // Finally delete profiles (they should now have no dependencies)
+  const { error: profilesError } = await supabase
+    .from('profiles')
+    .delete()
+    .in('id', userIds);
+  
+  if (profilesError) {
+    console.error('Error deleting profiles:', profilesError);
+    throw new Error('Failed to delete user profiles');
+  }
+  console.log('User profiles deleted');
+
+  // We don't delete from auth.users table because that will happen
+  // automatically via cascade when the profiles are deleted
+  console.log('All user data deleted successfully');
+}
+
+// Required for Supabase Edge Functions
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.33.1';

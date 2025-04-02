@@ -204,33 +204,44 @@ async function deleteUserData(supabase, userIds) {
   console.log(`Deleting data for ${userIds.length} users in the correct order...`);
 
   try {
-    // First delete priority_matches data - this is crucial to avoid foreign key constraint violations
-    // Delete from priority_matches where either founder_id or investor_id is in userIds
+    // First delete ALL priority_matches that could reference users being deleted
+    // This includes three cases: founder_id, investor_id, and set_by fields
     console.log('Deleting priority matches data...');
     
-    // Delete priority matches where initiator_id is in userIds
-    const { error: initiatorPriorityMatchesError } = await supabase
+    // 1. Delete priority matches where founder_id is in userIds
+    const { error: founderPriorityMatchesError } = await supabase
       .from('priority_matches')
       .delete()
       .in('founder_id', userIds);
     
-    if (initiatorPriorityMatchesError) {
-      console.error('Error deleting initiator priority matches:', initiatorPriorityMatchesError);
-      throw new Error('Failed to delete priority matches initiated by users');
+    if (founderPriorityMatchesError) {
+      console.error('Error deleting founder priority matches:', founderPriorityMatchesError);
+      throw new Error('Failed to delete priority matches where founder_id references users');
     }
     
-    // Delete priority matches where target_id is in userIds
-    const { error: targetPriorityMatchesError } = await supabase
+    // 2. Delete priority matches where investor_id is in userIds
+    const { error: investorPriorityMatchesError } = await supabase
       .from('priority_matches')
       .delete()
       .in('investor_id', userIds);
     
-    if (targetPriorityMatchesError) {
-      console.error('Error deleting target priority matches:', targetPriorityMatchesError);
-      throw new Error('Failed to delete priority matches targeting users');
+    if (investorPriorityMatchesError) {
+      console.error('Error deleting investor priority matches:', investorPriorityMatchesError);
+      throw new Error('Failed to delete priority matches where investor_id references users');
     }
     
-    console.log('Priority matches deleted successfully');
+    // 3. Delete priority matches where set_by is in userIds
+    const { error: setByPriorityMatchesError } = await supabase
+      .from('priority_matches')
+      .delete()
+      .in('set_by', userIds);
+    
+    if (setByPriorityMatchesError) {
+      console.error('Error deleting set_by priority matches:', setByPriorityMatchesError);
+      throw new Error('Failed to delete priority matches where set_by references users');
+    }
+    
+    console.log('All priority matches deleted successfully');
     
     // Next delete matches table data
     console.log('Deleting matches data...');

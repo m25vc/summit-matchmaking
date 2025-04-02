@@ -102,7 +102,7 @@ const Auth = () => {
       if (isMounted.current && isAuthChecking) {
         console.log("Auth: Long safety timeout triggered");
         setIsAuthChecking(false);
-        toast.error("Authentication check timed out. Please refresh the page.");
+        // Removed the toast.error message that was here
       }
     }, 8000);
 

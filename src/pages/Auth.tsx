@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -40,42 +40,51 @@ const Auth = () => {
   const [lastRoundRaised, setLastRoundRaised] = useState('');
   const [nextRaisePlanned, setNextRaisePlanned] = useState('');
   
-  // Check for authentication on component mount and handle redirect from OAuth
   useEffect(() => {
-    // Check if there's an access token in the URL (from OAuth redirect)
+    let mounted = true;
+    
     const checkForAuthSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
         
-        if (data?.session) {
-          console.log("User is already authenticated, checking profile");
-          // Check if user needs to complete their profile
-          const profileTable = data.session.user.user_metadata.user_type === 'founder' 
-            ? 'founder_details' 
-            : 'investor_details';
-            
-          const { data: profileData } = await supabase
-            .from(profileTable)
-            .select('*')
-            .eq('profile_id', data.session.user.id)
-            .single();
+        if (data?.session && mounted) {
+          // User is authenticated, check if profile is complete
+          try {
+            const profileTable = data.session.user.user_metadata.user_type === 'founder' 
+              ? 'founder_details' 
+              : 'investor_details';
+              
+            const { data: profileData } = await supabase
+              .from(profileTable)
+              .select('*')
+              .eq('profile_id', data.session.user.id)
+              .maybeSingle();
 
-          if (!profileData) {
-            console.log("User needs to complete profile");
-            navigate('/profile');
-          } else {
-            console.log("User has complete profile");
-            navigate('/dashboard');
+            if (mounted) {
+              if (!profileData) {
+                navigate('/profile');
+              } else {
+                navigate('/dashboard');
+              }
+            }
+          } catch (error) {
+            console.error("Error checking profile:", error);
           }
         }
       } catch (error) {
         console.error("Auth check error:", error);
       } finally {
-        setCheckingAuth(false);
+        if (mounted) {
+          setCheckingAuth(false);
+        }
       }
     };
 
     checkForAuthSession();
+    
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,7 +103,6 @@ const Auth = () => {
               job_title: jobTitle,
               user_type: userType,
               company_name: userType === 'founder' ? companyName : firmName,
-              // Additional metadata based on user type
               ...(userType === 'investor' 
                 ? {
                     firm_hq: firmHQ,
@@ -121,7 +129,6 @@ const Auth = () => {
         
         if (error) throw error;
         
-        // Sign in the user immediately after signup
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -138,7 +145,6 @@ const Auth = () => {
         });
         if (error) throw error;
         
-        // Check if user needs to complete their profile
         const { data: profileData } = await supabase
           .from(data.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
           .select('*')
@@ -158,12 +164,16 @@ const Auth = () => {
     }
   };
 
-  // Show loading state during initial auth check
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600">Checking authentication...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4 mx-auto" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </div>
       </div>
     );

@@ -38,7 +38,9 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       }
 
       toast.success("All data has been cleared successfully (except your admin account).");
-      onDataCleared();
+      
+      // Force a page reload to ensure all data is refreshed
+      window.location.reload();
     } catch (error) {
       console.error("Failed to clear all data:", error);
       toast.error(error.message || "Failed to clear all data. Please try again.");
@@ -63,7 +65,9 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       }
 
       toast.success("All test users and data have been cleared successfully.");
-      onDataCleared();
+      
+      // Force a page reload to ensure all data is refreshed
+      window.location.reload();
     } catch (error) {
       console.error("Failed to clear test data:", error);
       toast.error(error.message || "Failed to clear test data. Please try again.");

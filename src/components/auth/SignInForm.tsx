@@ -14,10 +14,12 @@ interface SignInFormProps {
 const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitAttempted(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -27,10 +29,23 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       
       if (error) throw error;
       
-      onSuccess();
+      // Add a small delay before executing onSuccess to ensure auth state is updated
+      setTimeout(() => {
+        onSuccess();
+      }, 300);
     } catch (error) {
-      toast.error(error.message);
-      setLoading(false);
+      toast.error(error.message || "Failed to sign in");
+    } finally {
+      // If we're still mounted after 6 seconds of trying to sign in, release the loading state
+      // This ensures the UI doesn't get stuck in a loading state
+      const timeoutId = setTimeout(() => {
+        if (submitAttempted) {
+          setLoading(false);
+          setSubmitAttempted(false);
+        }
+      }, 6000);
+      
+      return () => clearTimeout(timeoutId);
     }
   };
 

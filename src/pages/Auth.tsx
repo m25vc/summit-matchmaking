@@ -12,26 +12,23 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const authChecked = useRef(false);
+  
+  // Track if component is mounted to avoid state updates after unmount
+  const isMounted = useRef(true);
+  const checkTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
-    // Use a ref to ensure we only check auth status once
-    if (authChecked.current) {
-      return;
-    }
+    // Set isMounted to true when component mounts
+    isMounted.current = true;
     
-    let mounted = true;
-    authChecked.current = true;
-
-    const checkForAuthSession = async () => {
-      // Add a small delay to avoid race conditions with ProtectedRoute
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+    // Function to check authentication state
+    const checkAuthState = async () => {
       try {
         console.log("Auth: Checking auth session");
         const { data } = await supabase.auth.getSession();
         
-        if (!mounted) return;
+        // Only update state if component is still mounted
+        if (!isMounted.current) return;
         
         if (data?.session) {
           console.log("Auth: User is authenticated, checking profile");
@@ -52,6 +49,8 @@ const Auth = () => {
               .eq('profile_id', data.session.user.id)
               .maybeSingle();
 
+            if (!isMounted.current) return;
+
             if (!profileData) {
               console.log("Auth: Profile not complete, redirecting to profile completion");
               navigate('/profile');
@@ -60,30 +59,43 @@ const Auth = () => {
               navigate('/dashboard');
             }
           } catch (error) {
+            if (!isMounted.current) return;
             console.error("Auth: Error checking profile:", error);
             setIsAuthChecking(false);
           }
         } else {
+          if (!isMounted.current) return;
           console.log("Auth: No authenticated user");
           setIsAuthChecking(false);
         }
       } catch (error) {
-        if (!mounted) return;
+        if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
       }
     };
 
-    checkForAuthSession();
+    // Add a timeout to prevent indefinite hanging
+    checkTimeoutRef.current = setTimeout(() => {
+      if (isMounted.current && isAuthChecking) {
+        console.log("Auth: Auth check timed out, resetting state");
+        setIsAuthChecking(false);
+      }
+    }, 5000) as unknown as number;
 
+    // Start auth check with a small delay to avoid race conditions
+    setTimeout(checkAuthState, 100);
+
+    // Cleanup function
     return () => {
-      mounted = false;
+      isMounted.current = false;
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
     };
   }, [navigate]);
 
   const handleAuthSuccess = () => {
-    // Reset auth check to allow redirect to work
-    authChecked.current = false;
     navigate('/profile');
   };
 

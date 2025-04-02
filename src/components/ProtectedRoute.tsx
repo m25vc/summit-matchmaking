@@ -5,59 +5,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from "@/components/ui/skeleton";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
-    let mounted = true;
-    
-    const setupAuthListener = async () => {
-      // First set up the listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (!mounted) return;
-        
-        if (session?.user) {
-          setUser(session.user);
-        } else {
-          setUser(null);
-        }
-        
-        // Only update loading state after the initial session check has been done
-        if (!loading) setLoading(false);
-      });
-
-      // Then check the current session
+    // Use a single source of truth for auth state
+    const checkAuth = async () => {
       try {
+        // First check current session
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
+        setUser(session?.user ?? null);
       } catch (error) {
         console.error("Error checking session:", error);
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-        }
+        setUser(null);
+      } finally {
+        // Only set loading to false after initial check completes
+        setIsLoading(false);
       }
-
-      return () => {
-        mounted = false;
-        subscription.unsubscribe();
-      };
     };
 
-    setupAuthListener();
+    // Set up auth listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    checkAuth();
 
     return () => {
-      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
-  // Use a unified loading component that matches the one in Auth.tsx
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">

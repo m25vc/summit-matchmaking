@@ -69,6 +69,10 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
 
       console.log("Clear all response:", data);
       
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
       toast.success("All data has been cleared successfully (except your admin account).");
       
       // Notify parent that data was cleared
@@ -106,6 +110,10 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
 
       if (!data) {
         throw new Error("No response received from the server");
+      }
+      
+      if (data.error) {
+        throw new Error(data.error);
       }
       
       console.log("Clear test data response:", data);

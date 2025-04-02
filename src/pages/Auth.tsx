@@ -16,22 +16,22 @@ const Auth = () => {
   
   // Track if component is mounted to avoid state updates after unmount
   const isMounted = useRef(true);
-  // Track if auth check has been performed
-  const authCheckPerformed = useRef(false);
   
   useEffect(() => {
     // Set isMounted to true when component mounts
     isMounted.current = true;
+    console.log("Auth: Component mounted, starting auth check");
     
     // Function to check authentication state
     const checkAuthState = async () => {
-      // Avoid running multiple times
-      if (authCheckPerformed.current) return;
-      authCheckPerformed.current = true;
-      
       try {
         console.log("Auth: Checking auth session");
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth: Error getting session:", error);
+          throw error;
+        }
         
         // Only update state if component is still mounted
         if (!isMounted.current) return;
@@ -57,6 +57,7 @@ const Auth = () => {
 
             if (error) {
               console.error("Auth: Error fetching profile data:", error);
+              throw error;
             }
 
             if (!isMounted.current) return;
@@ -82,19 +83,28 @@ const Auth = () => {
         if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
+        toast.error("Authentication error. Please try again.");
       }
     };
 
-    // Start auth check with a small delay to avoid race conditions
+    // Start auth check immediately
     const authCheckTimer = setTimeout(checkAuthState, 100);
 
-    // Add a safety timeout to prevent infinite loading
-    const safetyTimer = setTimeout(() => {
+    // Add multiple safety timeouts at different intervals
+    const shortSafetyTimer = setTimeout(() => {
       if (isMounted.current && isAuthChecking) {
-        console.log("Auth: Safety timeout triggered to prevent infinite loading");
+        console.log("Auth: Short safety timeout triggered");
         setIsAuthChecking(false);
       }
     }, 3000);
+    
+    const longSafetyTimer = setTimeout(() => {
+      if (isMounted.current && isAuthChecking) {
+        console.log("Auth: Long safety timeout triggered");
+        setIsAuthChecking(false);
+        toast.error("Authentication check timed out. Please refresh the page.");
+      }
+    }, 8000);
 
     // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -110,6 +120,9 @@ const Auth = () => {
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: User signed out via state change');
         setIsAuthChecking(false);
+      } else if (event === 'INITIAL_SESSION') {
+        // Initial session event is handled by the checkAuthState function
+        console.log('Auth: Initial session event received');
       }
     });
 
@@ -119,7 +132,8 @@ const Auth = () => {
       isMounted.current = false;
       subscription.unsubscribe();
       clearTimeout(authCheckTimer);
-      clearTimeout(safetyTimer);
+      clearTimeout(shortSafetyTimer);
+      clearTimeout(longSafetyTimer);
     };
   }, [navigate]);
 

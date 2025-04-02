@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -33,6 +33,11 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         throw error;
       }
       
+      if (!data?.session) {
+        console.error("Auth: No session returned after successful sign-in");
+        throw new Error("No session returned. Please try again.");
+      }
+      
       console.log("Auth: Sign-in successful, session created");
       
       // Execute onSuccess callback directly
@@ -40,7 +45,16 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       onSuccess();
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
-      toast.error(error.message || "Failed to sign in");
+      
+      // Provide more specific error messages based on error type
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error("Please check your email and confirm your account before signing in.");
+      } else {
+        toast.error(error.message || "Failed to sign in. Please try again.");
+      }
+      
       setLoading(false);
       setSubmitAttempted(false);
     }

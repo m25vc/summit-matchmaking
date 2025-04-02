@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
@@ -113,35 +112,47 @@ Deno.serve(async (req) => {
       
       if (deleteMatchesError) {
         console.error('Error deleting matches:', deleteMatchesError)
+        throw new Error(`Error deleting matches: ${deleteMatchesError.message}`)
       } else {
         console.log('Successfully deleted all priority matches')
       }
 
       // Now get and delete users
-      const { data: existingUsers } = await supabase.auth.admin.listUsers()
+      const { data: existingUsers, error: getUsersError } = await supabase.auth.admin.listUsers()
       
-      for (const user of existingUsers.users) {
-        // Get the user's profile to check if they're an admin
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        
-        // Skip admin users
-        if (userProfile?.role === 'admin') {
-          console.log(`Skipping admin user: ${user.email}`)
-          continue
-        }
-        
-        // If we're only clearing test users, skip non-test emails
-        if (!clearAllUsers && !user.email?.includes('test.com')) {
-          console.log(`Skipping non-test user: ${user.email}`)
-          continue
-        }
+      if (getUsersError) {
+        console.error('Error getting users:', getUsersError)
+        throw new Error(`Error getting users: ${getUsersError.message}`)
+      }
+      
+      // Keep track of deleted users for logging
+      let deletedUsersCount = 0
+      let skippedUsersCount = 0
 
-        // Delete the user
+      for (const user of existingUsers.users) {
         try {
+          // Get the user's profile to check if they're an admin
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          
+          // Skip admin users
+          if (userProfile?.role === 'admin') {
+            console.log(`Skipping admin user: ${user.email}`)
+            skippedUsersCount++
+            continue
+          }
+          
+          // If we're only clearing test users, skip non-test emails
+          if (!clearAllUsers && !user.email?.includes('test.com')) {
+            console.log(`Skipping non-test user: ${user.email}`)
+            skippedUsersCount++
+            continue
+          }
+
+          // Delete the user
           // First delete from profiles table to avoid FK constraint issues
           const { error: profileDeleteError } = await supabase
             .from('profiles')
@@ -150,19 +161,45 @@ Deno.serve(async (req) => {
           
           if (profileDeleteError) {
             console.error(`Error deleting profile for ${user.email}:`, profileDeleteError)
+            throw new Error(`Error deleting profile for ${user.email}: ${profileDeleteError.message}`)
+          }
+
+          // Then delete the founder_details if exists
+          const { error: founderDetailsDeleteError } = await supabase
+            .from('founder_details')
+            .delete()
+            .eq('profile_id', user.id)
+          
+          if (founderDetailsDeleteError) {
+            console.log(`No founder details for user: ${user.email} or error:`, founderDetailsDeleteError)
+          }
+
+          // Then delete the investor_details if exists
+          const { error: investorDetailsDeleteError } = await supabase
+            .from('investor_details')
+            .delete()
+            .eq('profile_id', user.id)
+          
+          if (investorDetailsDeleteError) {
+            console.log(`No investor details for user: ${user.email} or error:`, investorDetailsDeleteError)
           }
 
           // Then delete the auth user
           const { error: authDeleteError } = await supabase.auth.admin.deleteUser(user.id)
           if (authDeleteError) {
             console.error(`Error deleting user ${user.email}:`, authDeleteError)
+            throw new Error(`Error deleting user ${user.email}: ${authDeleteError.message}`)
           } else {
             console.log(`Successfully deleted user: ${user.email}`)
+            deletedUsersCount++
           }
         } catch (error) {
           console.error(`Error in deletion process for ${user.email}:`, error)
+          // Continue with next user even if this one failed
         }
       }
+
+      console.log(`Deletion summary: ${deletedUsersCount} users deleted, ${skippedUsersCount} users skipped`)
     }
 
     if (action === 'clear-all') {

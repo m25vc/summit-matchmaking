@@ -55,7 +55,27 @@ serve(async (req) => {
       // Create test data - existing functionality
       const count = 10;
       console.log(`Creating ${count} test users...`);
-      // ... existing create test users code ...
+      const testUsers = Array.from({ length: count }, (_, i) => ({
+        email: `test${i + 1}@test.com`,
+        first_name: `Test`,
+        last_name: `User ${i + 1}`,
+        company_name: `Test Company ${i + 1}`,
+        role: 'founder',
+        user_type: 'founder'
+      }));
+    
+      // Insert test users into the database
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .insert(testUsers);
+    
+      if (error) {
+        console.error('Error creating test users:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create test users' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       return new Response(
         JSON.stringify({ message: 'Test data successfully created' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -215,8 +215,9 @@ async function deleteUserData(supabase, userIds) {
       .in('founder_id', userIds);
     
     if (founderPriorityMatchesError) {
+      const errorMessage = 'Failed to delete priority matches where founder_id references users';
       console.error('Error deleting founder priority matches:', founderPriorityMatchesError);
-      throw new Error(`Failed to delete priority matches where founder_id references users: ${JSON.stringify(founderPriorityMatchesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     }
     
     // 2. Delete priority matches where investor_id is in userIds
@@ -226,8 +227,9 @@ async function deleteUserData(supabase, userIds) {
       .in('investor_id', userIds);
     
     if (investorPriorityMatchesError) {
+      const errorMessage = 'Failed to delete priority matches where investor_id references users';
       console.error('Error deleting investor priority matches:', investorPriorityMatchesError);
-      throw new Error(`Failed to delete priority matches where investor_id references users: ${JSON.stringify(investorPriorityMatchesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     }
     
     // 3. Delete priority matches where set_by is in userIds
@@ -237,8 +239,9 @@ async function deleteUserData(supabase, userIds) {
       .in('set_by', userIds);
     
     if (setByPriorityMatchesError) {
+      const errorMessage = 'Failed to delete priority matches where set_by references users';
       console.error('Error deleting set_by priority matches:', setByPriorityMatchesError);
-      throw new Error(`Failed to delete priority matches where set_by references users: ${JSON.stringify(setByPriorityMatchesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     }
     
     console.log('All priority matches deleted successfully');
@@ -251,8 +254,9 @@ async function deleteUserData(supabase, userIds) {
       .in('founder_id', userIds);
     
     if (founderMatchesError) {
+      const errorMessage = 'Failed to delete matches where user is founder';
       console.error('Error deleting founder matches:', founderMatchesError);
-      throw new Error(`Failed to delete matches where user is founder: ${JSON.stringify(founderMatchesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     } else {
       console.log('Founder matches deleted successfully');
     }
@@ -263,8 +267,9 @@ async function deleteUserData(supabase, userIds) {
       .in('investor_id', userIds);
     
     if (investorMatchesError) {
+      const errorMessage = 'Failed to delete matches where user is investor';
       console.error('Error deleting investor matches:', investorMatchesError);
-      throw new Error(`Failed to delete matches where user is investor: ${JSON.stringify(investorMatchesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     } else {
       console.log('Investor matches deleted successfully');
     }
@@ -277,8 +282,9 @@ async function deleteUserData(supabase, userIds) {
       .in('profile_id', userIds);
     
     if (founderDetailsError) {
+      const errorMessage = 'Failed to delete founder details';
       console.error('Error deleting founder details:', founderDetailsError);
-      throw new Error(`Failed to delete founder details: ${JSON.stringify(founderDetailsError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     } else {
       console.log('Founder details deleted');
     }
@@ -289,8 +295,9 @@ async function deleteUserData(supabase, userIds) {
       .in('profile_id', userIds);
     
     if (investorDetailsError) {
+      const errorMessage = 'Failed to delete investor details';
       console.error('Error deleting investor details:', investorDetailsError);
-      throw new Error(`Failed to delete investor details: ${JSON.stringify(investorDetailsError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     } else {
       console.log('Investor details deleted');
     }
@@ -303,8 +310,9 @@ async function deleteUserData(supabase, userIds) {
       .in('id', userIds);
     
     if (profilesError) {
+      const errorMessage = 'Failed to delete user profiles';
       console.error('Error deleting profiles:', profilesError);
-      throw new Error(`Failed to delete user profiles: ${JSON.stringify(profilesError).replace(/\n/g, ' ')}`);
+      throw new Error(errorMessage);
     }
     console.log('User profiles deleted successfully');
 

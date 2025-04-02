@@ -83,7 +83,7 @@ const Auth = () => {
         if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
-        toast.error("Authentication error. Please try again.");
+        // Removed toast.error here to prevent unnecessary error messages
       }
     };
 

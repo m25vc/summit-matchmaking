@@ -14,7 +14,9 @@ serve(async (req) => {
   }
   
   try {
-    const { action } = await req.json();
+    // Parse the request body only once
+    const requestBody = await req.json();
+    const { action, adminId } = requestBody;
     
     // Obtain URL and key from environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -39,8 +41,14 @@ serve(async (req) => {
     else if (action === 'clear-all') {
       // Clear all data except admin user
       console.log('Clearing ALL data...');
-      // Pass the admin ID from the request payload instead of trying to get it from the session
-      const { adminId } = await req.json();
+      
+      if (!adminId) {
+        return new Response(
+          JSON.stringify({ error: 'Admin ID is required to preserve admin account' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return await clearAllData(supabaseAdmin, adminId);
     } 
     else if (action === 'create') {

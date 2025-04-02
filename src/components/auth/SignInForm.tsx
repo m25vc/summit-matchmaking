@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,29 +15,11 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Clear any existing timeouts when component unmounts
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSubmitAttempted(true);
-    
-    // Set a timeout to prevent infinite loading state
-    timeoutRef.current = setTimeout(() => {
-      console.log("Auth: Sign-in attempt timed out after 8 seconds");
-      setLoading(false);
-      setSubmitAttempted(false);
-      toast.error("Sign in is taking longer than expected. Please try again.");
-    }, 8000);
 
     try {
       console.log("Auth: Attempting to sign in with email");
@@ -52,24 +35,12 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       
       console.log("Auth: Sign-in successful, session created");
       
-      // Clear the timeout since we got a successful response
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      
       // Execute onSuccess callback directly
       console.log("Auth: Executing onSuccess callback");
       onSuccess();
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
       toast.error(error.message || "Failed to sign in");
-      
-      // Clear the timeout and reset loading state since we already handled the error
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
       setLoading(false);
       setSubmitAttempted(false);
     }

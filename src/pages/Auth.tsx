@@ -86,9 +86,17 @@ const Auth = () => {
     };
 
     // Start auth check with a small delay to avoid race conditions
-    setTimeout(checkAuthState, 100);
+    const authCheckTimer = setTimeout(checkAuthState, 100);
 
-    // Setup auth state change listener to catch real-time auth changes
+    // Add a safety timeout to prevent infinite loading
+    const safetyTimer = setTimeout(() => {
+      if (isMounted.current && isAuthChecking) {
+        console.log("Auth: Safety timeout triggered to prevent infinite loading");
+        setIsAuthChecking(false);
+      }
+    }, 3000);
+
+    // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`Auth: Auth state change event: ${event}`);
       
@@ -110,6 +118,8 @@ const Auth = () => {
       console.log("Auth: Component unmounting, cleaning up");
       isMounted.current = false;
       subscription.unsubscribe();
+      clearTimeout(authCheckTimer);
+      clearTimeout(safetyTimer);
     };
   }, [navigate]);
 

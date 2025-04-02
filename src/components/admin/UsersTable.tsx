@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/hooks/useAdminData';
@@ -21,8 +21,26 @@ interface UsersTableProps {
 
 export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
   const [isClearing, setIsClearing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get the current user's ID when component mounts
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   const clearAllData = async () => {
+    if (!currentUserId) {
+      toast.error("Could not identify the current admin user. Please refresh the page and try again.");
+      return;
+    }
+
     if (!confirm("⚠️ WARNING: Are you sure you want to clear ALL users and data except your admin account? This action cannot be undone.")) {
       return;
     }
@@ -34,7 +52,10 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
       toast.info("Starting data clearing process...");
       
       const { data, error } = await supabase.functions.invoke('create-test-users', {
-        body: { action: 'clear-all' }
+        body: { 
+          action: 'clear-all',
+          adminId: currentUserId 
+        }
       });
 
       if (error) {
@@ -131,7 +152,7 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
           <Button 
             onClick={clearAllData} 
             variant="destructive"
-            disabled={isClearing}
+            disabled={isClearing || !currentUserId}
             className="gap-2"
           >
             {isClearing ? (

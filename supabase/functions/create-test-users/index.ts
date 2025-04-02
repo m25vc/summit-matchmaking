@@ -1,4 +1,3 @@
-
 // Add Deno serve and CORS handling
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -40,7 +39,9 @@ serve(async (req) => {
     else if (action === 'clear-all') {
       // Clear all data except admin user
       console.log('Clearing ALL data...');
-      return await clearAllData(supabaseAdmin);
+      // Pass the admin ID from the request payload instead of trying to get it from the session
+      const { adminId } = await req.json();
+      return await clearAllData(supabaseAdmin, adminId);
     } 
     else if (action === 'create') {
       // Create test data - existing functionality
@@ -114,29 +115,18 @@ async function clearTestData(supabase) {
 }
 
 // Helper function to clear all data except admin user
-async function clearAllData(supabase) {
+async function clearAllData(supabase, adminId) {
   try {
     console.log('Starting to clear all data except admin user...');
-
-    // Get current authenticated user (assumed to be admin)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError) {
-      console.error('Error getting authenticated user:', authError);
+    if (!adminId) {
+      console.error('No admin ID provided');
       return new Response(
-        JSON.stringify({ error: 'Failed to identify admin user' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Admin ID is required to preserve admin account' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'No authenticated user found' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const adminId = user.id;
+    
     console.log(`Admin user ID: ${adminId} will be preserved`);
 
     // Get all non-admin users
@@ -187,14 +177,16 @@ async function deleteUserData(supabase, userIds) {
   try {
     // First delete matches table data (no longer used)
     console.log('Deleting matches data...');
-    const { error: matchesError } = await supabase
-      .from('matches')
-      .delete()
-      .or(`founder_id.in.(${userIds.join(',')}),investor_id.in.(${userIds.join(',')})`);
+    const { error: matchesError } = await supabase.rpc(
+      'execute_sql',
+      { 
+        sql_query: `DELETE FROM matches WHERE founder_id IN ('${userIds.join("','")}') OR investor_id IN ('${userIds.join("','")}')` 
+      }
+    );
     
     if (matchesError) {
       console.error('Error deleting matches:', matchesError);
-      // Continue with other deletions even if this fails
+      throw new Error(`Error deleting matches: ${matchesError.message}`);
     } else {
       console.log('Matches deleted successfully');
     }

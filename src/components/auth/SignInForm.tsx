@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,37 +15,66 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Clear any existing timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSubmitAttempted(true);
+    
+    // Set a timeout to prevent infinite loading state
+    timeoutRef.current = setTimeout(() => {
+      console.log("Auth: Sign-in attempt timed out after 8 seconds");
+      setLoading(false);
+      setSubmitAttempted(false);
+      toast.error("Sign in is taking longer than expected. Please try again.");
+    }, 8000);
 
     try {
+      console.log("Auth: Attempting to sign in with email");
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Auth: Sign-in error", error);
+        throw error;
+      }
+      
+      console.log("Auth: Sign-in successful, session created");
+      
+      // Clear the timeout since we got a successful response
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       
       // Add a small delay before executing onSuccess to ensure auth state is updated
       setTimeout(() => {
+        console.log("Auth: Executing onSuccess callback");
         onSuccess();
-      }, 300);
+      }, 500);
     } catch (error) {
+      console.error("Auth: Error in sign-in process", error);
       toast.error(error.message || "Failed to sign in");
-    } finally {
-      // If we're still mounted after 6 seconds of trying to sign in, release the loading state
-      // This ensures the UI doesn't get stuck in a loading state
-      const timeoutId = setTimeout(() => {
-        if (submitAttempted) {
-          setLoading(false);
-          setSubmitAttempted(false);
-        }
-      }, 6000);
       
-      return () => clearTimeout(timeoutId);
+      // Clear the timeout and reset loading state since we already handled the error
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setLoading(false);
+      setSubmitAttempted(false);
     }
   };
 

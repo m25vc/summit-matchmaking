@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import SignInForm from '@/components/auth/SignInForm';
 import RegistrationForm from '@/components/auth/RegistrationForm';
 import AuthContainer from '@/components/auth/AuthContainer';
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -43,11 +44,15 @@ const Auth = () => {
               return;
             }
               
-            const { data: profileData } = await supabase
+            const { data: profileData, error } = await supabase
               .from(profileTable)
               .select('*')
               .eq('profile_id', data.session.user.id)
               .maybeSingle();
+
+            if (error) {
+              console.error("Auth: Error fetching profile data:", error);
+            }
 
             if (!isMounted.current) return;
 
@@ -62,6 +67,9 @@ const Auth = () => {
             if (!isMounted.current) return;
             console.error("Auth: Error checking profile:", error);
             setIsAuthChecking(false);
+            
+            // Show error toast if there's an issue while checking auth
+            toast.error("Error checking profile. Please try again.");
           }
         } else {
           if (!isMounted.current) return;
@@ -72,6 +80,9 @@ const Auth = () => {
         if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
+        
+        // Show error toast if there's an issue while checking auth
+        toast.error("Error checking authentication. Please try again.");
       }
     };
 
@@ -80,22 +91,41 @@ const Auth = () => {
       if (isMounted.current && isAuthChecking) {
         console.log("Auth: Auth check timed out, resetting state");
         setIsAuthChecking(false);
+        toast.error("Authentication check timed out. Please refresh the page.");
       }
     }, 5000) as unknown as number;
 
     // Start auth check with a small delay to avoid race conditions
     setTimeout(checkAuthState, 100);
 
+    // Setup auth state change listener to catch real-time auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`Auth: Auth state change event: ${event}`);
+      
+      if (!isMounted.current) return;
+      
+      // Only handle sign in/out events here
+      if (event === 'SIGNED_IN' && session) {
+        console.log('Auth: User signed in via state change');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('Auth: User signed out via state change');
+        setIsAuthChecking(false);
+      }
+    });
+
     // Cleanup function
     return () => {
+      console.log("Auth: Component unmounting, cleaning up");
       isMounted.current = false;
       if (checkTimeoutRef.current) {
         clearTimeout(checkTimeoutRef.current);
       }
+      subscription.unsubscribe();
     };
   }, [navigate]);
 
   const handleAuthSuccess = () => {
+    console.log("Auth: Auth success handler called");
     navigate('/profile');
   };
 

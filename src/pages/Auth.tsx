@@ -16,7 +16,6 @@ const Auth = () => {
   
   // Track if component is mounted to avoid state updates after unmount
   const isMounted = useRef(true);
-  const checkTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
     // Set isMounted to true when component mounts
@@ -67,9 +66,6 @@ const Auth = () => {
             if (!isMounted.current) return;
             console.error("Auth: Error checking profile:", error);
             setIsAuthChecking(false);
-            
-            // Show error toast if there's an issue while checking auth
-            toast.error("Error checking profile. Please try again.");
           }
         } else {
           if (!isMounted.current) return;
@@ -80,20 +76,8 @@ const Auth = () => {
         if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
-        
-        // Show error toast if there's an issue while checking auth
-        toast.error("Error checking authentication. Please try again.");
       }
     };
-
-    // Add a timeout to prevent indefinite hanging
-    checkTimeoutRef.current = setTimeout(() => {
-      if (isMounted.current && isAuthChecking) {
-        console.log("Auth: Auth check timed out, resetting state");
-        setIsAuthChecking(false);
-        toast.error("Authentication check timed out. Please refresh the page.");
-      }
-    }, 5000) as unknown as number;
 
     // Start auth check with a small delay to avoid race conditions
     setTimeout(checkAuthState, 100);
@@ -117,9 +101,6 @@ const Auth = () => {
     return () => {
       console.log("Auth: Component unmounting, cleaning up");
       isMounted.current = false;
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
-      }
       subscription.unsubscribe();
     };
   }, [navigate]);

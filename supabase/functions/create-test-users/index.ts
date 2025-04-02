@@ -90,8 +90,10 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error processing request:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -136,8 +138,10 @@ async function clearTestData(supabase) {
     );
   } catch (error) {
     console.error('Error clearing test data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to clear test data' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -192,8 +196,10 @@ async function clearAllData(supabase, adminId) {
     );
   } catch (error) {
     console.error('Error clearing all data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to clear all data' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -205,7 +211,6 @@ async function deleteUserData(supabase, userIds) {
 
   try {
     // First delete ALL priority_matches that could reference users being deleted
-    // This includes three cases: founder_id, investor_id, and set_by fields
     console.log('Deleting priority matches data...');
     
     // 1. Delete priority matches where founder_id is in userIds
@@ -215,9 +220,8 @@ async function deleteUserData(supabase, userIds) {
       .in('founder_id', userIds);
     
     if (founderPriorityMatchesError) {
-      const errorMessage = 'Failed to delete priority matches where founder_id references users';
       console.error('Error deleting founder priority matches:', founderPriorityMatchesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete priority matches where founder_id references users');
     }
     
     // 2. Delete priority matches where investor_id is in userIds
@@ -227,9 +231,8 @@ async function deleteUserData(supabase, userIds) {
       .in('investor_id', userIds);
     
     if (investorPriorityMatchesError) {
-      const errorMessage = 'Failed to delete priority matches where investor_id references users';
       console.error('Error deleting investor priority matches:', investorPriorityMatchesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete priority matches where investor_id references users');
     }
     
     // 3. Delete priority matches where set_by is in userIds
@@ -239,9 +242,8 @@ async function deleteUserData(supabase, userIds) {
       .in('set_by', userIds);
     
     if (setByPriorityMatchesError) {
-      const errorMessage = 'Failed to delete priority matches where set_by references users';
       console.error('Error deleting set_by priority matches:', setByPriorityMatchesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete priority matches where set_by references users');
     }
     
     console.log('All priority matches deleted successfully');
@@ -254,9 +256,8 @@ async function deleteUserData(supabase, userIds) {
       .in('founder_id', userIds);
     
     if (founderMatchesError) {
-      const errorMessage = 'Failed to delete matches where user is founder';
       console.error('Error deleting founder matches:', founderMatchesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete matches where user is founder');
     } else {
       console.log('Founder matches deleted successfully');
     }
@@ -267,9 +268,8 @@ async function deleteUserData(supabase, userIds) {
       .in('investor_id', userIds);
     
     if (investorMatchesError) {
-      const errorMessage = 'Failed to delete matches where user is investor';
       console.error('Error deleting investor matches:', investorMatchesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete matches where user is investor');
     } else {
       console.log('Investor matches deleted successfully');
     }
@@ -282,9 +282,8 @@ async function deleteUserData(supabase, userIds) {
       .in('profile_id', userIds);
     
     if (founderDetailsError) {
-      const errorMessage = 'Failed to delete founder details';
       console.error('Error deleting founder details:', founderDetailsError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete founder details');
     } else {
       console.log('Founder details deleted');
     }
@@ -295,9 +294,8 @@ async function deleteUserData(supabase, userIds) {
       .in('profile_id', userIds);
     
     if (investorDetailsError) {
-      const errorMessage = 'Failed to delete investor details';
       console.error('Error deleting investor details:', investorDetailsError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete investor details');
     } else {
       console.log('Investor details deleted');
     }
@@ -310,9 +308,8 @@ async function deleteUserData(supabase, userIds) {
       .in('id', userIds);
     
     if (profilesError) {
-      const errorMessage = 'Failed to delete user profiles';
       console.error('Error deleting profiles:', profilesError);
-      throw new Error(errorMessage);
+      throw new Error('Failed to delete user profiles');
     }
     console.log('User profiles deleted successfully');
 

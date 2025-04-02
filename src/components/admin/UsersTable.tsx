@@ -29,18 +29,32 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
 
     try {
       setIsClearing(true);
-      const { error } = await supabase.functions.invoke('create-test-users', {
+      
+      // First check if we have connectivity to the edge function
+      toast.info("Starting data clearing process...");
+      
+      const { data, error } = await supabase.functions.invoke('create-test-users', {
         body: { action: 'clear-all' }
       });
 
       if (error) {
-        throw new Error(`Error clearing data: ${error.message}`);
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to clear data: ${error.message}`);
       }
 
+      if (!data) {
+        throw new Error("No response received from the server");
+      }
+
+      console.log("Clear all response:", data);
+      
       toast.success("All data has been cleared successfully (except your admin account).");
       
-      // Force a page reload to ensure all data is refreshed
-      window.location.reload();
+      // Notify parent that data was cleared and force a full page reload
+      onDataCleared();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Failed to clear all data:", error);
       toast.error(error.message || "Failed to clear all data. Please try again.");
@@ -56,18 +70,31 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
 
     try {
       setIsClearing(true);
-      const { error } = await supabase.functions.invoke('create-test-users', {
+      
+      toast.info("Starting test data clearing process...");
+      
+      const { data, error } = await supabase.functions.invoke('create-test-users', {
         body: { action: 'clear' }
       });
 
       if (error) {
-        throw new Error(`Error clearing data: ${error.message}`);
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to clear test data: ${error.message}`);
       }
 
+      if (!data) {
+        throw new Error("No response received from the server");
+      }
+      
+      console.log("Clear test data response:", data);
+      
       toast.success("All test users and data have been cleared successfully.");
       
-      // Force a page reload to ensure all data is refreshed
-      window.location.reload();
+      // Notify parent that data was cleared and force a full page reload
+      onDataCleared();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Failed to clear test data:", error);
       toast.error(error.message || "Failed to clear test data. Please try again.");

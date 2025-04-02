@@ -17,7 +17,7 @@ export type PriorityMatch = {
 };
 
 export const useAdminData = () => {
-  const { data: profiles, isLoading: profilesLoading } = useQuery({
+  const profilesQuery = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -29,7 +29,7 @@ export const useAdminData = () => {
     },
   });
 
-  const { data: priorityMatches, isLoading: priorityMatchesLoading } = useQuery({
+  const priorityMatchesQuery = useQuery({
     queryKey: ['priority_matches'],
     queryFn: async () => {
       try {
@@ -121,8 +121,12 @@ export const useAdminData = () => {
   });
 
   return {
-    profiles,
-    priorityMatches,
-    isLoading: profilesLoading || priorityMatchesLoading
+    profiles: profilesQuery.data,
+    priorityMatches: priorityMatchesQuery.data,
+    isLoading: profilesQuery.isLoading || priorityMatchesQuery.isLoading,
+    refetch: () => {
+      profilesQuery.refetch();
+      priorityMatchesQuery.refetch();
+    }
   };
 };

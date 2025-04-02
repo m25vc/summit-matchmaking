@@ -9,28 +9,39 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // First set up the listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session?.user?.email);
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (!loading) setLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Then check the current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Current session check:", session?.user?.email);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
+    console.log("No user found, redirecting to auth");
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  console.log("User authenticated, rendering protected content");
   return <>{children}</>;
 };
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const Auth = () => {
   const [jobTitle, setJobTitle] = useState('');
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   
   // Investor fields
   const [firmName, setFirmName] = useState('');
@@ -42,21 +44,34 @@ const Auth = () => {
   useEffect(() => {
     // Check if there's an access token in the URL (from OAuth redirect)
     const checkForAuthSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (data?.session) {
-        // Check if user needs to complete their profile
-        const { data: profileData } = await supabase
-          .from(data.session.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
-          .select('*')
-          .eq('profile_id', data.session.user.id)
-          .single();
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (data?.session) {
+          console.log("User is already authenticated, checking profile");
+          // Check if user needs to complete their profile
+          const profileTable = data.session.user.user_metadata.user_type === 'founder' 
+            ? 'founder_details' 
+            : 'investor_details';
+            
+          const { data: profileData } = await supabase
+            .from(profileTable)
+            .select('*')
+            .eq('profile_id', data.session.user.id)
+            .single();
 
-        if (!profileData) {
-          navigate('/profile');
-        } else {
-          navigate('/dashboard');
+          if (!profileData) {
+            console.log("User needs to complete profile");
+            navigate('/profile');
+          } else {
+            console.log("User has complete profile");
+            navigate('/dashboard');
+          }
         }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setCheckingAuth(false);
       }
     };
 
@@ -128,7 +143,7 @@ const Auth = () => {
           .from(data.user.user_metadata.user_type === 'founder' ? 'founder_details' : 'investor_details')
           .select('*')
           .eq('profile_id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (!profileData) {
           navigate('/profile');
@@ -142,6 +157,17 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show loading state during initial auth check
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

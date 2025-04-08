@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,9 +15,18 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const isProcessing = useRef(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isProcessing.current) {
+      console.log("Auth: Sign-in already in progress, ignoring duplicate submit");
+      return;
+    }
+    
+    isProcessing.current = true;
     setLoading(true);
     setSubmitAttempted(true);
 
@@ -49,6 +58,7 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       }, 100);
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
+      isProcessing.current = false;
       
       // Provide more specific error messages based on error type
       if (error.message?.includes('Invalid login credentials')) {

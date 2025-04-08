@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import SignInForm from '@/components/auth/SignInForm';
@@ -9,9 +9,11 @@ import AuthContainer from '@/components/auth/AuthContainer';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   
   // Track if component is mounted to avoid state updates after unmount
   const isMounted = useRef(true);
@@ -31,6 +33,12 @@ const Auth = () => {
     
     // Function to check authentication state
     const checkAuthState = async () => {
+      // Prevent multiple auth checks if we're already redirecting
+      if (redirectInProgress) {
+        console.log("Auth: Redirect already in progress, skipping auth check");
+        return;
+      }
+      
       try {
         console.log("Auth: Checking auth session");
         const { data, error } = await supabase.auth.getSession();
@@ -49,6 +57,10 @@ const Auth = () => {
         
         if (data?.session) {
           console.log("Auth: User is authenticated, checking profile");
+          
+          // Set redirecting flag to prevent further auth checks
+          setRedirectInProgress(true);
+          
           try {
             const profileTable = data.session.user.user_metadata?.user_type === 'founder' 
               ? 'founder_details' 
@@ -57,6 +69,7 @@ const Auth = () => {
             if (!profileTable) {
               console.log("Auth: No user_type found, keeping on auth page");
               setIsAuthChecking(false);
+              setRedirectInProgress(false);
               return;
             }
               
@@ -68,7 +81,10 @@ const Auth = () => {
 
             if (error) {
               console.error("Auth: Error fetching profile data:", error);
-              if (isMounted.current) setIsAuthChecking(false);
+              if (isMounted.current) {
+                setIsAuthChecking(false);
+                setRedirectInProgress(false);
+              }
               return;
             }
 
@@ -80,15 +96,28 @@ const Auth = () => {
             console.log("Auth: Profile check complete, redirecting if needed");
             if (!profileData) {
               console.log("Auth: Profile not complete, redirecting to profile completion");
-              // Use direct window location for more reliable navigation
-              window.location.href = '/profile';
+              
+              // Use a function to ensure we only redirect once
+              const safeRedirect = () => {
+                // Just to be extra safe, check again if mounted
+                if (isMounted.current) {
+                  // Use direct window location for more reliable navigation
+                  window.location.href = '/profile';
+                }
+              };
+              
+              safeRedirect();
             } else {
               console.log("Auth: Profile complete, redirecting to dashboard");
+              // Use direct window location for more reliable navigation
               window.location.href = '/dashboard';
             }
           } catch (error) {
             console.error("Auth: Error checking profile:", error);
-            if (isMounted.current) setIsAuthChecking(false);
+            if (isMounted.current) {
+              setIsAuthChecking(false);
+              setRedirectInProgress(false);
+            }
           }
         } else {
           console.log("Auth: No authenticated user");
@@ -120,9 +149,18 @@ const Auth = () => {
         return;
       }
       
+      // Don't process changes if we're already redirecting
+      if (redirectInProgress) {
+        console.log("Auth: Redirect in progress, ignoring auth state change");
+        return;
+      }
+      
       // Only handle sign in/out events here
       if (event === 'SIGNED_IN' && session) {
         console.log('Auth: User signed in via state change');
+        // Set redirecting flag to prevent multiple redirects
+        setRedirectInProgress(true);
+        
         // Use direct window location for more reliable navigation
         window.location.href = '/profile';
       } else if (event === 'SIGNED_OUT') {
@@ -142,10 +180,12 @@ const Auth = () => {
       clearTimeout(shortSafetyTimer);
       clearTimeout(loadingTimeout);
     };
-  }, [navigate]);
+  }, [navigate, redirectInProgress]);
 
   const handleAuthSuccess = () => {
     console.log("Auth: Auth success handler called");
+    // Set redirecting flag to prevent multiple redirects 
+    setRedirectInProgress(true);
     // Use direct window location for more reliable navigation
     window.location.href = '/profile';
   };

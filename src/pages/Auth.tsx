@@ -6,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import SignInForm from '@/components/auth/SignInForm';
 import RegistrationForm from '@/components/auth/RegistrationForm';
 import AuthContainer from '@/components/auth/AuthContainer';
-import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -34,7 +33,10 @@ const Auth = () => {
         }
         
         // Only update state if component is still mounted
-        if (!isMounted.current) return;
+        if (!isMounted.current) {
+          console.log("Auth: Component unmounted during auth check, stopping");
+          return;
+        }
         
         if (data?.session) {
           console.log("Auth: User is authenticated, checking profile");
@@ -60,14 +62,21 @@ const Auth = () => {
               throw error;
             }
 
-            if (!isMounted.current) return;
+            if (!isMounted.current) {
+              console.log("Auth: Component unmounted during profile check, stopping");
+              return;
+            }
 
             if (!profileData) {
               console.log("Auth: Profile not complete, redirecting to profile completion");
-              navigate('/profile');
+              // Use a more direct approach for navigation
+              window.location.href = '/profile';
+              return;
             } else {
               console.log("Auth: Profile complete, redirecting to dashboard");
-              navigate('/dashboard');
+              // Use a more direct approach for navigation
+              window.location.href = '/dashboard';
+              return;
             }
           } catch (error) {
             if (!isMounted.current) return;
@@ -83,7 +92,6 @@ const Auth = () => {
         if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
         setIsAuthChecking(false);
-        // Removed toast.error here to prevent unnecessary error messages
       }
     };
 
@@ -102,7 +110,6 @@ const Auth = () => {
       if (isMounted.current && isAuthChecking) {
         console.log("Auth: Long safety timeout triggered");
         setIsAuthChecking(false);
-        // Removed the toast.error message that was here
       }
     }, 8000);
 
@@ -110,13 +117,16 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`Auth: Auth state change event: ${event}`);
       
-      if (!isMounted.current) return;
+      if (!isMounted.current) {
+        console.log("Auth: Component unmounted during state change, stopping");
+        return;
+      }
       
       // Only handle sign in/out events here
       if (event === 'SIGNED_IN' && session) {
         console.log('Auth: User signed in via state change');
-        // Don't trigger another full auth check here, just handle the navigation
-        navigate('/profile');
+        // Use a more direct approach for navigation
+        window.location.href = '/profile';
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: User signed out via state change');
         setIsAuthChecking(false);
@@ -139,9 +149,8 @@ const Auth = () => {
 
   const handleAuthSuccess = () => {
     console.log("Auth: Auth success handler called");
-    // We don't need to trigger another auth check here
-    // Just navigate directly
-    navigate('/profile');
+    // Use a more direct approach for navigation that works better cross-browser
+    window.location.href = '/profile';
   };
 
   return (

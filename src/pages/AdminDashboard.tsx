@@ -21,6 +21,11 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [refetch]);
 
+  const handleDataCleared = () => {
+    console.log("Data cleared, refreshing...");
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -43,7 +48,7 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="users">
-            <UsersTable users={profiles} onDataCleared={() => {}} />
+            <UsersTable users={profiles} onDataCleared={handleDataCleared} />
           </TabsContent>
 
           <TabsContent value="priorities">

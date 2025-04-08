@@ -10,6 +10,8 @@ import {
 import { useState, useEffect } from "react";
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/hooks/useAdminData';
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface UsersTableProps {
   users: Profile[] | null;
@@ -18,6 +20,7 @@ interface UsersTableProps {
 
 export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<{[key: string]: boolean}>({});
 
   // Get the current user's ID when component mounts
   useEffect(() => {
@@ -30,6 +33,37 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
 
     fetchCurrentUser();
   }, []);
+
+  const makeAdmin = async (email: string | null) => {
+    if (!email) {
+      toast.error("No email provided");
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, [email]: true }));
+
+    try {
+      const { data, error } = await supabase.rpc('make_user_admin', {
+        user_email: email
+      });
+      
+      if (error) {
+        console.error("Error making user admin:", error);
+        toast.error("Failed to make user admin: " + error.message);
+        return;
+      }
+      
+      toast.success(`User ${email} is now an admin. Refresh to see changes.`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error("Exception making user admin:", error);
+      toast.error("Failed to make user admin due to an unexpected error");
+    } finally {
+      setLoading(prev => ({ ...prev, [email]: false }));
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -45,6 +79,7 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
               <TableHead>Company</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -54,6 +89,18 @@ export const UsersTable = ({ users, onDataCleared }: UsersTableProps) => {
                 <TableCell>{profile.company_name}</TableCell>
                 <TableCell>{profile.role}</TableCell>
                 <TableCell>{profile.user_type}</TableCell>
+                <TableCell>
+                  {profile.role !== 'admin' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      disabled={loading[profile.email || '']}
+                      onClick={() => makeAdmin(profile.email)}
+                    >
+                      {loading[profile.email || ''] ? 'Processing...' : 'Make Admin'}
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

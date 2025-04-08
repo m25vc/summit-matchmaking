@@ -21,6 +21,14 @@ const Auth = () => {
     isMounted.current = true;
     console.log("Auth: Component mounted, starting auth check");
     
+    // Define a hard timeout to ensure we never get stuck in loading state
+    const loadingTimeout = setTimeout(() => {
+      if (isMounted.current && isAuthChecking) {
+        console.log("Auth: Loading timeout triggered, forcing auth check completion");
+        setIsAuthChecking(false);
+      }
+    }, 2000); // 2 second max wait time
+    
     // Function to check authentication state
     const checkAuthState = async () => {
       try {
@@ -29,7 +37,8 @@ const Auth = () => {
         
         if (error) {
           console.error("Auth: Error getting session:", error);
-          throw error;
+          if (isMounted.current) setIsAuthChecking(false);
+          return;
         }
         
         // Only update state if component is still mounted
@@ -59,7 +68,8 @@ const Auth = () => {
 
             if (error) {
               console.error("Auth: Error fetching profile data:", error);
-              throw error;
+              if (isMounted.current) setIsAuthChecking(false);
+              return;
             }
 
             if (!isMounted.current) {
@@ -67,51 +77,39 @@ const Auth = () => {
               return;
             }
 
+            console.log("Auth: Profile check complete, redirecting if needed");
             if (!profileData) {
               console.log("Auth: Profile not complete, redirecting to profile completion");
-              // Use a more direct approach for navigation
+              // Use direct window location for more reliable navigation
               window.location.href = '/profile';
-              return;
             } else {
               console.log("Auth: Profile complete, redirecting to dashboard");
-              // Use a more direct approach for navigation
               window.location.href = '/dashboard';
-              return;
             }
           } catch (error) {
-            if (!isMounted.current) return;
             console.error("Auth: Error checking profile:", error);
-            setIsAuthChecking(false);
+            if (isMounted.current) setIsAuthChecking(false);
           }
         } else {
-          if (!isMounted.current) return;
           console.log("Auth: No authenticated user");
-          setIsAuthChecking(false);
+          if (isMounted.current) setIsAuthChecking(false);
         }
       } catch (error) {
-        if (!isMounted.current) return;
         console.error("Auth: Authentication check error:", error);
-        setIsAuthChecking(false);
+        if (isMounted.current) setIsAuthChecking(false);
       }
     };
 
     // Start auth check immediately
-    const authCheckTimer = setTimeout(checkAuthState, 100);
+    checkAuthState();
 
-    // Add multiple safety timeouts at different intervals
+    // Add more safety timeouts at different intervals
     const shortSafetyTimer = setTimeout(() => {
       if (isMounted.current && isAuthChecking) {
         console.log("Auth: Short safety timeout triggered");
         setIsAuthChecking(false);
       }
     }, 3000);
-    
-    const longSafetyTimer = setTimeout(() => {
-      if (isMounted.current && isAuthChecking) {
-        console.log("Auth: Long safety timeout triggered");
-        setIsAuthChecking(false);
-      }
-    }, 8000);
 
     // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -125,7 +123,7 @@ const Auth = () => {
       // Only handle sign in/out events here
       if (event === 'SIGNED_IN' && session) {
         console.log('Auth: User signed in via state change');
-        // Use a more direct approach for navigation
+        // Use direct window location for more reliable navigation
         window.location.href = '/profile';
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: User signed out via state change');
@@ -141,15 +139,14 @@ const Auth = () => {
       console.log("Auth: Component unmounting, cleaning up");
       isMounted.current = false;
       subscription.unsubscribe();
-      clearTimeout(authCheckTimer);
       clearTimeout(shortSafetyTimer);
-      clearTimeout(longSafetyTimer);
+      clearTimeout(loadingTimeout);
     };
   }, [navigate]);
 
   const handleAuthSuccess = () => {
     console.log("Auth: Auth success handler called");
-    // Use a more direct approach for navigation that works better cross-browser
+    // Use direct window location for more reliable navigation
     window.location.href = '/profile';
   };
 

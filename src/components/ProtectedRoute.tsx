@@ -12,10 +12,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
-    // We'll only check auth once on component mount
+    // Add a hard timeout to ensure we never get stuck in loading state
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.log("ProtectedRoute: Loading timeout triggered, forcing completion");
+        setIsLoading(false);
+      }
+    }, 3000); // 3 second max wait time
+    
     const checkAuth = async () => {
       try {
-        // First check current session
+        console.log("ProtectedRoute: Checking session");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -62,8 +69,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         setIsLoading(false);
       } else {
-        // For other events, we can set isLoading to false
-        setIsLoading(false);
+        // For other events, we can set isLoading to false after a short delay
+        setTimeout(() => {
+          if (mounted) {
+            setIsLoading(false);
+          }
+        }, 200);
       }
     });
 
@@ -73,6 +84,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(loadingTimeout);
     };
   }, []);
 

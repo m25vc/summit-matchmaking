@@ -40,9 +40,13 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       
       console.log("Auth: Sign-in successful, session created");
       
-      // Execute onSuccess callback directly
+      // Call onSuccess and let it handle navigation
       console.log("Auth: Executing onSuccess callback");
-      onSuccess();
+      
+      // Add a small delay to ensure state updates complete
+      setTimeout(() => {
+        onSuccess();
+      }, 100);
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
       

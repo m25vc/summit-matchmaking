@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { investorFormSchema, type InvestorFormValues } from "@/schemas/profileSchemas";
 
 interface InvestorFormProps {
@@ -83,10 +83,23 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           name="preferredIndustries"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Industries (comma-separated)</FormLabel>
-              <FormControl>
-                <Input placeholder="SaaS, Fintech, Healthcare" {...field} />
-              </FormControl>
+              <FormLabel>Investment Industries</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select investment industries" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="SaaS">SaaS</SelectItem>
+                  <SelectItem value="Fintech">Fintech</SelectItem>
+                  <SelectItem value="Healthcare">Healthcare</SelectItem>
+                  <SelectItem value="E-commerce">E-commerce</SelectItem>
+                  <SelectItem value="AI/ML">AI/ML</SelectItem>
+                  <SelectItem value="Enterprise">Enterprise</SelectItem>
+                  <SelectItem value="Consumer">Consumer</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -97,10 +110,22 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           name="preferredStages"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Stages (comma-separated)</FormLabel>
-              <FormControl>
-                <Input placeholder="Pre-seed, Seed, Series A" {...field} />
-              </FormControl>
+              <FormLabel>Investment Stages</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select investment stages" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Pre-seed">Pre-seed</SelectItem>
+                  <SelectItem value="Seed">Seed</SelectItem>
+                  <SelectItem value="Series A">Series A</SelectItem>
+                  <SelectItem value="Series B">Series B</SelectItem>
+                  <SelectItem value="Growth">Growth</SelectItem>
+                  <SelectItem value="Late Stage">Late Stage</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -112,9 +137,20 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Geographic Focus</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Midwest, Global" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select geographic focus" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="North America">North America</SelectItem>
+                  <SelectItem value="Europe">Europe</SelectItem>
+                  <SelectItem value="Asia">Asia</SelectItem>
+                  <SelectItem value="Global">Global</SelectItem>
+                  <SelectItem value="US Only">US Only</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -126,9 +162,20 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Typical Check Size</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. $50K-$500K" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select check size range" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="$0-$50K">$0-$50K</SelectItem>
+                  <SelectItem value="$50K-$250K">$50K-$250K</SelectItem>
+                  <SelectItem value="$250K-$500K">$250K-$500K</SelectItem>
+                  <SelectItem value="$500K-$1M">$500K-$1M</SelectItem>
+                  <SelectItem value="$1M+">$1M+</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

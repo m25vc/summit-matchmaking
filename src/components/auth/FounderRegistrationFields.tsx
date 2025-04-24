@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -128,11 +127,10 @@ const FounderRegistrationFields = ({
             <SelectValue placeholder="Select next raise timeline" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Q1 2024">Q1 2024</SelectItem>
-            <SelectItem value="Q2 2024">Q2 2024</SelectItem>
-            <SelectItem value="Q3 2024">Q3 2024</SelectItem>
-            <SelectItem value="Q4 2024">Q4 2024</SelectItem>
-            <SelectItem value="Q1 2025">Q1 2025</SelectItem>
+            <SelectItem value="Q2 2025">Q2 2025</SelectItem>
+            <SelectItem value="Q3 2025">Q3 2025</SelectItem>
+            <SelectItem value="Q4 2025">Q4 2025</SelectItem>
+            <SelectItem value="Q1 2026">Q1 2026</SelectItem>
             <SelectItem value="No Plans">No Immediate Plans</SelectItem>
           </SelectContent>
         </Select>

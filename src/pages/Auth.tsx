@@ -187,7 +187,7 @@ const Auth = () => {
     // Set redirecting flag to prevent multiple redirects 
     setRedirectInProgress(true);
     // Use direct window location for more reliable navigation
-    window.location.href = '/profile';
+    window.location.href = '/dashboard';
   };
 
   return (

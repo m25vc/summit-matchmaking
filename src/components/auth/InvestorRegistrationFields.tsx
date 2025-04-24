@@ -1,5 +1,6 @@
 
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface InvestorRegistrationFieldsProps {
   firmName: string;
@@ -59,12 +60,12 @@ const InvestorRegistrationFields = ({
       
       <div>
         <label htmlFor="firmHQ" className="block text-sm font-medium text-gray-700">
-          Firm HQ Location (e.g., Chicago, IL)
+          Firm HQ Location
         </label>
         <Input
           id="firmHQ"
           type="text"
-          placeholder="Firm HQ Location"
+          placeholder="e.g., Chicago, IL"
           value={firmHQ}
           onChange={(e) => setFirmHQ(e.target.value)}
           disabled={loading}
@@ -75,56 +76,94 @@ const InvestorRegistrationFields = ({
         <label htmlFor="investmentIndustries" className="block text-sm font-medium text-gray-700">
           Investment Industries
         </label>
-        <Input
-          id="investmentIndustries"
-          type="text"
-          placeholder="e.g., SaaS, Fintech, Healthcare"
+        <Select
           value={investmentIndustries}
-          onChange={(e) => setInvestmentIndustries(e.target.value)}
+          onValueChange={setInvestmentIndustries}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select primary industry focus" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="SaaS">SaaS</SelectItem>
+            <SelectItem value="Fintech">Fintech</SelectItem>
+            <SelectItem value="Healthcare">Healthcare</SelectItem>
+            <SelectItem value="E-commerce">E-commerce</SelectItem>
+            <SelectItem value="AI/ML">AI/ML</SelectItem>
+            <SelectItem value="Enterprise">Enterprise</SelectItem>
+            <SelectItem value="Consumer">Consumer</SelectItem>
+            <SelectItem value="Hardware">Hardware</SelectItem>
+            <SelectItem value="Deep Tech">Deep Tech</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
         <label htmlFor="investmentStages" className="block text-sm font-medium text-gray-700">
           Investment Stages
         </label>
-        <Input
-          id="investmentStages"
-          type="text"
-          placeholder="e.g., Seed, Series A"
+        <Select
           value={investmentStages}
-          onChange={(e) => setInvestmentStages(e.target.value)}
+          onValueChange={setInvestmentStages}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select preferred investment stage" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Pre-seed">Pre-seed</SelectItem>
+            <SelectItem value="Seed">Seed</SelectItem>
+            <SelectItem value="Series A">Series A</SelectItem>
+            <SelectItem value="Series B">Series B</SelectItem>
+            <SelectItem value="Series C+">Series C+</SelectItem>
+            <SelectItem value="Growth">Growth</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
         <label htmlFor="geographicFocus" className="block text-sm font-medium text-gray-700">
           Geographic Focus
         </label>
-        <Input
-          id="geographicFocus"
-          type="text"
-          placeholder="e.g., Midwest, Global"
+        <Select
           value={geographicFocus}
-          onChange={(e) => setGeographicFocus(e.target.value)}
+          onValueChange={setGeographicFocus}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select geographic focus" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="North America">North America</SelectItem>
+            <SelectItem value="Europe">Europe</SelectItem>
+            <SelectItem value="Asia">Asia</SelectItem>
+            <SelectItem value="Global">Global</SelectItem>
+            <SelectItem value="US Only">US Only</SelectItem>
+            <SelectItem value="Remote First">Remote First</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
         <label htmlFor="checkSize" className="block text-sm font-medium text-gray-700">
           Typical Check Size
         </label>
-        <Input
-          id="checkSize"
-          type="text"
-          placeholder="e.g., $50K-$500K"
+        <Select
           value={checkSize}
-          onChange={(e) => setCheckSize(e.target.value)}
+          onValueChange={setCheckSize}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select typical check size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="$25K-$100K">$25K-$100K</SelectItem>
+            <SelectItem value="$100K-$500K">$100K-$500K</SelectItem>
+            <SelectItem value="$500K-$1M">$500K-$1M</SelectItem>
+            <SelectItem value="$1M-$5M">$1M-$5M</SelectItem>
+            <SelectItem value="$5M+">$5M+</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>

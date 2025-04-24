@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,10 +137,17 @@ const Dashboard = () => {
         setUsers(prevUsers => 
           prevUsers.map(user => {
             if (user.id === userId) {
+              const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
+              
               return {
                 ...user,
                 priority_matches: [{
                   ...user.priority_matches?.[0],
+                  id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
+                  created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
+                  founder_id: profile.user_type === 'founder' ? profile.id : userId,
+                  investor_id: profile.user_type === 'founder' ? userId : profile.id,
+                  set_by: profile.id,
                   priority: null,
                   not_interested: true
                 }]
@@ -149,7 +157,12 @@ const Dashboard = () => {
           })
         );
 
-        if (user.priority_matches?.[0]?.priority === 'high') {
+        // Fix: Changed 'user' to 'users' here
+        const userWithHighPriority = users.find(u => 
+          u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+        );
+        
+        if (userWithHighPriority) {
           setHighPriorityCount(prev => prev - 1);
         }
 
@@ -203,7 +216,8 @@ const Dashboard = () => {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority,
-        set_by: profile.id
+        set_by: profile.id,
+        not_interested: false
       };
 
       console.log('Upserting match data:', matchData);

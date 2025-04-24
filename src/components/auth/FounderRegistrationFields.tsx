@@ -1,6 +1,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FounderRegistrationFieldsProps {
   companyName: string;
@@ -71,42 +72,70 @@ const FounderRegistrationFields = ({
         <label htmlFor="lastRoundRaised" className="block text-sm font-medium text-gray-700">
           Most Recent Round Raised
         </label>
-        <Input
-          id="lastRoundRaised"
-          type="text"
-          placeholder="e.g., Seed, Series A"
+        <Select
           value={lastRoundRaised}
-          onChange={(e) => setLastRoundRaised(e.target.value)}
+          onValueChange={setLastRoundRaised}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select most recent round" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Pre-seed">Pre-seed</SelectItem>
+            <SelectItem value="Seed">Seed</SelectItem>
+            <SelectItem value="Series A">Series A</SelectItem>
+            <SelectItem value="Series B">Series B</SelectItem>
+            <SelectItem value="Series C+">Series C+</SelectItem>
+            <SelectItem value="Not Raised Yet">Not Raised Yet</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
         <label htmlFor="currentRevenue" className="block text-sm font-medium text-gray-700">
           Current Annual Revenue Range
         </label>
-        <Input
-          id="currentRevenue"
-          type="text"
-          placeholder="e.g., $100K-$500K"
+        <Select
           value={currentRevenue}
-          onChange={(e) => setCurrentRevenue(e.target.value)}
+          onValueChange={setCurrentRevenue}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select revenue range" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="$0-$10K">$0-$10K</SelectItem>
+            <SelectItem value="$10K-$50K">$10K-$50K</SelectItem>
+            <SelectItem value="$50K-$100K">$50K-$100K</SelectItem>
+            <SelectItem value="$100K-$500K">$100K-$500K</SelectItem>
+            <SelectItem value="$500K-$1M">$500K-$1M</SelectItem>
+            <SelectItem value="$1M+">$1M+</SelectItem>
+            <SelectItem value="No Revenue Yet">No Revenue Yet</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
         <label htmlFor="nextRaisePlanned" className="block text-sm font-medium text-gray-700">
           When Do You Plan to Raise Again?
         </label>
-        <Input
-          id="nextRaisePlanned"
-          type="text"
-          placeholder="e.g., Q4 2024"
+        <Select
           value={nextRaisePlanned}
-          onChange={(e) => setNextRaisePlanned(e.target.value)}
+          onValueChange={setNextRaisePlanned}
           disabled={loading}
-        />
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select next raise timeline" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Q1 2024">Q1 2024</SelectItem>
+            <SelectItem value="Q2 2024">Q2 2024</SelectItem>
+            <SelectItem value="Q3 2024">Q3 2024</SelectItem>
+            <SelectItem value="Q4 2024">Q4 2024</SelectItem>
+            <SelectItem value="Q1 2025">Q1 2025</SelectItem>
+            <SelectItem value="No Plans">No Immediate Plans</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>

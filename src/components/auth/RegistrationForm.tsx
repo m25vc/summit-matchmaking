@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import FounderRegistrationFields from "./FounderRegistrationFields";
@@ -23,7 +22,6 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
   const [jobTitle, setJobTitle] = useState('');
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
   
-  // Investor fields
   const [firmName, setFirmName] = useState('');
   const [firmHQ, setFirmHQ] = useState('');
   const [investmentIndustries, setInvestmentIndustries] = useState('');
@@ -33,7 +31,6 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   
-  // Founder fields
   const [companyName, setCompanyName] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
   const [currentRevenue, setCurrentRevenue] = useState('');
@@ -176,20 +173,19 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
         
         <div className="space-y-2">
           <Label className="block text-sm font-medium text-gray-700">I am a:</Label>
-          <RadioGroup
+          <Select
             value={userType}
             onValueChange={(value: 'founder' | 'investor') => setUserType(value)}
-            className="flex space-x-4"
+            disabled={loading}
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="founder" id="founder" />
-              <Label htmlFor="founder">Founder</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="investor" id="investor" />
-              <Label htmlFor="investor">Investor</Label>
-            </div>
-          </RadioGroup>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select your role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="founder">Founder</SelectItem>
+              <SelectItem value="investor">Investor</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         {userType === 'investor' ? (

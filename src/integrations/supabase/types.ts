@@ -281,6 +281,10 @@ export type Database = {
         }
         Returns: number
       }
+      first_admin: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
       make_user_admin: {
         Args: { user_email: string }
         Returns: undefined

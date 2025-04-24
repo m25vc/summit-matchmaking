@@ -169,6 +169,7 @@ export type Database = {
           founder_id: string
           id: string
           investor_id: string
+          not_interested: boolean | null
           priority: Database["public"]["Enums"]["match_priority"]
           set_by: string
         }
@@ -177,6 +178,7 @@ export type Database = {
           founder_id: string
           id?: string
           investor_id: string
+          not_interested?: boolean | null
           priority: Database["public"]["Enums"]["match_priority"]
           set_by: string
         }
@@ -185,6 +187,7 @@ export type Database = {
           founder_id?: string
           id?: string
           investor_id?: string
+          not_interested?: boolean | null
           priority?: Database["public"]["Enums"]["match_priority"]
           set_by?: string
         }

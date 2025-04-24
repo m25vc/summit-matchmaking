@@ -1,4 +1,4 @@
-
+import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -8,12 +8,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
-import type { Database } from '@/integrations/supabase/types';
+import type { PriorityMatch } from '@/hooks/useAdminData';
 import { Badge } from "@/components/ui/badge";
 
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type UserWithDetails = Profile & {
@@ -24,7 +23,11 @@ type UserWithDetails = Profile & {
 
 interface UserCardProps {
   user: UserWithDetails;
-  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
+  onPriorityChange: (
+    userId: string, 
+    priority: 'high' | 'medium' | 'low' | null, 
+    notInterested?: boolean
+  ) => Promise<void>;
 }
 
 export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
@@ -59,11 +62,14 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
   };
 
   const priorityStyles = getPriorityStyles();
+  const hasNotInterested = user.priority_matches?.[0]?.not_interested;
 
   return (
     <Card 
       key={user.id}
-      className={`${priorityStyles.borderColor || ''} ${priorityStyles.bgColor || ''} transition-colors`}
+      className={`${priorityStyles.borderColor || ''} ${
+        hasNotInterested ? 'opacity-50 border-red-400' : priorityStyles.bgColor || ''
+      } transition-colors`}
     >
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -127,17 +133,26 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
           )}
           <div className="pt-4">
             <Select
-              value={user.priority_matches?.[0]?.priority || ''}
-              onValueChange={(value: 'high' | 'medium' | 'low' | 'remove') => {
+              value={hasNotInterested ? 'not_interested' : 
+                user.priority_matches?.[0]?.priority || ''}
+              onValueChange={(value: 'high' | 'medium' | 'low' | 'remove' | 'not_interested') => {
                 if (value === 'remove') {
                   onPriorityChange(user.id, null);
+                } else if (value === 'not_interested') {
+                  onPriorityChange(user.id, null, true);
                 } else {
                   onPriorityChange(user.id, value);
                 }
               }}
             >
-              <SelectTrigger className={priorityStyles.textColor}>
-                <SelectValue placeholder="Set priority" />
+              <SelectTrigger 
+                className={`w-[140px] ${
+                  hasNotInterested ? 'text-red-700' : priorityStyles.textColor
+                }`}
+              >
+                <SelectValue 
+                  placeholder={hasNotInterested ? 'Not Interested' : 'Set priority'} 
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="high" className="text-green-700">High Priority</SelectItem>
@@ -146,6 +161,9 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
                 {user.priority_matches?.[0]?.priority && (
                   <SelectItem value="remove" className="text-gray-900">Remove Match</SelectItem>
                 )}
+                <SelectItem value="not_interested" className="text-red-900">
+                  Not Interested
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

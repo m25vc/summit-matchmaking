@@ -1,12 +1,11 @@
-
 import type { Database } from '@/integrations/supabase/types';
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type UserWithDetails = Profile & {
@@ -17,7 +16,11 @@ type UserWithDetails = Profile & {
 
 interface UserListViewProps {
   user: UserWithDetails;
-  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
+  onPriorityChange: (
+    userId: string, 
+    priority: 'high' | 'medium' | 'low' | null, 
+    notInterested?: boolean
+  ) => Promise<void>;
 }
 
 export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
@@ -51,12 +54,15 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
   };
 
   const priorityStyles = getPriorityStyles();
+  const hasNotInterested = user.priority_matches?.[0]?.not_interested;
 
   return (
     <div 
-      className={`p-4 rounded-lg border ${priorityStyles.borderColor || 'border-border'} ${
-        priorityStyles.bgColor || 'bg-background'
-      } transition-colors`}
+      className={`p-4 rounded-lg border ${
+        hasNotInterested ? 'border-red-400' : priorityStyles.borderColor || 'border-border'
+      } ${
+        hasNotInterested ? 'bg-red-50' : priorityStyles.bgColor || 'bg-background'
+      } transition-colors ${hasNotInterested ? 'opacity-50' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-1">
@@ -118,17 +124,26 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
         </div>
 
         <Select
-          value={user.priority_matches?.[0]?.priority || ''}
-          onValueChange={(value: 'high' | 'medium' | 'low' | 'remove') => {
+          value={hasNotInterested ? 'not_interested' : 
+            user.priority_matches?.[0]?.priority || ''}
+          onValueChange={(value: 'high' | 'medium' | 'low' | 'remove' | 'not_interested') => {
             if (value === 'remove') {
               onPriorityChange(user.id, null);
+            } else if (value === 'not_interested') {
+              onPriorityChange(user.id, null, true);
             } else {
               onPriorityChange(user.id, value);
             }
           }}
         >
-          <SelectTrigger className={`w-[140px] ${priorityStyles.textColor}`}>
-            <SelectValue placeholder="Set priority" />
+          <SelectTrigger 
+            className={`w-[140px] ${
+              hasNotInterested ? 'text-red-700' : priorityStyles.textColor
+            }`}
+          >
+            <SelectValue 
+              placeholder={hasNotInterested ? 'Not Interested' : 'Set priority'} 
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="high" className="text-green-700">High Priority</SelectItem>
@@ -137,10 +152,12 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
             {user.priority_matches?.[0]?.priority && (
               <SelectItem value="remove" className="text-gray-900">Remove Match</SelectItem>
             )}
+            <SelectItem value="not_interested" className="text-red-900">
+              Not Interested
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
     </div>
   );
 };
-

@@ -104,9 +104,60 @@ const Dashboard = () => {
     fetchProfile();
   }, []);
 
-  const handlePriorityChange = async (userId: string, priority: 'high' | 'medium' | 'low' | null) => {
+  const handlePriorityChange = async (
+    userId: string, 
+    priority: 'high' | 'medium' | 'low' | null, 
+    notInterested = false
+  ) => {
     if (!profile) {
       toast.error("Profile not loaded");
+      return;
+    }
+
+    if (notInterested) {
+      try {
+        const { error } = await supabase
+          .from('priority_matches')
+          .upsert({
+            founder_id: profile.user_type === 'founder' ? profile.id : userId,
+            investor_id: profile.user_type === 'founder' ? userId : profile.id,
+            priority: null,
+            not_interested: true,
+            set_by: profile.id
+          }, {
+            onConflict: 'founder_id,investor_id'
+          });
+
+        if (error) {
+          console.error('Upsert error:', error);
+          throw error;
+        }
+
+        setUsers(prevUsers => 
+          prevUsers.map(user => {
+            if (user.id === userId) {
+              return {
+                ...user,
+                priority_matches: [{
+                  ...user.priority_matches?.[0],
+                  priority: null,
+                  not_interested: true
+                }]
+              };
+            }
+            return user;
+          })
+        );
+
+        if (user.priority_matches?.[0]?.priority === 'high') {
+          setHighPriorityCount(prev => prev - 1);
+        }
+
+        toast.success("Match marked as not interested");
+      } catch (error) {
+        console.error('Error marking match as not interested:', error);
+        toast.error("Failed to mark match as not interested");
+      }
       return;
     }
 

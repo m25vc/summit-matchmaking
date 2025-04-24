@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -135,10 +134,16 @@ const InvestorRegistrationFields = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="North America">North America</SelectItem>
-            <SelectItem value="Europe">Europe</SelectItem>
-            <SelectItem value="Asia">Asia</SelectItem>
-            <SelectItem value="Global">Global</SelectItem>
             <SelectItem value="US Only">US Only</SelectItem>
+            <SelectItem value="West Coast">West Coast</SelectItem>
+            <SelectItem value="East Coast">East Coast</SelectItem>
+            <SelectItem value="Midwest">Midwest</SelectItem>
+            <SelectItem value="Southwest">Southwest</SelectItem>
+            <SelectItem value="Southeast">Southeast</SelectItem>
+            <SelectItem value="Northeast">Northeast</SelectItem>
+            <SelectItem value="Pacific Northwest">Pacific Northwest</SelectItem>
+            <SelectItem value="Mountain West">Mountain West</SelectItem>
+            <SelectItem value="Global">Global</SelectItem>
             <SelectItem value="Remote First">Remote First</SelectItem>
           </SelectContent>
         </Select>

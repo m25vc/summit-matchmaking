@@ -1,8 +1,9 @@
-
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
+import { UserListView } from './UserListView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LayoutGrid, LayoutList } from "lucide-react";
 import { useState, useMemo } from 'react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -49,15 +50,14 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
   const [userTypeTab, setUserTypeTab] = useState<string>('founders');
   const [priorityTypeTab, setPriorityTypeTab] = useState<string>('founders');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
 
-  // Separate users by type
   const founderUsers = newUsers.filter(user => user.user_type === 'founder');
   const investorUsers = newUsers.filter(user => user.user_type === 'investor');
 
-  // Separate priority users by type
   const priorityFounders = priorityUsers.filter(user => user.user_type === 'founder');
   const priorityInvestors = priorityUsers.filter(user => user.user_type === 'investor');
 
@@ -112,9 +112,30 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">
-        {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Matches'}
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">
+          {profile?.user_type === 'founder' ? 'Potential Investors' : 'Potential Matches'}
+        </h2>
+        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'grid' ? 'bg-background text-foreground' : 'text-muted-foreground'
+            }`}
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'list' ? 'bg-background text-foreground' : 'text-muted-foreground'
+            }`}
+          >
+            <LayoutList className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      
       <p className="text-gray-600">
         You can mark up to 5 people as high priority. Current high priority matches: {highPriorityCount}/5
       </p>
@@ -212,43 +233,76 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {profile?.user_type === 'investor' ? (
-              userTypeTab === 'founders' ? (
-                filteredFounders.map((user) => (
-                  <UserCard 
-                    key={user.id} 
-                    user={user} 
-                    onPriorityChange={onPriorityChange}
-                  />
-                ))
+          {viewMode === 'grid' ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {profile?.user_type === 'investor' ? (
+                userTypeTab === 'founders' ? (
+                  filteredFounders.map((user) => (
+                    <UserCard 
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ))
+                ) : (
+                  filteredInvestors.map((user) => (
+                    <UserCard 
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ))
+                )
               ) : (
-                filteredInvestors.map((user) => (
+                getSortedUsers(getFilteredUsers(newUsers)).map((user) => (
                   <UserCard 
                     key={user.id} 
                     user={user} 
                     onPriorityChange={onPriorityChange}
                   />
                 ))
-              )
-            ) : (
-              getSortedUsers(getFilteredUsers(newUsers)).map((user) => (
-                <UserCard 
-                  key={user.id} 
-                  user={user} 
-                  onPriorityChange={onPriorityChange}
-                />
-              ))
-            )}
-            {((profile?.user_type === 'investor' && 
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {profile?.user_type === 'investor' ? (
+                userTypeTab === 'founders' ? (
+                  filteredFounders.map((user) => (
+                    <UserListView
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ))
+                ) : (
+                  filteredInvestors.map((user) => (
+                    <UserListView
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ))
+                )
+              ) : (
+                getSortedUsers(getFilteredUsers(newUsers)).map((user) => (
+                  <UserListView
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ))
+              )}
+            </div>
+          )}
+
+          {((profile?.user_type === 'investor' && 
               ((userTypeTab === 'founders' && filteredFounders.length === 0) || 
                (userTypeTab === 'investors' && filteredInvestors.length === 0))) ||
               (profile?.user_type !== 'investor' && getSortedUsers(getFilteredUsers(newUsers)).length === 0)) && (
-              <p className="col-span-full text-center text-gray-500 py-8">
-                No matches found with the selected filters
-              </p>
-            )}
-          </div>
+            <p className="col-span-full text-center text-gray-500 py-8">
+              No matches found with the selected filters
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="priority">
@@ -288,43 +342,68 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
             </Select>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className={viewMode === 'grid' ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
             {profile?.user_type === 'investor' ? (
               priorityTypeTab === 'founders' ? (
                 sortedPriorityFounders.map((user) => (
-                  <UserCard 
-                    key={user.id} 
-                    user={user} 
-                    onPriorityChange={onPriorityChange}
-                  />
+                  viewMode === 'grid' ? (
+                    <UserCard 
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ) : (
+                    <UserListView
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  )
                 ))
               ) : (
                 sortedPriorityInvestors.map((user) => (
-                  <UserCard 
-                    key={user.id} 
-                    user={user} 
-                    onPriorityChange={onPriorityChange}
-                  />
+                  viewMode === 'grid' ? (
+                    <UserCard 
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  ) : (
+                    <UserListView
+                      key={user.id} 
+                      user={user} 
+                      onPriorityChange={onPriorityChange}
+                    />
+                  )
                 ))
               )
             ) : (
               getSortedUsers(priorityUsers).map((user) => (
-                <UserCard 
-                  key={user.id} 
-                  user={user} 
-                  onPriorityChange={onPriorityChange}
-                />
+                viewMode === 'grid' ? (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                ) : (
+                  <UserListView
+                    key={user.id} 
+                    user={user} 
+                    onPriorityChange={onPriorityChange}
+                  />
+                )
               ))
             )}
-            {((profile?.user_type === 'investor' && 
+          </div>
+
+          {((profile?.user_type === 'investor' && 
               ((priorityTypeTab === 'founders' && priorityFounders.length === 0) || 
                (priorityTypeTab === 'investors' && priorityInvestors.length === 0))) ||
               (profile?.user_type !== 'investor' && priorityUsers.length === 0)) && (
-              <p className="col-span-full text-center text-gray-500 py-8">
-                No priority matches yet
-              </p>
-            )}
-          </div>
+            <p className="col-span-full text-center text-gray-500 py-8">
+              No priority matches yet
+            </p>
+          )}
         </TabsContent>
       </Tabs>
     </div>

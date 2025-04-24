@@ -1,3 +1,4 @@
+
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { UserListView } from './UserListView';
@@ -5,11 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LayoutGrid, LayoutList } from "lucide-react";
 import { useState, useMemo } from 'react';
+import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'];
 
 type UserWithDetails = Profile & {
   investor_details?: InvestorDetails;
@@ -21,7 +22,7 @@ interface UserListProps {
   users: UserWithDetails[];
   profile: Profile | null;
   highPriorityCount: number;
-  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null) => Promise<void>;
+  onPriorityChange: (userId: string, priority: 'high' | 'medium' | 'low' | null, notInterested?: boolean) => Promise<void>;
 }
 
 const INDUSTRY_OPTIONS = [

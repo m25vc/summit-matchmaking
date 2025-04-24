@@ -10,10 +10,12 @@ export type PriorityMatch = {
   investor_id: string;
   priority: Database['public']['Enums']['match_priority'];
   created_at: string;
-  initiator: Profile | null;
-  target: Profile | null;
-  score: number;
-  has_mutual_match: boolean;
+  set_by: string;
+  not_interested: boolean | null;
+  initiator?: Profile | null;
+  target?: Profile | null;
+  score?: number;
+  has_mutual_match?: boolean;
 };
 
 export const useAdminData = () => {

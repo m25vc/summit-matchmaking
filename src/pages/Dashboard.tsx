@@ -5,11 +5,11 @@ import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 import { ProfileHeader } from '@/components/dashboard/ProfileHeader';
 import { UserList } from '@/components/dashboard/UserList';
+import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type PriorityMatch = Database['public']['Tables']['priority_matches']['Row'];
 
 type UserWithDetails = Profile & {
   investor_details?: InvestorDetails;

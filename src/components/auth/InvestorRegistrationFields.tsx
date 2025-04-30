@@ -227,7 +227,7 @@ const InvestorRegistrationFields = ({
             <SelectValue placeholder="Select typical check size" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="< $50K">< $50K</SelectItem>
+            <SelectItem value="< $50K">&lt; $50K</SelectItem>
             <SelectItem value="$50K - $100K">$50K - $100K</SelectItem>
             <SelectItem value="$100K - $250K">$100K - $250K</SelectItem>
             <SelectItem value="$250K - $500K">$250K - $500K</SelectItem>

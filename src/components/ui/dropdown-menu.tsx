@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle, ChevronDown } from "lucide-react"
@@ -180,54 +179,79 @@ const DropdownMenuShortcut = ({
 }
 DropdownMenuShortcut.displayName = "DropdownMenuShortcut"
 
-// Add the MultiSelectDropdown component
+// Multi-Select Dropdown component
 interface MultiSelectDropdownProps {
   options: { value: string; label: string }[];
   selected: string[];
   onChange: (selected: string[]) => void;
-  buttonText: string;
+  buttonText?: string;
   disabled?: boolean;
 }
 
-const MultiSelectDropdown = ({
-  options,
-  selected,
-  onChange,
-  buttonText,
-  disabled
-}: MultiSelectDropdownProps) => {
+export const MultiSelectDropdown = React.forwardRef<
+  HTMLDivElement,
+  MultiSelectDropdownProps
+>(({ options, selected, onChange, buttonText = "Select options", disabled }, ref) => {
+  const [open, setOpen] = React.useState(false);
+
+  const toggleOption = (value: string) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter((item) => item !== value)
+      : [...selected, value];
+    onChange(newSelected);
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild disabled={disabled}>
-        <button className="flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-          <span className="line-clamp-1">
-            {selected.length > 0
-              ? `${selected.length} selected`
-              : buttonText}
-          </span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-full min-w-[200px] max-h-[300px] overflow-auto">
-        {options.map((option) => (
-          <DropdownMenuCheckboxItem
-            key={option.value}
-            checked={selected.includes(option.value)}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                onChange([...selected, option.value]);
-              } else {
-                onChange(selected.filter(item => item !== option.value));
-              }
-            }}
-          >
-            {option.label}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        className={cn(
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          open ? "border-primary" : ""
+        )}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate">
+          {selected.length === 0
+            ? buttonText
+            : `${selected.length} option${selected.length !== 1 ? "s" : ""} selected`}
+        </span>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </button>
+      {open && (
+        <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-md outline-none animate-in fade-in-0">
+          <div className="max-h-60 overflow-auto p-1">
+            {options.map((option) => {
+              const isSelected = selected.includes(option.value);
+              return (
+                <div
+                  key={option.value}
+                  onClick={() => {
+                    if (!disabled) toggleOption(option.value);
+                  }}
+                  className={cn(
+                    "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
+                    isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground",
+                    disabled && "pointer-events-none opacity-50"
+                  )}
+                >
+                  <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                    {isSelected && <Check className="h-4 w-4" />}
+                  </span>
+                  {option.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
-};
+});
+MultiSelectDropdown.displayName = "MultiSelectDropdown";
 
 export {
   DropdownMenu,

@@ -123,6 +123,11 @@ export default function EditProfile() {
 
   const onInvestorSubmit = async (values: InvestorFormValues) => {
     try {
+      // Convert the geographicFocus array to a string if it exists and has elements
+      const geographicFocusValue = values.geographicFocus && values.geographicFocus.length > 0
+        ? values.geographicFocus[0] // Taking the first value from the array
+        : null;
+        
       const { error } = await supabase
         .from('investor_details')
         .upsert({
@@ -135,7 +140,7 @@ export default function EditProfile() {
           preferred_stages: values.preferredStages,
           firm_website_url: values.firmWebsiteUrl || null,
           firm_hq: values.firmHQ || null,
-          geographic_focus: values.geographicFocus || null,
+          geographic_focus: geographicFocusValue, // Converting array to string
           check_size: values.checkSize || null,
           linkedin_url: values.linkedinUrl || null,
           additional_notes: values.additionalNotes || null,

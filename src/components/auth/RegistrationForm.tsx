@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,9 +25,10 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
   
   const [firmName, setFirmName] = useState('');
   const [firmHQ, setFirmHQ] = useState('');
-  const [investmentIndustries, setInvestmentIndustries] = useState('');
-  const [investmentStages, setInvestmentStages] = useState('');
-  const [geographicFocus, setGeographicFocus] = useState('');
+  // Update to use arrays for multi-select fields
+  const [investmentIndustries, setInvestmentIndustries] = useState<string[]>([]);
+  const [investmentStages, setInvestmentStages] = useState<string[]>([]);
+  const [geographicFocus, setGeographicFocus] = useState<string[]>([]);
   const [checkSize, setCheckSize] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');

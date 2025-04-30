@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
@@ -179,6 +180,55 @@ const DropdownMenuShortcut = ({
 }
 DropdownMenuShortcut.displayName = "DropdownMenuShortcut"
 
+// Add the MultiSelectDropdown component
+interface MultiSelectDropdownProps {
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  buttonText: string;
+  disabled?: boolean;
+}
+
+const MultiSelectDropdown = ({
+  options,
+  selected,
+  onChange,
+  buttonText,
+  disabled
+}: MultiSelectDropdownProps) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild disabled={disabled}>
+        <button className="flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+          <span className="line-clamp-1">
+            {selected.length > 0
+              ? `${selected.length} selected`
+              : buttonText}
+          </span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-full min-w-[200px] max-h-[300px] overflow-auto">
+        {options.map((option) => (
+          <DropdownMenuCheckboxItem
+            key={option.value}
+            checked={selected.includes(option.value)}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                onChange([...selected, option.value]);
+              } else {
+                onChange(selected.filter(item => item !== option.value));
+              }
+            }}
+          >
+            {option.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -195,4 +245,5 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
+  MultiSelectDropdown,
 }

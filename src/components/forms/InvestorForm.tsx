@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,111 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelectDropdown } from "@/components/ui/dropdown-menu";
 import { investorFormSchema, type InvestorFormValues } from "@/schemas/profileSchemas";
+
+// Industry options for the multi-select dropdown
+const industryOptions = [
+  { value: "AI", label: "AI" },
+  { value: "Adtech", label: "Adtech" },
+  { value: "Aerospace & Defense", label: "Aerospace & Defense" },
+  { value: "Agriculture", label: "Agriculture" },
+  { value: "Analytics", label: "Analytics" },
+  { value: "Art / VR", label: "Art / VR" },
+  { value: "Big Data", label: "Big Data" },
+  { value: "Biotech", label: "Biotech" },
+  { value: "Business Services", label: "Business Services" },
+  { value: "Cannabis", label: "Cannabis" },
+  { value: "Construction", label: "Construction" },
+  { value: "Consumer", label: "Consumer" },
+  { value: "Crypto", label: "Crypto" },
+  { value: "Cybersecurity", label: "Cybersecurity" },
+  { value: "Deep Tech", label: "Deep Tech" },
+  { value: "E-Commerce & Retail", label: "E-Commerce & Retail" },
+  { value: "Education", label: "Education" },
+  { value: "Energy", label: "Energy" },
+  { value: "Entertainment", label: "Entertainment" },
+  { value: "Environment", label: "Environment" },
+  { value: "Events", label: "Events" },
+  { value: "Fashion & Beauty", label: "Fashion & Beauty" },
+  { value: "Financial Technology", label: "Financial Technology" },
+  { value: "Fitness", label: "Fitness" },
+  { value: "Food & Beverage", label: "Food & Beverage" },
+  { value: "Gaming", label: "Gaming" },
+  { value: "Government & Politics", label: "Government & Politics" },
+  { value: "Hardware", label: "Hardware" },
+  { value: "Health & Wellness", label: "Health & Wellness" },
+  { value: "Healthcare", label: "Healthcare" },
+  { value: "Hospitality", label: "Hospitality" },
+  { value: "Human Resources", label: "Human Resources" },
+  { value: "IoT", label: "IoT" },
+  { value: "Internet of Things (IoT)", label: "Internet of Things (IoT)" },
+  { value: "Legal", label: "Legal" },
+  { value: "Life Sciences", label: "Life Sciences" },
+  { value: "Logistics", label: "Logistics" },
+  { value: "Manufacturing & Auto", label: "Manufacturing & Auto" },
+  { value: "Marketing", label: "Marketing" },
+  { value: "Media", label: "Media" },
+  { value: "Medical Devices", label: "Medical Devices" },
+  { value: "Other / Specific", label: "Other / Specific" },
+  { value: "Pets", label: "Pets" },
+  { value: "Pharma", label: "Pharma" },
+  { value: "Physical Goods", label: "Physical Goods" },
+  { value: "Professional Services", label: "Professional Services" },
+  { value: "Real Estate", label: "Real Estate" },
+  { value: "Retail", label: "Retail" },
+  { value: "Robotics", label: "Robotics" },
+  { value: "Security & Defense", label: "Security & Defense" },
+  { value: "Social Media", label: "Social Media" },
+  { value: "Sports & Entertainment", label: "Sports & Entertainment" },
+  { value: "Tech", label: "Tech" },
+  { value: "Transportation", label: "Transportation" },
+  { value: "Travel", label: "Travel" },
+];
+
+// Stage options for the multi-select dropdown
+const stageOptions = [
+  { value: "Pre-Seed", label: "Pre-Seed" },
+  { value: "Seed", label: "Seed" },
+  { value: "Series A", label: "Series A" },
+  { value: "Series B", label: "Series B" },
+  { value: "Series C+", label: "Series C+" },
+  { value: "Growth", label: "Growth" },
+];
+
+// Geographic focus options for the multi-select dropdown
+const geoOptions = [
+  { value: "Global", label: "Global" },
+  { value: "Always", label: "Always" },
+  { value: "Sometimes", label: "Sometimes" },
+  { value: "Never", label: "Never" },
+  { value: "Regional: No Coast", label: "Regional: No Coast" },
+  { value: "Regional: Midwest", label: "Regional: Midwest" },
+  { value: "Other / Specific", label: "Other / Specific" },
+  { value: "Local: IA", label: "Local: IA" },
+  { value: "Local: IL", label: "Local: IL" },
+  { value: "Local: IN", label: "Local: IN" },
+  { value: "Local: KS", label: "Local: KS" },
+  { value: "Local: KY", label: "Local: KY" },
+  { value: "Local: MI", label: "Local: MI" },
+  { value: "Local: MN", label: "Local: MN" },
+  { value: "Local: MO", label: "Local: MO" },
+  { value: "Local: ND", label: "Local: ND" },
+  { value: "Local: OH", label: "Local: OH" },
+  { value: "Local: SD", label: "Local: SD" },
+  { value: "Local: WI", label: "Local: WI" },
+  { value: "North America", label: "North America" },
+  { value: "US Only", label: "US Only" },
+  { value: "West Coast", label: "West Coast" },
+  { value: "East Coast", label: "East Coast" },
+  { value: "Midwest", label: "Midwest" },
+  { value: "Southwest", label: "Southwest" },
+  { value: "Southeast", label: "Southeast" },
+  { value: "Northeast", label: "Northeast" },
+  { value: "Pacific Northwest", label: "Pacific Northwest" },
+  { value: "Mountain West", label: "Mountain West" },
+  { value: "Remote First", label: "Remote First" },
+];
 
 interface InvestorFormProps {
   defaultValues?: Partial<InvestorFormValues>;
@@ -20,9 +125,17 @@ interface InvestorFormProps {
 }
 
 export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
+  // Ensure default values have arrays for multi-select fields
+  const initialValues = {
+    ...defaultValues,
+    preferredIndustries: defaultValues?.preferredIndustries || [],
+    preferredStages: defaultValues?.preferredStages || [],
+    geographicFocus: defaultValues?.geographicFocus || [],
+  };
+
   const form = useForm<InvestorFormValues>({
     resolver: zodResolver(investorFormSchema),
-    defaultValues: defaultValues || {},
+    defaultValues: initialValues,
   });
 
   return (
@@ -83,71 +196,16 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           name="preferredIndustries"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Industries</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select preferred industries" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="AI">AI</SelectItem>
-                  <SelectItem value="Adtech">Adtech</SelectItem>
-                  <SelectItem value="Aerospace & Defense">Aerospace & Defense</SelectItem>
-                  <SelectItem value="Agriculture">Agriculture</SelectItem>
-                  <SelectItem value="Analytics">Analytics</SelectItem>
-                  <SelectItem value="Art / VR">Art / VR</SelectItem>
-                  <SelectItem value="Big Data">Big Data</SelectItem>
-                  <SelectItem value="Biotech">Biotech</SelectItem>
-                  <SelectItem value="Business Services">Business Services</SelectItem>
-                  <SelectItem value="Cannabis">Cannabis</SelectItem>
-                  <SelectItem value="Construction">Construction</SelectItem>
-                  <SelectItem value="Consumer">Consumer</SelectItem>
-                  <SelectItem value="Crypto">Crypto</SelectItem>
-                  <SelectItem value="Cybersecurity">Cybersecurity</SelectItem>
-                  <SelectItem value="Deep Tech">Deep Tech</SelectItem>
-                  <SelectItem value="E-Commerce & Retail">E-Commerce & Retail</SelectItem>
-                  <SelectItem value="Education">Education</SelectItem>
-                  <SelectItem value="Energy">Energy</SelectItem>
-                  <SelectItem value="Entertainment">Entertainment</SelectItem>
-                  <SelectItem value="Environment">Environment</SelectItem>
-                  <SelectItem value="Events">Events</SelectItem>
-                  <SelectItem value="Fashion & Beauty">Fashion & Beauty</SelectItem>
-                  <SelectItem value="Financial Technology">Financial Technology</SelectItem>
-                  <SelectItem value="Fitness">Fitness</SelectItem>
-                  <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
-                  <SelectItem value="Gaming">Gaming</SelectItem>
-                  <SelectItem value="Government & Politics">Government & Politics</SelectItem>
-                  <SelectItem value="Hardware">Hardware</SelectItem>
-                  <SelectItem value="Health & Wellness">Health & Wellness</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Hospitality">Hospitality</SelectItem>
-                  <SelectItem value="Human Resources">Human Resources</SelectItem>
-                  <SelectItem value="IoT">IoT</SelectItem>
-                  <SelectItem value="Internet of Things (IoT)">Internet of Things (IoT)</SelectItem>
-                  <SelectItem value="Legal">Legal</SelectItem>
-                  <SelectItem value="Life Sciences">Life Sciences</SelectItem>
-                  <SelectItem value="Logistics">Logistics</SelectItem>
-                  <SelectItem value="Manufacturing & Auto">Manufacturing & Auto</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="Media">Media</SelectItem>
-                  <SelectItem value="Medical Devices">Medical Devices</SelectItem>
-                  <SelectItem value="Other / Specific">Other / Specific</SelectItem>
-                  <SelectItem value="Pets">Pets</SelectItem>
-                  <SelectItem value="Pharma">Pharma</SelectItem>
-                  <SelectItem value="Physical Goods">Physical Goods</SelectItem>
-                  <SelectItem value="Professional Services">Professional Services</SelectItem>
-                  <SelectItem value="Real Estate">Real Estate</SelectItem>
-                  <SelectItem value="Retail">Retail</SelectItem>
-                  <SelectItem value="Robotics">Robotics</SelectItem>
-                  <SelectItem value="Security & Defense">Security & Defense</SelectItem>
-                  <SelectItem value="Social Media">Social Media</SelectItem>
-                  <SelectItem value="Sports & Entertainment">Sports & Entertainment</SelectItem>
-                  <SelectItem value="Tech">Tech</SelectItem>
-                  <SelectItem value="Transportation">Transportation</SelectItem>
-                  <SelectItem value="Travel">Travel</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Preferred Industries (select multiple)</FormLabel>
+              <FormControl>
+                <MultiSelectDropdown
+                  options={industryOptions}
+                  selected={field.value}
+                  onChange={field.onChange}
+                  buttonText="Select preferred industries"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -158,22 +216,16 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           name="preferredStages"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Investment Stages</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select preferred investment stages" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Pre-Seed">Pre-Seed</SelectItem>
-                  <SelectItem value="Seed">Seed</SelectItem>
-                  <SelectItem value="Series A">Series A</SelectItem>
-                  <SelectItem value="Series B">Series B</SelectItem>
-                  <SelectItem value="Series C+">Series C+</SelectItem>
-                  <SelectItem value="Growth">Growth</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Preferred Investment Stages (select multiple)</FormLabel>
+              <FormControl>
+                <MultiSelectDropdown
+                  options={stageOptions}
+                  selected={field.value}
+                  onChange={field.onChange}
+                  buttonText="Select preferred investment stages"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -184,46 +236,16 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
           name="geographicFocus"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Geographic Focus</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select geographic focus" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Global">Global</SelectItem>
-                  <SelectItem value="Always">Always</SelectItem>
-                  <SelectItem value="Sometimes">Sometimes</SelectItem>
-                  <SelectItem value="Never">Never</SelectItem>
-                  <SelectItem value="Regional: No Coast">Regional: No Coast</SelectItem>
-                  <SelectItem value="Regional: Midwest">Regional: Midwest</SelectItem>
-                  <SelectItem value="Other / Specific">Other / Specific</SelectItem>
-                  <SelectItem value="Local: IA">Local: IA</SelectItem>
-                  <SelectItem value="Local: IL">Local: IL</SelectItem>
-                  <SelectItem value="Local: IN">Local: IN</SelectItem>
-                  <SelectItem value="Local: KS">Local: KS</SelectItem>
-                  <SelectItem value="Local: KY">Local: KY</SelectItem>
-                  <SelectItem value="Local: MI">Local: MI</SelectItem>
-                  <SelectItem value="Local: MN">Local: MN</SelectItem>
-                  <SelectItem value="Local: MO">Local: MO</SelectItem>
-                  <SelectItem value="Local: ND">Local: ND</SelectItem>
-                  <SelectItem value="Local: OH">Local: OH</SelectItem>
-                  <SelectItem value="Local: SD">Local: SD</SelectItem>
-                  <SelectItem value="Local: WI">Local: WI</SelectItem>
-                  <SelectItem value="North America">North America</SelectItem>
-                  <SelectItem value="US Only">US Only</SelectItem>
-                  <SelectItem value="West Coast">West Coast</SelectItem>
-                  <SelectItem value="East Coast">East Coast</SelectItem>
-                  <SelectItem value="Midwest">Midwest</SelectItem>
-                  <SelectItem value="Southwest">Southwest</SelectItem>
-                  <SelectItem value="Southeast">Southeast</SelectItem>
-                  <SelectItem value="Northeast">Northeast</SelectItem>
-                  <SelectItem value="Pacific Northwest">Pacific Northwest</SelectItem>
-                  <SelectItem value="Mountain West">Mountain West</SelectItem>
-                  <SelectItem value="Remote First">Remote First</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Geographic Focus (select multiple)</FormLabel>
+              <FormControl>
+                <MultiSelectDropdown
+                  options={geoOptions}
+                  selected={field.value || []}
+                  onChange={field.onChange}
+                  buttonText="Select geographic focus"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

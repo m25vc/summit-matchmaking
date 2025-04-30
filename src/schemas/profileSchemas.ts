@@ -15,17 +15,17 @@ export const founderFormSchema = z.object({
   additionalNotes: z.string().optional(),
 });
 
-// Updated schema to match the dropdown selections
+// Updated schema to support arrays for multi-select fields
 export const investorFormSchema = z.object({
   firmDescription: z.string().min(10, "Please provide a longer description"),
   investmentThesis: z.string().optional(),
   minInvestmentAmount: z.string().optional(),
   maxInvestmentAmount: z.string().optional(),
-  preferredIndustries: z.string().min(1, "Please specify preferred industries"),
-  preferredStages: z.string().min(1, "Please specify preferred stages"),
+  preferredIndustries: z.array(z.string()).min(1, "Please specify at least one preferred industry"),
+  preferredStages: z.array(z.string()).min(1, "Please specify at least one preferred stage"),
   firmWebsiteUrl: z.string().url().optional().or(z.literal("")),
   firmHQ: z.string().optional(),
-  geographicFocus: z.string().optional(),
+  geographicFocus: z.array(z.string()).optional(),
   checkSize: z.string().optional(),
   linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),

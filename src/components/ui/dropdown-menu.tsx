@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle, ChevronDown } from "lucide-react"
@@ -188,7 +189,7 @@ interface MultiSelectDropdownProps {
   disabled?: boolean;
 }
 
-export const MultiSelectDropdown = React.forwardRef<
+const MultiSelectDropdown = React.forwardRef<
   HTMLDivElement,
   MultiSelectDropdownProps
 >(({ options, selected, onChange, buttonText = "Select options", disabled }, ref) => {

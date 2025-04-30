@@ -15,6 +15,7 @@ export const founderFormSchema = z.object({
   additionalNotes: z.string().optional(),
 });
 
+// Updated schema to match the dropdown selections
 export const investorFormSchema = z.object({
   firmDescription: z.string().min(10, "Please provide a longer description"),
   investmentThesis: z.string().optional(),

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -56,69 +55,13 @@ const Auth = () => {
         }
         
         if (data?.session) {
-          console.log("Auth: User is authenticated, checking profile");
+          console.log("Auth: User is authenticated, redirecting to dashboard");
           
           // Set redirecting flag to prevent further auth checks
           setRedirectInProgress(true);
           
-          try {
-            const profileTable = data.session.user.user_metadata?.user_type === 'founder' 
-              ? 'founder_details' 
-              : 'investor_details';
-              
-            if (!profileTable) {
-              console.log("Auth: No user_type found, keeping on auth page");
-              setIsAuthChecking(false);
-              setRedirectInProgress(false);
-              return;
-            }
-              
-            const { data: profileData, error } = await supabase
-              .from(profileTable)
-              .select('*')
-              .eq('profile_id', data.session.user.id)
-              .maybeSingle();
-
-            if (error) {
-              console.error("Auth: Error fetching profile data:", error);
-              if (isMounted.current) {
-                setIsAuthChecking(false);
-                setRedirectInProgress(false);
-              }
-              return;
-            }
-
-            if (!isMounted.current) {
-              console.log("Auth: Component unmounted during profile check, stopping");
-              return;
-            }
-
-            console.log("Auth: Profile check complete, redirecting if needed");
-            if (!profileData) {
-              console.log("Auth: Profile not complete, redirecting to profile completion");
-              
-              // Use a function to ensure we only redirect once
-              const safeRedirect = () => {
-                // Just to be extra safe, check again if mounted
-                if (isMounted.current) {
-                  // Use direct window location for more reliable navigation
-                  window.location.href = '/profile';
-                }
-              };
-              
-              safeRedirect();
-            } else {
-              console.log("Auth: Profile complete, redirecting to dashboard");
-              // Use direct window location for more reliable navigation
-              window.location.href = '/dashboard';
-            }
-          } catch (error) {
-            console.error("Auth: Error checking profile:", error);
-            if (isMounted.current) {
-              setIsAuthChecking(false);
-              setRedirectInProgress(false);
-            }
-          }
+          // Use direct window location for more reliable navigation
+          window.location.href = '/dashboard';
         } else {
           console.log("Auth: No authenticated user");
           if (isMounted.current) setIsAuthChecking(false);
@@ -162,7 +105,7 @@ const Auth = () => {
         setRedirectInProgress(true);
         
         // Use direct window location for more reliable navigation
-        window.location.href = '/profile';
+        window.location.href = '/dashboard';
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: User signed out via state change');
         setIsAuthChecking(false);

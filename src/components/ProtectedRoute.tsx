@@ -32,31 +32,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           console.log("ProtectedRoute: User is authenticated");
           setUser(session.user);
           
-          // Only check profile if we're not already on the profile completion page
-          if (location.pathname !== '/profile') {
-            console.log("ProtectedRoute: Checking profile completion status");
-            // Check if this is a profile page, if so we don't need to check completion
-            try {
-              const userType = session.user.user_metadata?.user_type || 'founder';
-              const profileTable = userType === 'founder' ? 'founder_details' : 'investor_details';
-              
-              const { data: profileData, error } = await supabase
-                .from(profileTable)
-                .select('*')
-                .eq('profile_id', session.user.id)
-                .maybeSingle();
-                
-              if (error) {
-                console.error("ProtectedRoute: Error checking profile:", error);
-              } else {
-                const isComplete = !!profileData;
-                console.log(`ProtectedRoute: Profile complete: ${isComplete}`);
-                setProfileComplete(isComplete);
-              }
-            } catch (err) {
-              console.error("ProtectedRoute: Error in profile check:", err);
-            }
-          }
+          // Skip profile completion check - always allow users to access protected routes
+          setProfileComplete(true);
         } else {
           console.log("ProtectedRoute: No authenticated user found");
           setUser(null);
@@ -135,13 +112,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If we're already on the profile page, show the children
-  // This prevents a redirect loop when the profile is incomplete
-  if (!profileComplete && location.pathname !== '/profile') {
-    console.log("ProtectedRoute: Profile incomplete, redirecting to profile completion");
-    return <Navigate to="/profile" replace />;
-  }
-
+  // Always allow access to protected routes
   return <>{children}</>;
 };
 

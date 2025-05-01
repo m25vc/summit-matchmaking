@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
-import { sanitizeJson } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
 
@@ -34,8 +33,9 @@ export const usePriorityHandlers = (
           set_by: profile.id
         };
 
-        // Sanitize data to prevent JSON parsing errors - stringifying and parsing to remove problematic characters
-        const sanitizedData = JSON.parse(JSON.stringify(matchData));
+        // Create a clean object with simple stringification - this eliminates all problematic characters
+        const cleanData = JSON.stringify(matchData).replace(/[\u0000-\u001F]/g, '');
+        const sanitizedData = JSON.parse(cleanData);
 
         const { error } = await supabase
           .from('priority_matches')
@@ -133,9 +133,9 @@ export const usePriorityHandlers = (
         not_interested: false
       };
 
-      // Properly sanitize the data before sending it to Supabase by stringifying and parsing
-      // This removes any problematic characters like newlines (0x0A)
-      const sanitizedData = JSON.parse(JSON.stringify(matchData));
+      // Create a clean object with simple string conversion - removes all problematic characters
+      const cleanData = JSON.stringify(matchData).replace(/[\u0000-\u001F]/g, '');
+      const sanitizedData = JSON.parse(cleanData);
 
       console.log('Upserting match data:', sanitizedData);
 

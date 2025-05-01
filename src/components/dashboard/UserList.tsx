@@ -441,5 +441,3 @@ export const sanitizeJson = (obj: any): any => {
   
   return obj;
 };
-
-export { UserList };

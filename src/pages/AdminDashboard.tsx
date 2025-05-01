@@ -7,7 +7,7 @@ import { useAdminData } from '@/hooks/useAdminData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { sanitizeJson } from '@/components/dashboard/UserList';
+import { sanitizeJson } from '@/lib/utils';
 
 const AdminDashboard = () => {
   const { profiles, priorityMatches, isLoading, refetch } = useAdminData();

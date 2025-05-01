@@ -34,8 +34,8 @@ export const usePriorityHandlers = (
           set_by: profile.id
         };
 
-        // Sanitize data to prevent JSON parsing errors
-        const sanitizedData = sanitizeJson(matchData);
+        // Sanitize data to prevent JSON parsing errors - stringifying and parsing to remove problematic characters
+        const sanitizedData = JSON.parse(JSON.stringify(matchData));
 
         const { error } = await supabase
           .from('priority_matches')
@@ -133,8 +133,9 @@ export const usePriorityHandlers = (
         not_interested: false
       };
 
-      // Properly sanitize the data before sending it to Supabase
-      const sanitizedData = sanitizeJson(matchData);
+      // Properly sanitize the data before sending it to Supabase by stringifying and parsing
+      // This removes any problematic characters like newlines (0x0A)
+      const sanitizedData = JSON.parse(JSON.stringify(matchData));
 
       console.log('Upserting match data:', sanitizedData);
 

@@ -83,7 +83,7 @@ export const useAdminData = () => {
           // Skip processing if essential IDs are missing
           if (!match.founder_id || !match.investor_id) {
             console.warn('Skipping match with missing IDs:', match);
-            return match;
+            return match as PriorityMatch;
           }
 
           const key = [match.founder_id, match.investor_id].sort().join('-');
@@ -123,16 +123,18 @@ export const useAdminData = () => {
             target,
             score,
             has_mutual_match: hasMutualMatch
-          };
+          } as PriorityMatch;
         }) ?? [];
 
         // Filter out any matches with undefined properties that could cause errors
         const validMatches = processedMatches.filter(match => 
           match && match.founder_id && match.investor_id
-        );
+        ) as PriorityMatch[];
 
-        // Sort by score in descending order
-        return validMatches.sort((a, b) => b.score - a.score);
+        // Sort by score in descending order - explicitly cast with the correct type
+        return validMatches.sort((a: PriorityMatch, b: PriorityMatch) => 
+          (b.score || 0) - (a.score || 0)
+        );
       } catch (error) {
         console.error('Error fetching priority matches:', error);
         throw error;

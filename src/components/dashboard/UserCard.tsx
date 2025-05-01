@@ -10,16 +10,11 @@ import {
 import { ExternalLink } from "lucide-react";
 import type { PriorityMatch } from '@/hooks/useAdminData';
 import { Badge } from "@/components/ui/badge";
+import type { UserWithDetails } from '@/types/dashboard';
 
 type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
-
-type UserWithDetails = Profile & {
-  investor_details?: InvestorDetails;
-  founder_details?: FounderDetails;
-  priority_matches?: PriorityMatch[];
-};
 
 interface UserCardProps {
   user: UserWithDetails;

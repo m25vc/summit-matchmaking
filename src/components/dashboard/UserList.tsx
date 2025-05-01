@@ -1,21 +1,9 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from './ViewToggle';
 import { DiscoverTabContent } from './tabs/DiscoverTabContent';
 import { PriorityTabContent } from './tabs/PriorityTabContent';
-import type { Database } from '@/integrations/supabase/types';
-import type { PriorityMatch } from '@/hooks/useAdminData';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
-type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-
-type UserWithDetails = Profile & {
-  investor_details?: InvestorDetails;
-  founder_details?: FounderDetails;
-  priority_matches?: PriorityMatch[];
-};
+import type { Profile, UserWithDetails } from '@/types/dashboard';
 
 interface UserListProps {
   users: UserWithDetails[];

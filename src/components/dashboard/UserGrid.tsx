@@ -1,19 +1,7 @@
-
 import React from 'react';
 import { UserCard } from './UserCard';
 import { UserListView } from './UserListView';
-import type { Database } from '@/integrations/supabase/types';
-import type { PriorityMatch } from '@/hooks/useAdminData';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
-type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-
-type UserWithDetails = Profile & {
-  investor_details?: InvestorDetails;
-  founder_details?: FounderDetails;
-  priority_matches?: PriorityMatch[];
-};
+import type { UserWithDetails } from '@/types/dashboard';
 
 interface UserGridProps {
   users: UserWithDetails[];

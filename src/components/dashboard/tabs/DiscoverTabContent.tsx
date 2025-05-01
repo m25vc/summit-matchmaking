@@ -1,20 +1,8 @@
-
 import React, { useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterBar } from '../filters/FilterBar';
 import { UserGrid } from '../UserGrid';
-import type { Database } from '@/integrations/supabase/types';
-import type { PriorityMatch } from '@/hooks/useAdminData';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
-type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-
-type UserWithDetails = Profile & {
-  investor_details?: InvestorDetails;
-  founder_details?: FounderDetails;
-  priority_matches?: PriorityMatch[];
-};
+import type { Profile, UserWithDetails } from '@/types/dashboard';
 
 type SortOption = 'newest' | 'alphabetical' | 'company';
 

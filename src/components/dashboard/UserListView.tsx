@@ -1,18 +1,7 @@
-import type { Database } from '@/integrations/supabase/types';
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { PriorityMatch } from '@/hooks/useAdminData';
-
-type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
-type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-type UserWithDetails = Profile & {
-  investor_details?: InvestorDetails;
-  founder_details?: FounderDetails;
-  priority_matches?: PriorityMatch[];
-};
+import type { UserWithDetails } from '@/types/dashboard';
 
 interface UserListViewProps {
   user: UserWithDetails;

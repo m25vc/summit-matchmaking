@@ -13,6 +13,25 @@ export const usePriorityHandlers = (
   setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
+  // Helper function to sanitize data before sending to Supabase
+  const sanitizeData = (data: any): any => {
+    // Convert to string and back to remove all problematic characters
+    try {
+      // First convert to a basic string without any special formatting
+      const stringified = JSON.stringify(data);
+      
+      // Replace all control characters that could cause issues
+      const cleaned = stringified.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+      
+      // Parse it back to an object
+      return JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Error sanitizing data:", e);
+      // If there's an error in sanitization, return a simple copy of the object
+      return {...data};
+    }
+  };
+
   const handlePriorityChange = async (
     userId: string, 
     priority: 'high' | 'medium' | 'low' | null, 
@@ -33,9 +52,8 @@ export const usePriorityHandlers = (
           set_by: profile.id
         };
 
-        // Create a clean object with simple stringification - this eliminates all problematic characters
-        const cleanData = JSON.stringify(matchData).replace(/[\u0000-\u001F]/g, '');
-        const sanitizedData = JSON.parse(cleanData);
+        // Sanitize data before sending to Supabase
+        const sanitizedData = sanitizeData(matchData);
 
         const { error } = await supabase
           .from('priority_matches')
@@ -125,6 +143,7 @@ export const usePriorityHandlers = (
         return;
       }
 
+      // Create the match data object
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
@@ -133,10 +152,9 @@ export const usePriorityHandlers = (
         not_interested: false
       };
 
-      // Create a clean object with simple string conversion - removes all problematic characters
-      const cleanData = JSON.stringify(matchData).replace(/[\u0000-\u001F]/g, '');
-      const sanitizedData = JSON.parse(cleanData);
-
+      // Sanitize data before sending to Supabase
+      const sanitizedData = sanitizeData(matchData);
+      
       console.log('Upserting match data:', sanitizedData);
 
       const { error } = await supabase

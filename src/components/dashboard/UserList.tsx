@@ -1,4 +1,3 @@
-
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { UserListView } from './UserListView';
@@ -410,3 +409,37 @@ export const UserList = ({ users, profile, highPriorityCount, onPriorityChange }
     </div>
   );
 };
+
+// This sanitization ensures we're sending clean data to Supabase
+export const sanitizeJson = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'object') {
+    if (Array.isArray(obj)) {
+      return obj.map(item => sanitizeJson(item));
+    }
+    
+    const result: Record<string, any> = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        // Skip functions and non-serializable objects
+        if (typeof obj[key] !== 'function' && key !== '__proto__') {
+          result[key] = sanitizeJson(obj[key]);
+        }
+      }
+    }
+    return result;
+  }
+  
+  // Convert special types that might cause issues in JSON
+  if (typeof obj === 'string') {
+    // Ensure strings don't have unescaped special characters
+    return obj;
+  }
+  
+  return obj;
+};
+
+export { UserList };

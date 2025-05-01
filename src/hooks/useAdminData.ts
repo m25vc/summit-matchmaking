@@ -114,8 +114,27 @@ export const useAdminData = () => {
             else if (otherMatch.priority === 'low') score += 1;
           }
 
-          const initiator = profilesMap.get(match.founder_id);
-          const target = profilesMap.get(match.investor_id);
+          // Use safe lookups for profiles and sanitize data
+          let initiator = null;
+          let target = null;
+          
+          try {
+            initiator = profilesMap.get(match.founder_id) || null;
+            target = profilesMap.get(match.investor_id) || null;
+            
+            // Ensure we're not passing objects that might cause JSON serialization issues
+            if (initiator) {
+              // Create a clean copy without circular references or functions
+              initiator = JSON.parse(JSON.stringify(initiator));
+            }
+            
+            if (target) {
+              // Create a clean copy without circular references or functions
+              target = JSON.parse(JSON.stringify(target));
+            }
+          } catch (error) {
+            console.error('Error processing profile data:', error);
+          }
 
           return {
             ...match,

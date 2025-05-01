@@ -6,6 +6,8 @@ import { PriorityMatchesTable } from '@/components/admin/PriorityMatchesTable';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
+import { sanitizeJson } from '@/components/dashboard/UserList';
 
 const AdminDashboard = () => {
   const { profiles, priorityMatches, isLoading, refetch } = useAdminData();
@@ -23,6 +25,7 @@ const AdminDashboard = () => {
 
   const handleDataCleared = () => {
     console.log("Data cleared, refreshing...");
+    toast.success("Data cleared successfully");
     refetch();
   };
 
@@ -48,11 +51,11 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="users">
-            <UsersTable users={profiles} onDataCleared={handleDataCleared} />
+            <UsersTable users={sanitizeJson(profiles)} onDataCleared={handleDataCleared} />
           </TabsContent>
 
           <TabsContent value="priorities">
-            <PriorityMatchesTable matches={priorityMatches} />
+            <PriorityMatchesTable matches={sanitizeJson(priorityMatches)} />
           </TabsContent>
         </Tabs>
       </div>

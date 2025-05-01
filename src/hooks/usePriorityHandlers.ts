@@ -13,25 +13,6 @@ export const usePriorityHandlers = (
   setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
-  // Helper function to sanitize data before sending to Supabase
-  const sanitizeData = (data: any): any => {
-    // Convert to string and back to remove all problematic characters
-    try {
-      // First convert to a basic string without any special formatting
-      const stringified = JSON.stringify(data);
-      
-      // Replace all control characters that could cause issues
-      const cleaned = stringified.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
-      
-      // Parse it back to an object
-      return JSON.parse(cleaned);
-    } catch (e) {
-      console.error("Error sanitizing data:", e);
-      // If there's an error in sanitization, return a simple copy of the object
-      return {...data};
-    }
-  };
-
   const handlePriorityChange = async (
     userId: string, 
     priority: 'high' | 'medium' | 'low' | null, 
@@ -44,6 +25,7 @@ export const usePriorityHandlers = (
 
     if (notInterested) {
       try {
+        // Create a plain object with only the required fields
         const matchData = {
           founder_id: profile.user_type === 'founder' ? profile.id : userId,
           investor_id: profile.user_type === 'founder' ? userId : profile.id,
@@ -52,12 +34,12 @@ export const usePriorityHandlers = (
           set_by: profile.id
         };
 
-        // Sanitize data before sending to Supabase
-        const sanitizedData = sanitizeData(matchData);
+        // Log the data before sending it
+        console.log('Sending not interested match data:', matchData);
 
         const { error } = await supabase
           .from('priority_matches')
-          .upsert(sanitizedData, {
+          .upsert(matchData, {
             onConflict: 'founder_id,investor_id'
           });
 
@@ -143,7 +125,7 @@ export const usePriorityHandlers = (
         return;
       }
 
-      // Create the match data object
+      // Create a plain, simple object with only primitive values
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
@@ -151,15 +133,13 @@ export const usePriorityHandlers = (
         set_by: profile.id,
         not_interested: false
       };
-
-      // Sanitize data before sending to Supabase
-      const sanitizedData = sanitizeData(matchData);
       
-      console.log('Upserting match data:', sanitizedData);
+      console.log('Upserting match data:', matchData);
 
+      // Use upsert with the plain object directly
       const { error } = await supabase
         .from('priority_matches')
-        .upsert(sanitizedData, {
+        .upsert(matchData, {
           onConflict: 'founder_id,investor_id'
         });
 

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 import { ProfileHeader } from '@/components/dashboard/ProfileHeader';
-import { UserList } from '@/components/dashboard/UserList';
+import { UserList, sanitizeJson } from '@/components/dashboard/UserList';
 import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -117,15 +117,20 @@ const Dashboard = () => {
 
     if (notInterested) {
       try {
+        const matchData = {
+          founder_id: profile.user_type === 'founder' ? profile.id : userId,
+          investor_id: profile.user_type === 'founder' ? userId : profile.id,
+          priority: null,
+          not_interested: true,
+          set_by: profile.id
+        };
+
+        // Sanitize data to prevent JSON parsing errors
+        const sanitizedData = sanitizeJson(matchData);
+
         const { error } = await supabase
           .from('priority_matches')
-          .upsert({
-            founder_id: profile.user_type === 'founder' ? profile.id : userId,
-            investor_id: profile.user_type === 'founder' ? userId : profile.id,
-            priority: null,
-            not_interested: true,
-            set_by: profile.id
-          }, {
+          .upsert(sanitizedData, {
             onConflict: 'founder_id,investor_id'
           });
 
@@ -157,7 +162,6 @@ const Dashboard = () => {
           })
         );
 
-        // Fix: Changed 'user' to 'users' here
         const userWithHighPriority = users.find(u => 
           u.id === userId && u.priority_matches?.[0]?.priority === 'high'
         );
@@ -220,11 +224,14 @@ const Dashboard = () => {
         not_interested: false
       };
 
-      console.log('Upserting match data:', matchData);
+      // Sanitize data to prevent JSON parsing errors
+      const sanitizedData = sanitizeJson(matchData);
+
+      console.log('Upserting match data:', sanitizedData);
 
       const { error } = await supabase
         .from('priority_matches')
-        .upsert(matchData, {
+        .upsert(sanitizedData, {
           onConflict: 'founder_id,investor_id'
         });
 

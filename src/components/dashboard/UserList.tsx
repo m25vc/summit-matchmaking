@@ -1,3 +1,4 @@
+
 import type { Database } from '@/integrations/supabase/types';
 import { UserCard } from './UserCard';
 import { UserListView } from './UserListView';
@@ -435,8 +436,11 @@ export const sanitizeJson = (obj: any): any => {
   
   // Convert special types that might cause issues in JSON
   if (typeof obj === 'string') {
-    // Ensure strings don't have unescaped special characters
-    return obj;
+    // Replace newlines and other problematic characters
+    return obj
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, ' ')
+      .replace(/\t/g, ' ');
   }
   
   return obj;

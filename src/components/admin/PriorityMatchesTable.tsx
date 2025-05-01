@@ -13,6 +13,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import type { PriorityMatch } from '@/hooks/useAdminData';
+import { sanitizeJson } from '@/lib/utils';
 
 interface PriorityMatchesTableProps {
   matches: PriorityMatch[] | null;
@@ -66,8 +67,11 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     setIsSyncing(true);
     
     try {
+      // Sanitize matches data before sending to Supabase function
+      const sanitizedMatches = sanitizeJson(matches);
+      
       const { error } = await supabase.functions.invoke('sync-to-sheets', {
-        body: { matches }
+        body: { matches: sanitizedMatches }
       });
       
       if (error) {

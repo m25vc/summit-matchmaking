@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { sanitizeJson } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
-import type { UserWithDetails } from './useDashboardData';
+import type { UserWithDetails } from '@/types/dashboard';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -11,8 +11,8 @@ export const usePriorityHandlers = (
   profile: Profile | null,
   users: UserWithDetails[],
   highPriorityCount: number,
-  setHighPriorityCount: (count: number) => void,
-  setUsers: (users: UserWithDetails[]) => void
+  setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
+  setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
   const handlePriorityChange = async (
     userId: string, 
@@ -48,7 +48,7 @@ export const usePriorityHandlers = (
           throw error;
         }
 
-        setUsers(prevUsers => 
+        setUsers((prevUsers: UserWithDetails[]) => 
           prevUsers.map(user => {
             if (user.id === userId) {
               const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
@@ -76,7 +76,7 @@ export const usePriorityHandlers = (
         );
         
         if (userWithHighPriority) {
-          setHighPriorityCount(prev => prev - 1);
+          setHighPriorityCount((prev: number) => prev - 1);
         }
 
         toast.success("Match marked as not interested");
@@ -105,12 +105,12 @@ export const usePriorityHandlers = (
 
         if (error) throw error;
 
-        setUsers(prevUsers => 
+        setUsers((prevUsers: UserWithDetails[]) => 
           prevUsers.map(user => {
             if (user.id === userId) {
               const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
               if (wasHighPriority) {
-                setHighPriorityCount(prev => prev - 1);
+                setHighPriorityCount((prev: number) => prev - 1);
               }
               return {
                 ...user,
@@ -149,7 +149,7 @@ export const usePriorityHandlers = (
         throw error;
       }
 
-      setUsers(prevUsers => 
+      setUsers((prevUsers: UserWithDetails[]) => 
         prevUsers.map(user => {
           if (user.id === userId) {
             return {
@@ -166,14 +166,14 @@ export const usePriorityHandlers = (
       );
 
       if (priority === 'high') {
-        setHighPriorityCount(prev => {
+        setHighPriorityCount((prev: number) => {
           const userHadHighPriority = users.find(u => 
             u.id === userId && u.priority_matches?.[0]?.priority === 'high'
           );
           return userHadHighPriority ? prev : prev + 1;
         });
       } else {
-        setHighPriorityCount(prev => {
+        setHighPriorityCount((prev: number) => {
           const userHadHighPriority = users.find(u => 
             u.id === userId && u.priority_matches?.[0]?.priority === 'high'
           );

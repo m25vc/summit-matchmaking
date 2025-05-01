@@ -42,7 +42,7 @@ export const useAdminData = () => {
 
         if (priorityMatchesError) {
           console.error('Priority matches error:', priorityMatchesError);
-          return [];
+          throw priorityMatchesError;
         }
 
         // Get all profiles for reference
@@ -52,7 +52,7 @@ export const useAdminData = () => {
 
         if (profilesError) {
           console.error('Profiles error:', profilesError);
-          return [];
+          throw profilesError;
         }
 
         // Create a map of profiles by ID for faster lookups
@@ -63,16 +63,29 @@ export const useAdminData = () => {
 
         // Process priority matches to identify mutual matches
         priorityMatchesData?.forEach(match => {
-          const key = [match.founder_id, match.investor_id].sort().join('-');
-          if (!mutualMatches.has(key)) {
-            mutualMatches.set(key, { matches: [], count: 0 });
+          // Ensure match.founder_id and match.investor_id are defined before sorting
+          if (match.founder_id && match.investor_id) {
+            const key = [match.founder_id, match.investor_id].sort().join('-');
+            
+            if (!mutualMatches.has(key)) {
+              mutualMatches.set(key, { matches: [], count: 0 });
+            }
+            
+            mutualMatches.get(key).matches.push(match);
+            mutualMatches.get(key).count++;
+          } else {
+            console.warn('Match with undefined founder_id or investor_id:', match);
           }
-          mutualMatches.get(key).matches.push(match);
-          mutualMatches.get(key).count++;
         });
 
         // Calculate scores and prepare final data
         const processedMatches = priorityMatchesData?.map(match => {
+          // Skip processing if essential IDs are missing
+          if (!match.founder_id || !match.investor_id) {
+            console.warn('Skipping match with missing IDs:', match);
+            return match;
+          }
+
           const key = [match.founder_id, match.investor_id].sort().join('-');
           const mutualMatch = mutualMatches.get(key);
           const hasMutualMatch = mutualMatch?.count === 2;
@@ -113,11 +126,16 @@ export const useAdminData = () => {
           };
         }) ?? [];
 
+        // Filter out any matches with undefined properties that could cause errors
+        const validMatches = processedMatches.filter(match => 
+          match && match.founder_id && match.investor_id
+        );
+
         // Sort by score in descending order
-        return processedMatches.sort((a, b) => b.score - a.score);
+        return validMatches.sort((a, b) => b.score - a.score);
       } catch (error) {
         console.error('Error fetching priority matches:', error);
-        return [];
+        throw error;
       }
     },
   });
@@ -126,6 +144,8 @@ export const useAdminData = () => {
     profiles: profilesQuery.data,
     priorityMatches: priorityMatchesQuery.data,
     isLoading: profilesQuery.isLoading || priorityMatchesQuery.isLoading,
+    isError: profilesQuery.isError || priorityMatchesQuery.isError,
+    error: profilesQuery.error || priorityMatchesQuery.error,
     refetch: () => {
       profilesQuery.refetch();
       priorityMatchesQuery.refetch();

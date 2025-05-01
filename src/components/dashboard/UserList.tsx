@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LayoutGrid, LayoutList } from "lucide-react";
 import { useState, useMemo } from 'react';
+import { sanitizeJson } from '@/lib/utils';
 import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];

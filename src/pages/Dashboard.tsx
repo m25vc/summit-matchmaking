@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 import { ProfileHeader } from '@/components/dashboard/ProfileHeader';
-import { UserList, sanitizeJson } from '@/components/dashboard/UserList';
+import { UserList } from '@/components/dashboard/UserList';
+import { sanitizeJson } from '@/lib/utils';
 import type { PriorityMatch } from '@/hooks/useAdminData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -224,7 +225,7 @@ const Dashboard = () => {
         not_interested: false
       };
 
-      // Sanitize data to prevent JSON parsing errors
+      // Properly sanitize the data before sending it to Supabase
       const sanitizedData = sanitizeJson(matchData);
 
       console.log('Upserting match data:', sanitizedData);

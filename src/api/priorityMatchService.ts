@@ -84,7 +84,7 @@ export async function setPriorityMatch(
       
       // Only assign if it's a valid match priority type
       if (cleanPriority === 'high' || cleanPriority === 'medium' || cleanPriority === 'low') {
-        safePriority = cleanPriority;
+        safePriority = cleanPriority as MatchPriority;
       } else {
         console.warn(`Invalid priority value: "${priority}" → defaulting to null`);
       }

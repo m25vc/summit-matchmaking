@@ -16,7 +16,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 export function usePriorityMatchService() {
   /**
    * Sanitizes RPC parameters to prevent issues with special characters
-   * With enhanced handling for newline and control characters
+   * Specifically targeting newline and control characters
    */
   const sanitizeRpcParams = (input: any): any => {
     // Handle null/undefined
@@ -26,19 +26,17 @@ export function usePriorityMatchService() {
     
     // Handle strings - aggressively remove all problematic characters
     if (typeof input === 'string') {
-      // First target the 0x0A newline character specifically that's causing issues
+      // First remove all newlines (0x0A) which are causing the specific error
       let sanitized = input.replace(/\n/g, '');
       
       // Also remove carriage returns
       sanitized = sanitized.replace(/\r/g, '');
       
-      // Then remove all control characters and other problematic characters
+      // Then remove all control characters (includes more than just \n and \r)
       sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
       
-      // Final trim
-      sanitized = sanitized.trim();
-      
-      return sanitized;
+      // Final trim to clean up spaces
+      return sanitized.trim();
     }
     
     // Handle arrays
@@ -46,7 +44,7 @@ export function usePriorityMatchService() {
       return input.map(item => sanitizeRpcParams(item));
     }
     
-    // Handle objects
+    // Handle objects recursively
     if (typeof input === 'object') {
       const result: Record<string, any> = {};
       for (const key in input) {
@@ -69,29 +67,29 @@ export function usePriorityMatchService() {
     params: Record<string, any>
   ): Promise<any> => {
     try {
-      // First, sanitize parameters to remove problematic characters 
+      // First, sanitize parameters to ensure they're clean
       const sanitizedParams = sanitizeRpcParams(params);
       
-      // Then stringify with extra safety
+      // Then convert to JSON string with extra care
       let safeJsonParams;
       try {
-        // Use a custom stringify function with replacer function to handle special cases
+        // Use a custom replacer function to handle any remaining special characters
         safeJsonParams = JSON.stringify(sanitizedParams, (key, value) => {
           if (typeof value === 'string') {
-            // Extra sanitization during stringify to ensure all newlines are gone
-            return value.replace(/\n/g, '').replace(/\r/g, '');
+            // Extra sanitization during stringify to catch any remaining issues
+            return value.replace(/[\n\r]/g, '');
           }
           return value;
         });
       } catch (stringifyError) {
         console.error('Failed to stringify params:', stringifyError);
-        // Fallback to our safe stringify utility
+        // Fall back to our safe stringify utility if the standard stringify fails
         safeJsonParams = safeJsonStringify(sanitizedParams);
       }
       
       console.log(`Calling RPC ${functionName} with params:`, safeJsonParams);
       
-      // Make direct fetch call with sanitized JSON
+      // Make the fetch call with sanitized JSON
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
         method: 'POST',
         headers: {
@@ -109,18 +107,18 @@ export function usePriorityMatchService() {
         throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
       }
       
-      // For minimal responses, return success status
+      // For minimal responses, just return success status
       if (response.status === 204) {
         return { success: true };
       }
       
-      // Parse response with safety checks
+      // Parse response but handle parsing errors
       try {
         const data = await response.json();
         return { data };
       } catch (parseError) {
         console.error('Failed to parse response:', parseError);
-        return { success: true }; // Assume success since the request didn't fail
+        return { success: true }; // Assume success since status was OK
       }
     } catch (error) {
       console.error(`Error in RPC call to ${functionName}:`, error);
@@ -130,7 +128,7 @@ export function usePriorityMatchService() {
 
   /**
    * Sets a priority match between a founder and investor
-   * With enhanced parameter sanitization
+   * With improved parameter validation
    */
   const setPriorityMatch = async (
     founderId: string,
@@ -141,18 +139,13 @@ export function usePriorityMatchService() {
     console.log("Setting priority match:", { founderId, investorId, priority, setBy });
     
     try {
-      // Aggressively sanitize all parameters
-      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
-      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
-      const safeSetBy = typeof setBy === 'string' ? setBy.replace(/[\n\r\t]/g, '') : setBy;
-      
-      // Validate and sanitize priority value
+      // Validate priority value and enforce enum values
       let safePriority: MatchPriority = null;
       if (typeof priority === 'string') {
         // Clean up the priority string
-        const cleanPriority = priority.replace(/\n/g, '').replace(/\r/g, '').trim();
+        const cleanPriority = priority.replace(/[\n\r\t]/g, '').trim();
         
-        // Only assign if it's a valid match priority type
+        // Only assign if it's a valid match priority
         if (cleanPriority === 'high' || cleanPriority === 'medium' || cleanPriority === 'low') {
           safePriority = cleanPriority as MatchPriority;
         } else {
@@ -160,22 +153,15 @@ export function usePriorityMatchService() {
           safePriority = 'low';
         }
       } else {
-        // If null, use 'low' since the database requires a non-null value
+        // If null, default to 'low' since the database expects a non-null value
         safePriority = priority || 'low';
       }
       
-      console.log(`Using sanitized values:`, {
-        founderId: safeFounderId,
-        investorId: safeInvestorId,
-        priority: safePriority,
-        setBy: safeSetBy
-      });
-      
       return await callRpcEndpoint('set_priority_match', {
-        p_founder_id: safeFounderId,
-        p_investor_id: safeInvestorId,
+        p_founder_id: founderId,
+        p_investor_id: investorId,
         p_priority: safePriority,
-        p_set_by: safeSetBy
+        p_set_by: setBy
       });
     } catch (error) {
       console.error("Error in setPriorityMatch:", error);
@@ -192,15 +178,10 @@ export function usePriorityMatchService() {
     setBy: string
   ) => {
     try {
-      // Sanitize all parameters
-      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
-      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
-      const safeSetBy = typeof setBy === 'string' ? setBy.replace(/[\n\r\t]/g, '') : setBy;
-      
       return await callRpcEndpoint('set_not_interested', {
-        p_founder_id: safeFounderId,
-        p_investor_id: safeInvestorId,
-        p_set_by: safeSetBy
+        p_founder_id: founderId,
+        p_investor_id: investorId,
+        p_set_by: setBy
       });
     } catch (error) {
       console.error("Error in setNotInterested:", error);
@@ -216,13 +197,9 @@ export function usePriorityMatchService() {
     investorId: string
   ) => {
     try {
-      // Sanitize parameters
-      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
-      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
-      
       return await callRpcEndpoint('delete_priority_match', {
-        p_founder_id: safeFounderId,
-        p_investor_id: safeInvestorId
+        p_founder_id: founderId,
+        p_investor_id: investorId
       });
     } catch (error) {
       console.error("Error in deletePriorityMatch:", error);

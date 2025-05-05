@@ -19,13 +19,14 @@ BEGIN
   ) VALUES (
     p_founder_id,
     p_investor_id,
-    CASE WHEN p_priority IS NULL THEN NULL ELSE p_priority::match_priority END,  -- Safer casting
+    -- Default to 'low' if p_priority is NULL since priority column is NOT NULL
+    CASE WHEN p_priority IS NULL THEN 'low'::match_priority ELSE p_priority::match_priority END,
     FALSE,
     p_set_by
   )
   ON CONFLICT (founder_id, investor_id)
   DO UPDATE SET
-    priority = CASE WHEN p_priority IS NULL THEN NULL ELSE p_priority::match_priority END,  -- Safer casting
+    priority = CASE WHEN p_priority IS NULL THEN 'low'::match_priority ELSE p_priority::match_priority END,
     not_interested = FALSE,
     set_by = p_set_by;
 END;

@@ -64,13 +64,13 @@ export function usePriorityMatches(
           throw result.error;
         }
         
-        // Update local state
-        updateUserState(userId, null, true);
+        // Update local state with 'low' priority (not null) and not_interested=true
+        updateUserState(userId, 'low', true);
         toast.success("Match marked as not interested");
         return;
       }
 
-      // Handle removing priority case
+      // Handle removing priority case - use 'low' instead of null due to NOT NULL constraint
       if (priority === null) {
         const result = await deletePriorityMatch(founderId, investorId);
         
@@ -126,6 +126,8 @@ export function usePriorityMatches(
         if (user.id === userId) {
           const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
           
+          // For "remove match" case with null priority - we'll leave priority_matches empty
+          // For "not interested" case, we'll use 'low' priority with not_interested=true
           return {
             ...user,
             priority_matches: priority === null && !notInterested ? [] : [{
@@ -134,7 +136,7 @@ export function usePriorityMatches(
               founder_id: profile?.user_type === 'founder' ? profile.id : userId,
               investor_id: profile?.user_type === 'founder' ? userId : profile.id,
               set_by: profile?.id || '',
-              priority: priority,
+              priority: priority || 'low', // Default to 'low' if null due to NOT NULL constraint
               not_interested: notInterested
             }]
           };

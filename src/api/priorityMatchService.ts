@@ -62,7 +62,8 @@ export async function setPriorityMatch(
     // Sanitize inputs
     const sanitizedFounderId = sanitizeInput(founderId);
     const sanitizedInvestorId = sanitizeInput(investorId);
-    const sanitizedPriority = priority ? sanitizeInput(priority) : null;
+    // If priority is null, default to 'low' since the column is NOT NULL
+    const sanitizedPriority = priority ? sanitizeInput(priority) : 'low';
     const sanitizedSetBy = sanitizeInput(setBy);
     
     console.log("Sanitized inputs:", {

@@ -14,40 +14,38 @@ export function usePriorityMatchService() {
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8";
 
   /**
-   * Special JSON stringification with character escaping
-   * This specifically handles the problematic 0x0A newline character
+   * Safely prepare parameters for RPC by sanitizing all values
    */
-  const safeStringify = (obj: any): string => {
-    return JSON.stringify(obj).replace(/\n/g, "\\n");
+  const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
+    const sanitized: Record<string, any> = {};
+    
+    for (const key in params) {
+      if (typeof params[key] === 'string') {
+        // Remove ALL control characters including newlines
+        sanitized[key] = params[key].replace(/[\x00-\x1F\x7F-\x9F]/g, "");
+      } else {
+        sanitized[key] = params[key];
+      }
+    }
+    
+    return sanitized;
   };
 
   /**
-   * Make a direct API call to Supabase RPC endpoint
+   * Make a direct API call to Supabase RPC endpoint using application/json
+   * with properly serialized parameters
    */
   const callRpc = async (
     functionName: string,
     params: Record<string, any>
   ): Promise<any> => {
     try {
-      // Pre-process all parameters to handle problematic characters
-      const processedParams: Record<string, any> = {};
+      // Clean all parameters to remove control characters
+      const cleanParams = sanitizeParams(params);
       
-      // Process each parameter to ensure it's safe for JSON
-      for (const key in params) {
-        if (typeof params[key] === 'string') {
-          // Remove ALL control characters specifically targeting newlines (0x0A)
-          processedParams[key] = params[key]
-            .replace(/\n/g, "") // Newlines (LF)
-            .replace(/\r/g, "") // Carriage returns (CR)
-            .replace(/[\x00-\x1F\x7F-\x9F]/g, ""); // All other control chars
-        } else {
-          processedParams[key] = params[key];
-        }
-      }
-
-      console.log(`RPC call to ${functionName} with processed params:`, processedParams);
+      console.log(`RPC call to ${functionName} with sanitized params:`, cleanParams);
       
-      // Make API call with specially formatted body
+      // Use the URLSearchParams approach for more reliable parameter passing
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
         method: 'POST',
         headers: {
@@ -56,7 +54,13 @@ export function usePriorityMatchService() {
           'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Prefer': 'return=minimal'
         },
-        body: safeStringify(processedParams)
+        // Stringify with replacer function to handle any remaining control characters
+        body: JSON.stringify(cleanParams, (key, value) => {
+          if (typeof value === 'string') {
+            return value.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
+          }
+          return value;
+        })
       });
       
       if (!response.ok) {
@@ -97,7 +101,8 @@ export function usePriorityMatchService() {
           !['high', 'medium', 'low'].includes(priority))) {
         validPriority = 'low';
       }
-      
+
+      // Use the updated callRpc function
       const result = await callRpc('set_priority_match', {
         p_founder_id: founderId,
         p_investor_id: investorId,

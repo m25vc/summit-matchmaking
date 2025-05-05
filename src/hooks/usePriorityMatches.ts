@@ -34,7 +34,6 @@ export function usePriorityMatches(
     notInterested = false
   ) => {
     console.log(`updatePriorityMatch - START - userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
-    console.log(`updatePriorityMatch - DEBUGGING - current user count: ${users.length}, highPriorityCount: ${highPriorityCount}`);
     
     if (!profile) {
       console.error("updatePriorityMatch - ERROR - Profile not loaded");
@@ -45,14 +44,6 @@ export function usePriorityMatches(
     console.log(`Updating match: userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
     console.log(`Current profile: ${profile.user_type}, id=${profile.id}`);
     
-    // Debug user details
-    const targetUser = users.find(u => u.id === userId);
-    console.log("Target user details:", {
-      id: targetUser?.id,
-      name: targetUser ? `${targetUser.first_name} ${targetUser.last_name}` : 'unknown',
-      priorityMatch: targetUser?.priority_matches?.[0]
-    });
-
     try {
       // Determine founder and investor IDs based on user types
       let founderId = '';
@@ -71,18 +62,22 @@ export function usePriorityMatches(
       // Handle "not interested" case
       if (notInterested) {
         console.log("updatePriorityMatch - Processing NOT INTERESTED case");
-        const result = await setNotInterested(founderId, investorId, profile.id);
+        
+        // Sanitize input IDs - extra precaution
+        const sanitizedFounderId = founderId?.replace(/[\n\r\t]/g, '');
+        const sanitizedInvestorId = investorId?.replace(/[\n\r\t]/g, '');
+        const sanitizedProfileId = profile.id?.replace(/[\n\r\t]/g, '');
+        
+        const result = await setNotInterested(
+          sanitizedFounderId, 
+          sanitizedInvestorId, 
+          sanitizedProfileId
+        );
         
         console.log("updatePriorityMatch - setNotInterested result:", result);
         
         if (result.error) {
           console.error('Error from setNotInterested:', result.error);
-          console.error('Error details:', {
-            message: result.error.message,
-            code: result.error.code,
-            details: result.error.details,
-            hint: result.error.hint
-          });
           throw result.error;
         }
         
@@ -96,18 +91,17 @@ export function usePriorityMatches(
       // Handle removing priority case - use 'low' instead of null due to NOT NULL constraint
       if (priority === null) {
         console.log("updatePriorityMatch - Processing REMOVE PRIORITY case");
-        const result = await deletePriorityMatch(founderId, investorId);
+        
+        // Sanitize input IDs - extra precaution
+        const sanitizedFounderId = founderId?.replace(/[\n\r\t]/g, '');
+        const sanitizedInvestorId = investorId?.replace(/[\n\r\t]/g, '');
+        
+        const result = await deletePriorityMatch(sanitizedFounderId, sanitizedInvestorId);
         
         console.log("updatePriorityMatch - deletePriorityMatch result:", result);
         
         if (result.error) {
           console.error('Error from deletePriorityMatch:', result.error);
-          console.error('Error details:', {
-            message: result.error.message,
-            code: result.error.code,
-            details: result.error.details,
-            hint: result.error.hint
-          });
           throw result.error;
         }
         
@@ -135,18 +129,31 @@ export function usePriorityMatches(
 
       // Set priority match
       console.log(`Setting priority: founderId=${founderId}, investorId=${investorId}, priority=${priority}`);
-      const result = await setPriorityMatch(founderId, investorId, priority, profile.id);
+      
+      // Sanitize inputs - extra precaution
+      const sanitizedFounderId = founderId?.replace(/[\n\r\t]/g, '');
+      const sanitizedInvestorId = investorId?.replace(/[\n\r\t]/g, '');
+      const sanitizedPriority = typeof priority === 'string' ? priority.replace(/[\n\r\t]/g, '') : priority;
+      const sanitizedProfileId = profile.id?.replace(/[\n\r\t]/g, '');
+      
+      console.log("Sanitized inputs:", {
+        founderId: sanitizedFounderId,
+        investorId: sanitizedInvestorId,
+        priority: sanitizedPriority,
+        profileId: sanitizedProfileId
+      });
+      
+      const result = await setPriorityMatch(
+        sanitizedFounderId, 
+        sanitizedInvestorId, 
+        sanitizedPriority, 
+        sanitizedProfileId
+      );
       
       console.log("updatePriorityMatch - setPriorityMatch result:", result);
       
       if (result.error) {
         console.error('Error from setPriorityMatch:', result.error);
-        console.error('Error details:', {
-          message: result.error.message,
-          code: result.error.code,
-          details: result.error.details,
-          hint: result.error.hint
-        });
         throw result.error;
       }
       
@@ -157,14 +164,12 @@ export function usePriorityMatches(
       
     } catch (error) {
       console.error('Error updating priority:', error);
-      console.error('Error stack:', error?.stack);
       console.error('Error details:', {
         name: error?.name,
         message: error?.message,
         code: error?.code,
         details: error?.details,
-        hint: error?.hint,
-        status: error?.status
+        hint: error?.hint
       });
       toast.error(`Failed to update priority: ${error?.message || 'Unknown error'}`);
     }

@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
-import { deepSanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -13,6 +12,7 @@ export const usePriorityHandlers = (
   setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
+  // Completely rewritten function to bypass JSON issues
   const handlePriorityChange = async (
     userId: string, 
     priority: 'high' | 'medium' | 'low' | null, 
@@ -29,80 +29,7 @@ export const usePriorityHandlers = (
       return;
     }
 
-    if (notInterested) {
-      console.log('Processing "not interested" case');
-      try {
-        // Create initial data object - make sure all values are primitive
-        const matchData = {
-          founder_id: profile.user_type === 'founder' ? profile.id : userId,
-          investor_id: profile.user_type === 'founder' ? userId : profile.id,
-          priority: null,
-          not_interested: true,
-          set_by: profile.id
-        };
-        
-        console.log('About to send upsert request to Supabase');
-        
-        const { error, data } = await supabase
-          .from('priority_matches')
-          .upsert(matchData, {
-            onConflict: 'founder_id,investor_id'
-          });
-
-        console.log('Supabase response:', { error, data });
-
-        if (error) {
-          console.error('Upsert error details:', error);
-          throw error;
-        }
-
-        console.log('Update successful, now updating local state');
-
-        setUsers((prevUsers: UserWithDetails[]) => {
-          console.log('Updating users state');
-          return prevUsers.map(user => {
-            if (user.id === userId) {
-              const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
-              console.log(`User ${userId} wasHighPriority:`, wasHighPriority);
-              
-              return {
-                ...user,
-                priority_matches: [{
-                  ...user.priority_matches?.[0],
-                  id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
-                  created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
-                  founder_id: profile.user_type === 'founder' ? profile.id : userId,
-                  investor_id: profile.user_type === 'founder' ? userId : profile.id,
-                  set_by: profile.id,
-                  priority: null,
-                  not_interested: true
-                }]
-              };
-            }
-            return user;
-          });
-        });
-
-        const userWithHighPriority = users.find(u => 
-          u.id === userId && u.priority_matches?.[0]?.priority === 'high'
-        );
-        
-        console.log(`userWithHighPriority check:`, !!userWithHighPriority);
-        
-        if (userWithHighPriority) {
-          console.log('Decrementing high priority count');
-          setHighPriorityCount((prev: number) => prev - 1);
-        }
-
-        toast.success("Match marked as not interested");
-      } catch (error) {
-        console.error('Error marking match as not interested:', error);
-        toast.error("Failed to mark match as not interested");
-      }
-      console.log('------- PRIORITY CHANGE END -------');
-      return;
-    }
-
+    // Check high priority limit
     if (priority === 'high' && highPriorityCount >= 5 && !users.find(u => 
       u.id === userId && u.priority_matches?.[0]?.priority === 'high'
     )) {
@@ -113,28 +40,28 @@ export const usePriorityHandlers = (
     }
 
     try {
+      // Determine founder_id and investor_id
+      const founderId = profile.user_type === 'founder' ? profile.id : userId;
+      const investorId = profile.user_type === 'founder' ? userId : profile.id;
+      
+      // For delete action (priority === null)
       if (priority === null) {
         console.log('Removing priority match');
-        // Delete the priority match
-        const { error, data } = await supabase
-          .from('priority_matches')
-          .delete()
-          .eq('founder_id', profile.user_type === 'founder' ? profile.id : userId)
-          .eq('investor_id', profile.user_type === 'founder' ? userId : profile.id);
-
-        console.log('Delete response:', { error, data });
+        
+        const { error } = await supabase.rpc('delete_priority_match', {
+          p_founder_id: founderId,
+          p_investor_id: investorId
+        });
 
         if (error) throw error;
-
-        setUsers((prevUsers: UserWithDetails[]) => 
+        
+        // Update UI state
+        setUsers((prevUsers) => 
           prevUsers.map(user => {
             if (user.id === userId) {
               const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
-              console.log(`Removing: User ${userId} wasHighPriority:`, wasHighPriority);
-              
               if (wasHighPriority) {
-                console.log('Decrementing high priority count');
-                setHighPriorityCount((prev: number) => prev - 1);
+                setHighPriorityCount((prev) => prev - 1);
               }
               return {
                 ...user,
@@ -149,49 +76,77 @@ export const usePriorityHandlers = (
         console.log('------- PRIORITY CHANGE END - REMOVED -------');
         return;
       }
-
-      // Create initial data object with simple primitive values only
-      const matchData = {
-        founder_id: profile.user_type === 'founder' ? profile.id : userId,
-        investor_id: profile.user_type === 'founder' ? userId : profile.id,
-        priority,
-        set_by: profile.id,
-        not_interested: false
-      };
       
-      console.log('PRIORITY UPDATE - matchData:', matchData);
-      console.log('PRIORITY UPDATE - matchData founder_id:', matchData.founder_id);
-      console.log('PRIORITY UPDATE - matchData investor_id:', matchData.investor_id);
-      console.log('PRIORITY UPDATE - matchData priority:', matchData.priority);
-      console.log('PRIORITY UPDATE - matchData set_by:', matchData.set_by);
-
-      // Send to Supabase directly - no need for sanitization since all values are primitives
-      console.log('About to send priority upsert to Supabase');
-      const { error, data } = await supabase
-        .from('priority_matches')
-        .upsert(matchData, {
-          onConflict: 'founder_id,investor_id'
+      // For "not interested" action
+      if (notInterested) {
+        console.log('Processing "not interested" case');
+        
+        const { error } = await supabase.rpc('set_not_interested', {
+          p_founder_id: founderId,
+          p_investor_id: investorId,
+          p_set_by: profile.id
         });
 
-      console.log('Supabase response:', { error, data });
+        if (error) throw error;
+        
+        // Update UI state
+        setUsers((prevUsers) => {
+          return prevUsers.map(user => {
+            if (user.id === userId) {
+              const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
+              if (wasHighPriority) {
+                setHighPriorityCount((prev) => prev - 1);
+              }
+              
+              return {
+                ...user,
+                priority_matches: [{
+                  ...user.priority_matches?.[0],
+                  id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
+                  created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
+                  founder_id: founderId,
+                  investor_id: investorId,
+                  set_by: profile.id,
+                  priority: null,
+                  not_interested: true
+                }]
+              };
+            }
+            return user;
+          });
+        });
 
-      if (error) {
-        console.error('Upsert error details:', error);
-        throw error;
+        toast.success("Match marked as not interested");
+        console.log('------- PRIORITY CHANGE END - NOT INTERESTED -------');
+        return;
       }
+      
+      // For priority update
+      console.log('Setting priority:', priority);
+      
+      const { error } = await supabase.rpc('set_priority_match', {
+        p_founder_id: founderId,
+        p_investor_id: investorId,
+        p_priority: priority,
+        p_set_by: profile.id
+      });
 
-      console.log('Priority update successful, updating local state');
-
-      setUsers((prevUsers: UserWithDetails[]) => 
+      if (error) throw error;
+      
+      // Update UI state
+      setUsers((prevUsers) => 
         prevUsers.map(user => {
           if (user.id === userId) {
-            console.log(`Updating user ${userId} with new priority ${priority}`);
             return {
               ...user,
               priority_matches: [{
-                ...matchData,
                 id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
-                created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString()
+                created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
+                founder_id: founderId,
+                investor_id: investorId,
+                set_by: profile.id,
+                priority: priority,
+                not_interested: false
               }]
             };
           }
@@ -199,28 +154,21 @@ export const usePriorityHandlers = (
         })
       );
 
+      // Update high priority count
       if (priority === 'high') {
-        console.log('Checking if high priority count needs to be updated');
-        setHighPriorityCount((prev: number) => {
-          const userHadHighPriority = users.find(u => 
-            u.id === userId && u.priority_matches?.[0]?.priority === 'high'
-          );
-          console.log('userHadHighPriority:', !!userHadHighPriority);
-          const newCount = userHadHighPriority ? prev : prev + 1;
-          console.log(`High priority count: ${prev} -> ${newCount}`);
-          return newCount;
-        });
+        const userHadHighPriority = users.find(u => 
+          u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+        );
+        if (!userHadHighPriority) {
+          setHighPriorityCount((prev) => prev + 1);
+        }
       } else {
-        console.log('Checking if high priority count needs to be decremented');
-        setHighPriorityCount((prev: number) => {
-          const userHadHighPriority = users.find(u => 
-            u.id === userId && u.priority_matches?.[0]?.priority === 'high'
-          );
-          console.log('userHadHighPriority:', !!userHadHighPriority);
-          const newCount = userHadHighPriority ? prev - 1 : prev;
-          console.log(`High priority count: ${prev} -> ${newCount}`);
-          return newCount;
-        });
+        const userHadHighPriority = users.find(u => 
+          u.id === userId && u.priority_matches?.[0]?.priority === 'high'
+        );
+        if (userHadHighPriority) {
+          setHighPriorityCount((prev) => prev - 1);
+        }
       }
 
       toast.success("Priority updated successfully");

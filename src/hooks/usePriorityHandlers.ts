@@ -168,19 +168,17 @@ export const usePriorityHandlers = (
       const founderID = profile.user_type === 'founder' ? profile.id : userId;
       const investorID = profile.user_type === 'founder' ? userId : profile.id;
       
-      console.log(`SQL function params: founderID=${founderID}, investorID=${investorID}, priority=${priority}, setBy=${profile.id}`);
+      // Sanitize the priority value to remove any newline characters or other problematic characters
+      const sanitizedPriority = priority ? priority.toString().trim().replace(/[\n\r\t]/g, '') : null;
       
-      // CRITICAL FIX: Need to cast the priority string to the PostgreSQL enum type
-      // Instead of passing the string directly, we'll pass it as p_priority::match_priority
-      // by modifying the RPC call to specify the string value and let PostgreSQL handle the casting
+      console.log(`SQL function params: founderID=${founderID}, investorID=${investorID}, priority=${sanitizedPriority}, setBy=${profile.id}`);
       
       const { error: functionError } = await supabase.rpc(
         'set_priority_match', 
         { 
           p_founder_id: founderID, 
           p_investor_id: investorID,
-          // The key fix: The p_priority parameter must be explicitly cast to match_priority in the database function
-          p_priority: priority,  
+          p_priority: sanitizedPriority,  
           p_set_by: profile.id
         }
       );

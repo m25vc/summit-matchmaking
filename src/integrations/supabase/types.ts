@@ -284,12 +284,29 @@ export type Database = {
         }
         Returns: number
       }
+      delete_priority_match: {
+        Args: { p_founder_id: string; p_investor_id: string }
+        Returns: undefined
+      }
       first_admin: {
         Args: { user_email: string }
         Returns: undefined
       }
       make_user_admin: {
         Args: { user_email: string }
+        Returns: undefined
+      }
+      set_not_interested: {
+        Args: { p_founder_id: string; p_investor_id: string; p_set_by: string }
+        Returns: undefined
+      }
+      set_priority_match: {
+        Args: {
+          p_founder_id: string
+          p_investor_id: string
+          p_priority: string
+          p_set_by: string
+        }
         Returns: undefined
       }
     }

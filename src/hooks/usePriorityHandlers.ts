@@ -1,9 +1,9 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
-import { sanitizeJson, deepSanitizeJson } from '@/lib/utils';
+import { usePriorityMatchService } from './usePriorityMatchService';
+import { sanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type MatchPriority = Database['public']['Enums']['match_priority'];
@@ -15,6 +15,8 @@ export const usePriorityHandlers = (
   setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
+  const { setPriorityMatch, setNotInterested, deletePriorityMatch } = usePriorityMatchService();
+
   const handlePriorityChange = async (
     userId: string, 
     priority: MatchPriority | null, 
@@ -39,18 +41,15 @@ export const usePriorityHandlers = (
         
         console.log(`SQL function params: founderID=${founderID}, investorID=${investorID}, setBy=${profile.id}`);
         
-        const { error: functionError } = await supabase.rpc(
-          'set_not_interested', 
-          { 
-            p_founder_id: founderID, 
-            p_investor_id: investorID,
-            p_set_by: profile.id
-          }
+        const result = await setNotInterested(
+          sanitizeJson(founderID),
+          sanitizeJson(investorID),
+          sanitizeJson(profile.id)
         );
         
-        if (functionError) {
-          console.error('⚠️ SQL function error:', functionError);
-          throw functionError;
+        if (result.error) {
+          console.error('⚠️ SQL function error:', result.error);
+          throw result.error;
         } else {
           console.log('✅ SQL function executed successfully');
         }
@@ -122,18 +121,15 @@ export const usePriorityHandlers = (
         
         console.log(`Delete params: founderID=${founderID}, investorID=${investorID}`);
         
-        // Use SQL function to delete
-        const { error: functionError } = await supabase.rpc(
-          'delete_priority_match', 
-          { 
-            p_founder_id: founderID, 
-            p_investor_id: investorID
-          }
+        // Use the service hook to delete
+        const result = await deletePriorityMatch(
+          sanitizeJson(founderID),
+          sanitizeJson(investorID)
         );
         
-        if (functionError) {
-          console.error('⚠️ SQL function error:', functionError);
-          throw functionError;
+        if (result.error) {
+          console.error('⚠️ SQL function error:', result.error);
+          throw result.error;
         } else {
           console.log('✅ Priority match deleted successfully');
         }
@@ -164,28 +160,25 @@ export const usePriorityHandlers = (
 
       console.log('✏️ Setting priority match to:', priority);
       
-      // Using SQL function approach
+      // Using service hook approach
       const founderID = profile.user_type === 'founder' ? profile.id : userId;
       const investorID = profile.user_type === 'founder' ? userId : profile.id;
       
-      // Sanitize the priority value to remove any newline characters or other problematic characters
-      const sanitizedPriority = priority ? priority.toString().trim().replace(/[\n\r\t]/g, '') : null;
+      // Sanitize the priority value to remove any problematic characters
+      const sanitizedPriority = priority ? priority.toString().trim() : null;
       
       console.log(`SQL function params: founderID=${founderID}, investorID=${investorID}, priority=${sanitizedPriority}, setBy=${profile.id}`);
       
-      const { error: functionError } = await supabase.rpc(
-        'set_priority_match', 
-        { 
-          p_founder_id: founderID, 
-          p_investor_id: investorID,
-          p_priority: sanitizedPriority,  
-          p_set_by: profile.id
-        }
+      const result = await setPriorityMatch(
+        sanitizeJson(founderID),
+        sanitizeJson(investorID),
+        sanitizedPriority as MatchPriority,
+        sanitizeJson(profile.id)
       );
       
-      if (functionError) {
-        console.error('⚠️ SQL function error:', functionError);
-        throw functionError;
+      if (result.error) {
+        console.error('⚠️ SQL function error:', result.error);
+        throw result.error;
       } else {
         console.log('✅ Priority set successfully via SQL function');
       }

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
-import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';
+import { usePriorityMatchService } from './usePriorityMatchService';
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/hooks/useDashboardData';
 
@@ -15,6 +15,7 @@ export function usePriorityMatches(
 ) {
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [highPriorityCount, setHighPriorityCount] = useState<number>(initialHighPriorityCount);
+  const { setPriorityMatch, setNotInterested, deletePriorityMatch } = usePriorityMatchService();
 
   // Ensure users are properly set when initialUsers change
   useEffect(() => {
@@ -26,7 +27,6 @@ export function usePriorityMatches(
 
   /**
    * Update a user's priority match status with improved error handling
-   * and detailed logging for debugging
    */
   const updatePriorityMatch = async (
     userId: string, 
@@ -134,7 +134,7 @@ export function usePriorityMatches(
       const sanitizedFounderId = founderId?.replace(/[\n\r\t]/g, '');
       const sanitizedInvestorId = investorId?.replace(/[\n\r\t]/g, '');
       
-      // TYPE FIX: Ensure priority is treated as a valid MatchPriority type
+      // Ensure priority is treated as a valid MatchPriority type
       let sanitizedPriority: MatchPriority = null;
       
       if (typeof priority === 'string') {

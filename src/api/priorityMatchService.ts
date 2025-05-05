@@ -5,6 +5,17 @@ import type { Database } from '@/integrations/supabase/types';
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
 /**
+ * Sanitizes input to prevent issues with special characters
+ */
+function sanitizeInput(input: any) {
+  if (typeof input === 'string') {
+    // Remove any newline characters or other problematic characters
+    return input.trim().replace(/[\n\r\t]/g, '');
+  }
+  return input;
+}
+
+/**
  * Sets a priority match between a founder and investor
  */
 export async function setPriorityMatch(
@@ -13,11 +24,24 @@ export async function setPriorityMatch(
   priority: MatchPriority,
   setBy: string
 ) {
+  console.log("setPriorityMatch called with:", {
+    founderId,
+    investorId,
+    priority,
+    setBy
+  });
+  
+  // Sanitize all inputs
+  const sanitizedFounderId = sanitizeInput(founderId);
+  const sanitizedInvestorId = sanitizeInput(investorId);
+  const sanitizedPriority = priority ? sanitizeInput(priority) : null;
+  const sanitizedSetBy = sanitizeInput(setBy);
+  
   return supabase.rpc('set_priority_match', {
-    p_founder_id: founderId,
-    p_investor_id: investorId,
-    p_priority: priority,
-    p_set_by: setBy
+    p_founder_id: sanitizedFounderId,
+    p_investor_id: sanitizedInvestorId,
+    p_priority: sanitizedPriority,
+    p_set_by: sanitizedSetBy
   });
 }
 
@@ -29,10 +53,15 @@ export async function setNotInterested(
   investorId: string,
   setBy: string
 ) {
+  // Sanitize all inputs
+  const sanitizedFounderId = sanitizeInput(founderId);
+  const sanitizedInvestorId = sanitizeInput(investorId);
+  const sanitizedSetBy = sanitizeInput(setBy);
+  
   return supabase.rpc('set_not_interested', {
-    p_founder_id: founderId,
-    p_investor_id: investorId,
-    p_set_by: setBy
+    p_founder_id: sanitizedFounderId,
+    p_investor_id: sanitizedInvestorId,
+    p_set_by: sanitizedSetBy
   });
 }
 
@@ -43,8 +72,12 @@ export async function deletePriorityMatch(
   founderId: string,
   investorId: string
 ) {
+  // Sanitize all inputs
+  const sanitizedFounderId = sanitizeInput(founderId);
+  const sanitizedInvestorId = sanitizeInput(investorId);
+  
   return supabase.rpc('delete_priority_match', {
-    p_founder_id: founderId,
-    p_investor_id: investorId
+    p_founder_id: sanitizedFounderId,
+    p_investor_id: sanitizedInvestorId
   });
 }

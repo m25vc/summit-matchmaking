@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { toast } from "sonner";
 import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';
 import type { Database } from '@/integrations/supabase/types';
-import type { UserWithDetails } from '@/types/dashboard';
+import type { UserWithDetails } from '@/hooks/useDashboardData';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
@@ -29,9 +29,14 @@ export function usePriorityMatches(
       return;
     }
 
+    console.log(`Updating match: userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
+    console.log(`Current profile: ${profile.user_type}, id=${profile.id}`);
+
     // Determine founder and investor IDs based on user types
     const founderId = profile.user_type === 'founder' ? profile.id : userId;
     const investorId = profile.user_type === 'founder' ? userId : profile.id;
+    
+    console.log(`founderId=${founderId}, investorId=${investorId}`);
     
     try {
       // Handle "not interested" case
@@ -69,8 +74,12 @@ export function usePriorityMatches(
       }
 
       // Set priority match
+      console.log(`Setting priority: founderId=${founderId}, investorId=${investorId}, priority=${priority}`);
       const { error } = await setPriorityMatch(founderId, investorId, priority, profile.id);
-      if (error) throw error;
+      if (error) {
+        console.error('Error from setPriorityMatch:', error);
+        throw error;
+      }
       
       // Update local state
       updateUserState(userId, priority, false);
@@ -139,9 +148,7 @@ export function usePriorityMatches(
 
   return {
     users,
-    setUsers,
     highPriorityCount,
-    setHighPriorityCount,
     updatePriorityMatch
   };
 }

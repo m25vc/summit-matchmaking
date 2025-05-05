@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { safeJsonStringify } from '@/lib/utils';
 
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
@@ -50,6 +51,65 @@ function sanitizeRpcParams(input: any): any {
 }
 
 /**
+ * Secure direct fetch to RPC endpoint with enhanced error handling
+ * This provides more control over the JSON serialization
+ */
+async function callRpcEndpoint(
+  functionName: string, 
+  params: Record<string, any>
+): Promise<any> {
+  try {
+    // Get the Supabase URL and key
+    const supabaseUrl = supabase.supabaseUrl;
+    const supabaseKey = supabase.supabaseKey;
+    
+    // Sanitize parameters more aggressively
+    const sanitizedParams = sanitizeRpcParams(params);
+    
+    // Convert parameters to a sanitized JSON string
+    // Use our custom safe stringify to avoid issues with special characters
+    const safeJsonParams = safeJsonStringify(sanitizedParams);
+    
+    console.log(`Calling RPC ${functionName} with params:`, safeJsonParams);
+    
+    // Make a direct fetch call with controlled JSON conversion
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=minimal'
+      },
+      body: safeJsonParams
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`RPC call failed with status ${response.status}:`, errorText);
+      throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
+    }
+    
+    // For minimal responses, return success status
+    if (response.status === 204) {
+      return { success: true };
+    }
+    
+    // Parse response with safety checks
+    try {
+      const data = await response.json();
+      return { data };
+    } catch (parseError) {
+      console.error('Failed to parse response:', parseError);
+      return { success: true }; // Assume success since the request didn't fail
+    }
+  } catch (error) {
+    console.error(`Error in RPC call to ${functionName}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Sets a priority match between a founder and investor
  * with enhanced error handling and debugging
  */
@@ -67,19 +127,10 @@ export async function setPriorityMatch(
   });
   
   try {
-    // Create params object first
-    const params = {
-      p_founder_id: founderId,
-      p_investor_id: investorId,
-      p_priority: priority,
-      p_set_by: setBy
-    };
-    
-    // Special handling for the priority value that's causing issues
-    // TYPE FIX: Ensure priority is treated as a valid enum value or null
+    // Validate and sanitize priority value
     let safePriority: MatchPriority = null;
     if (typeof priority === 'string') {
-      // Validate that the string is one of the allowed enum values
+      // Clean up the priority string
       const cleanPriority = priority.replace(/\n/g, '').replace(/\r/g, '').trim();
       
       // Only assign if it's a valid match priority type
@@ -88,67 +139,21 @@ export async function setPriorityMatch(
       } else {
         console.warn(`Invalid priority value: "${priority}" → defaulting to null`);
       }
-      
-      console.log(`Priority value sanitized: "${priority}" → "${safePriority}"`);
     } else {
-      // If it's already null or a valid type, use it directly
       safePriority = priority;
     }
     
-    // Build a new params object with the sanitized priority
-    const initialParams = {
-      ...params,
-      p_priority: safePriority
-    };
+    console.log(`Using sanitized priority: ${safePriority}`);
     
-    // Apply our aggressive sanitization to ALL parameters
-    const sanitizedParams = sanitizeRpcParams(initialParams);
-    
-    // Log both the initial and sanitized parameters for comparison
-    console.log("RPC params before sanitization:", JSON.stringify(initialParams));
-    console.log("RPC params after sanitization:", JSON.stringify(sanitizedParams));
-    
-    // Verify the params can be safely stringified
-    try {
-      JSON.stringify(sanitizedParams);
-      console.log("Params can be safely stringified to JSON");
-    } catch (e) {
-      console.error("JSON stringification test failed:", e);
-      throw new Error("Could not convert parameters to JSON");
-    }
-    
-    console.log("Making RPC call with sanitized params");
-    
-    // Make the RPC call with fully sanitized parameters
-    const { data, error, status } = await supabase.rpc(
-      'set_priority_match', 
-      sanitizedParams
-    );
-    
-    console.log("RPC response:", { status, data, error });
-    
-    if (error) {
-      // Provide detailed error logging
-      console.error("RPC error:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
-      throw error;
-    }
-    
-    console.log("setPriorityMatch completed successfully");
-    return { data, error };
+    // Use direct fetch for more control over the request
+    return await callRpcEndpoint('set_priority_match', {
+      p_founder_id: founderId,
+      p_investor_id: investorId,
+      p_priority: safePriority,
+      p_set_by: setBy
+    });
   } catch (error) {
     console.error("Error in setPriorityMatch:", error);
-    console.error("Error details:", {
-      name: error?.name,
-      message: error?.message,
-      code: error?.code,
-      details: error?.details,
-      hint: error?.hint
-    });
     throw error;
   }
 }
@@ -168,47 +173,14 @@ export async function setNotInterested(
       setBy
     });
     
-    // Create params and sanitize
-    const params = {
+    // Use direct fetch for more control
+    return await callRpcEndpoint('set_not_interested', {
       p_founder_id: founderId,
       p_investor_id: investorId,
       p_set_by: setBy
-    };
-    
-    const sanitizedParams = sanitizeRpcParams(params);
-    
-    console.log("Making RPC call to set_not_interested with sanitized params:", 
-      JSON.stringify(sanitizedParams));
-    
-    // Use the sanitized params for the RPC call
-    const { data, error, status } = await supabase.rpc(
-      'set_not_interested', 
-      sanitizedParams
-    );
-    
-    console.log("RPC Response from set_not_interested:", { status, data, error });
-    
-    if (error) {
-      console.error("Error from setNotInterested:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
-      throw error;
-    }
-    
-    console.log("setNotInterested completed successfully");
-    return { data, error };
+    });
   } catch (error) {
     console.error("Error in setNotInterested:", error);
-    console.error("Error details:", {
-      name: error?.name,
-      message: error?.message,
-      code: error?.code,
-      details: error?.details,
-      hint: error?.hint
-    });
     throw error;
   }
 }
@@ -226,46 +198,13 @@ export async function deletePriorityMatch(
       investorId
     });
     
-    // Create params and sanitize
-    const params = {
+    // Use direct fetch for more control
+    return await callRpcEndpoint('delete_priority_match', {
       p_founder_id: founderId,
       p_investor_id: investorId
-    };
-    
-    const sanitizedParams = sanitizeRpcParams(params);
-    
-    console.log("Making RPC call to delete_priority_match with sanitized params:", 
-      JSON.stringify(sanitizedParams));
-    
-    // Use the sanitized params for the RPC call
-    const { data, error, status } = await supabase.rpc(
-      'delete_priority_match', 
-      sanitizedParams
-    );
-    
-    console.log("RPC Response from delete_priority_match:", { status, data, error });
-    
-    if (error) {
-      console.error("Error from deletePriorityMatch:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
-      throw error;
-    }
-    
-    console.log("deletePriorityMatch completed successfully");
-    return { data, error };
+    });
   } catch (error) {
     console.error("Error in deletePriorityMatch:", error);
-    console.error("Error details:", {
-      name: error?.name,
-      message: error?.message,
-      code: error?.code,
-      details: error?.details,
-      hint: error?.hint
-    });
     throw error;
   }
 }

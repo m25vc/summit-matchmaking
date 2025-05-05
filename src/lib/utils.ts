@@ -10,24 +10,30 @@ export function cn(...inputs: ClassValue[]) {
  * A safe JSON stringify function that handles circular references and special characters
  */
 export function safeJsonStringify(obj: any, space?: number): string {
-  const cache = new Set();
-  
-  return JSON.stringify(obj, (key, value) => {
-    if (typeof value === 'object' && value !== null) {
-      if (cache.has(value)) {
-        return '[Circular Reference]';
+  try {
+    const cache = new Set();
+    
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) {
+          return '[Circular Reference]';
+        }
+        cache.add(value);
       }
-      cache.add(value);
-    }
-    
-    // Handle special values that might cause JSON issues
-    if (typeof value === 'string') {
-      // Remove control characters that can break JSON
-      return value.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-    }
-    
-    return value;
-  }, space);
+      
+      // Handle special values that might cause JSON issues
+      if (typeof value === 'string') {
+        // Remove control characters that can break JSON
+        return value.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+      }
+      
+      return value;
+    }, space);
+  } catch (error) {
+    console.error("Failed to stringify object:", error);
+    // Return a safe fallback value
+    return JSON.stringify({ error: "Failed to stringify object" });
+  }
 }
 
 /**

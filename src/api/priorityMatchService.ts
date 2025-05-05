@@ -5,13 +5,39 @@ import type { Database } from '@/integrations/supabase/types';
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
 /**
- * Sanitizes input to prevent issues with special characters
+ * Thoroughly sanitizes input to prevent JSON parsing issues with special characters
  */
-function sanitizeInput(input: any) {
-  if (typeof input === 'string') {
-    // Remove any newline characters or other problematic characters
-    return input.trim().replace(/[\n\r\t]/g, '');
+function sanitizeInput(input: any): any {
+  // For null or undefined values, return as is
+  if (input === null || input === undefined) {
+    return input;
   }
+  
+  // For strings, remove problematic characters and escape newlines
+  if (typeof input === 'string') {
+    // Replace all newlines, tabs, and other control characters that could cause JSON issues
+    return input
+      .replace(/[\n\r]/g, '') // Remove newlines and carriage returns
+      .replace(/[\t]/g, ' ')  // Replace tabs with spaces
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove other control characters
+  }
+  
+  // For objects (including arrays), recursively sanitize each property
+  if (typeof input === 'object') {
+    if (Array.isArray(input)) {
+      return input.map(item => sanitizeInput(item));
+    }
+    
+    const sanitizedObj: Record<string, any> = {};
+    for (const key in input) {
+      if (Object.prototype.hasOwnProperty.call(input, key)) {
+        sanitizedObj[key] = sanitizeInput(input[key]);
+      }
+    }
+    return sanitizedObj;
+  }
+  
+  // For all other types (numbers, booleans, etc.), return as is
   return input;
 }
 
@@ -31,13 +57,20 @@ export async function setPriorityMatch(
     setBy
   });
   
-  // Sanitize all inputs
-  const sanitizedFounderId = sanitizeInput(founderId);
-  const sanitizedInvestorId = sanitizeInput(investorId);
-  const sanitizedPriority = priority ? sanitizeInput(priority) : null;
-  const sanitizedSetBy = sanitizeInput(setBy);
-  
   try {
+    // Sanitize all inputs
+    const sanitizedFounderId = sanitizeInput(founderId);
+    const sanitizedInvestorId = sanitizeInput(investorId);
+    const sanitizedPriority = priority ? sanitizeInput(priority) : null;
+    const sanitizedSetBy = sanitizeInput(setBy);
+    
+    console.log("Sanitized inputs:", {
+      founderId: sanitizedFounderId,
+      investorId: sanitizedInvestorId,
+      priority: sanitizedPriority,
+      setBy: sanitizedSetBy
+    });
+    
     return supabase.rpc('set_priority_match', {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId,
@@ -58,12 +91,18 @@ export async function setNotInterested(
   investorId: string,
   setBy: string
 ) {
-  // Sanitize all inputs
-  const sanitizedFounderId = sanitizeInput(founderId);
-  const sanitizedInvestorId = sanitizeInput(investorId);
-  const sanitizedSetBy = sanitizeInput(setBy);
-  
   try {
+    // Sanitize all inputs
+    const sanitizedFounderId = sanitizeInput(founderId);
+    const sanitizedInvestorId = sanitizeInput(investorId);
+    const sanitizedSetBy = sanitizeInput(setBy);
+    
+    console.log("setNotInterested sanitized inputs:", {
+      founderId: sanitizedFounderId,
+      investorId: sanitizedInvestorId,
+      setBy: sanitizedSetBy
+    });
+    
     return supabase.rpc('set_not_interested', {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId,
@@ -82,11 +121,16 @@ export async function deletePriorityMatch(
   founderId: string,
   investorId: string
 ) {
-  // Sanitize all inputs
-  const sanitizedFounderId = sanitizeInput(founderId);
-  const sanitizedInvestorId = sanitizeInput(investorId);
-  
   try {
+    // Sanitize all inputs
+    const sanitizedFounderId = sanitizeInput(founderId);
+    const sanitizedInvestorId = sanitizeInput(investorId);
+    
+    console.log("deletePriorityMatch sanitized inputs:", {
+      founderId: sanitizedFounderId,
+      investorId: sanitizedInvestorId
+    });
+    
     return supabase.rpc('delete_priority_match', {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId

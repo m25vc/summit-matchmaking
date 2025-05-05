@@ -5,28 +5,38 @@ import { UserList } from '@/components/dashboard/UserList';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { usePriorityMatches } from '@/hooks/usePriorityMatches';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
+  // Get initial data
   const { profile, users: initialUsers, loading, highPriorityCount: initialHighPriorityCount } = useDashboardData();
   
+  // Track if we've initialized users to prevent useEffect dependency issues
+  const [initialized, setInitialized] = useState(false);
+  
+  // Setup priority match functionality
   const { users, highPriorityCount, updatePriorityMatch } = usePriorityMatches(
     profile, 
     initialUsers, 
     initialHighPriorityCount
   );
 
+  // Debug logging to help identify issues
   useEffect(() => {
-    // Debug logging to help identify issues
     console.log('Dashboard render:', {
       isLoading: loading,
       profile: profile,
-      userCount: users?.length,
-      initialUserCount: initialUsers?.length,
+      userCount: users?.length || 0,
+      initialUserCount: initialUsers?.length || 0,
       highPriorityCount,
       users: users
     });
-  }, [loading, profile, users, initialUsers, highPriorityCount]);
+    
+    // Mark as initialized once we have users
+    if (initialUsers?.length > 0 && !initialized) {
+      setInitialized(true);
+    }
+  }, [loading, profile, users, initialUsers, highPriorityCount, initialized]);
 
   return (
     <DashboardLayout>
@@ -51,7 +61,7 @@ const Dashboard = () => {
                 </p>
                 {initialUsers && initialUsers.length > 0 && (
                   <p className="mt-4 text-amber-600">
-                    (Debug: {initialUsers.length} users are available but not showing)
+                    (Debug: {initialUsers.length} users are available but not showing - please refresh the page)
                   </p>
                 )}
               </div>

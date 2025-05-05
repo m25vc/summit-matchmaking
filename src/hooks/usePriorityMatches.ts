@@ -16,7 +16,7 @@ export function usePriorityMatches(
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [highPriorityCount, setHighPriorityCount] = useState<number>(initialHighPriorityCount);
 
-  // Make sure users are properly set when initialUsers change
+  // Ensure users are properly set when initialUsers change
   useEffect(() => {
     if (initialUsers && initialUsers.length > 0) {
       console.log("Setting users in usePriorityMatches", initialUsers.length);
@@ -25,7 +25,7 @@ export function usePriorityMatches(
   }, [initialUsers]);
 
   /**
-   * Update a user's priority match status
+   * Update a user's priority match status with improved error handling
    */
   const updatePriorityMatch = async (
     userId: string, 
@@ -40,17 +40,29 @@ export function usePriorityMatches(
     console.log(`Updating match: userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
     console.log(`Current profile: ${profile.user_type}, id=${profile.id}`);
 
-    // Determine founder and investor IDs based on user types
-    const founderId = profile.user_type === 'founder' ? profile.id : userId;
-    const investorId = profile.user_type === 'founder' ? userId : profile.id;
-    
-    console.log(`founderId=${founderId}, investorId=${investorId}`);
-    
     try {
+      // Determine founder and investor IDs based on user types
+      let founderId = '';
+      let investorId = '';
+      
+      if (profile.user_type === 'founder') {
+        founderId = profile.id;
+        investorId = userId;
+      } else {
+        founderId = userId;
+        investorId = profile.id;
+      }
+      
+      console.log(`founderId=${founderId}, investorId=${investorId}`);
+      
       // Handle "not interested" case
       if (notInterested) {
-        const { error } = await setNotInterested(founderId, investorId, profile.id);
-        if (error) throw error;
+        const result = await setNotInterested(founderId, investorId, profile.id);
+        
+        if (result.error) {
+          console.error('Error from setNotInterested:', result.error);
+          throw result.error;
+        }
         
         // Update local state
         updateUserState(userId, null, true);
@@ -60,8 +72,12 @@ export function usePriorityMatches(
 
       // Handle removing priority case
       if (priority === null) {
-        const { error } = await deletePriorityMatch(founderId, investorId);
-        if (error) throw error;
+        const result = await deletePriorityMatch(founderId, investorId);
+        
+        if (result.error) {
+          console.error('Error from deletePriorityMatch:', result.error);
+          throw result.error;
+        }
         
         // Update local state
         updateUserState(userId, null, false);
@@ -83,10 +99,11 @@ export function usePriorityMatches(
 
       // Set priority match
       console.log(`Setting priority: founderId=${founderId}, investorId=${investorId}, priority=${priority}`);
-      const { error } = await setPriorityMatch(founderId, investorId, priority, profile.id);
-      if (error) {
-        console.error('Error from setPriorityMatch:', error);
-        throw error;
+      const result = await setPriorityMatch(founderId, investorId, priority, profile.id);
+      
+      if (result.error) {
+        console.error('Error from setPriorityMatch:', result.error);
+        throw result.error;
       }
       
       // Update local state
@@ -95,7 +112,7 @@ export function usePriorityMatches(
       
     } catch (error) {
       console.error('Error updating priority:', error);
-      toast.error("Failed to update priority");
+      toast.error(`Failed to update priority: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -109,7 +126,6 @@ export function usePriorityMatches(
         if (user.id === userId) {
           const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
           
-          // Create updated user with new priority match data
           return {
             ...user,
             priority_matches: priority === null && !notInterested ? [] : [{

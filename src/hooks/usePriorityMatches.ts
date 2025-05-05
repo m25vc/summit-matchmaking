@@ -32,7 +32,10 @@ export function usePriorityMatches(
     priority: MatchPriority, 
     notInterested = false
   ) => {
+    console.log(`updatePriorityMatch - START - userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
+    
     if (!profile) {
+      console.error("updatePriorityMatch - ERROR - Profile not loaded");
       toast.error("Profile not loaded");
       return;
     }
@@ -57,7 +60,10 @@ export function usePriorityMatches(
       
       // Handle "not interested" case
       if (notInterested) {
+        console.log("updatePriorityMatch - Processing NOT INTERESTED case");
         const result = await setNotInterested(founderId, investorId, profile.id);
+        
+        console.log("updatePriorityMatch - setNotInterested result:", result);
         
         if (result.error) {
           console.error('Error from setNotInterested:', result.error);
@@ -72,7 +78,10 @@ export function usePriorityMatches(
 
       // Handle removing priority case - use 'low' instead of null due to NOT NULL constraint
       if (priority === null) {
+        console.log("updatePriorityMatch - Processing REMOVE PRIORITY case");
         const result = await deletePriorityMatch(founderId, investorId);
+        
+        console.log("updatePriorityMatch - deletePriorityMatch result:", result);
         
         if (result.error) {
           console.error('Error from deletePriorityMatch:', result.error);
@@ -92,6 +101,7 @@ export function usePriorityMatches(
         );
         
         if (!isAlreadyHighPriority && highPriorityCount >= 5) {
+          console.warn("updatePriorityMatch - WARNING - High priority limit reached");
           toast.error("You can only have up to 5 high priority matches");
           return;
         }
@@ -101,6 +111,8 @@ export function usePriorityMatches(
       console.log(`Setting priority: founderId=${founderId}, investorId=${investorId}, priority=${priority}`);
       const result = await setPriorityMatch(founderId, investorId, priority, profile.id);
       
+      console.log("updatePriorityMatch - setPriorityMatch result:", result);
+      
       if (result.error) {
         console.error('Error from setPriorityMatch:', result.error);
         throw result.error;
@@ -109,9 +121,17 @@ export function usePriorityMatches(
       // Update local state
       updateUserState(userId, priority, false);
       toast.success("Priority updated successfully");
+      console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY");
       
     } catch (error) {
       console.error('Error updating priority:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       toast.error(`Failed to update priority: ${error.message || 'Unknown error'}`);
     }
   };
@@ -120,6 +140,8 @@ export function usePriorityMatches(
    * Helper function to update local state after API calls
    */
   const updateUserState = (userId: string, priority: MatchPriority, notInterested: boolean) => {
+    console.log(`updateUserState - user=${userId}, priority=${priority}, notInterested=${notInterested}`);
+    
     // Update users state
     setUsers(prevUsers => {
       return prevUsers.map(user => {
@@ -128,7 +150,7 @@ export function usePriorityMatches(
           
           // For "remove match" case with null priority - we'll leave priority_matches empty
           // For "not interested" case, we'll use 'low' priority with not_interested=true
-          return {
+          const updatedUser = {
             ...user,
             priority_matches: priority === null && !notInterested ? [] : [{
               id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
@@ -140,6 +162,21 @@ export function usePriorityMatches(
               not_interested: notInterested
             }]
           };
+          
+          console.log(`updateUserState - Updated user:`, {
+            before: { 
+              id: user.id, 
+              priority: user.priority_matches?.[0]?.priority,
+              notInterested: user.priority_matches?.[0]?.not_interested
+            },
+            after: {
+              id: updatedUser.id,
+              priority: updatedUser.priority_matches?.[0]?.priority,
+              notInterested: updatedUser.priority_matches?.[0]?.not_interested
+            }
+          });
+          
+          return updatedUser;
         }
         return user;
       });
@@ -159,16 +196,19 @@ export function usePriorityMatches(
         u.id === userId && u.priority_matches?.[0]?.priority === 'high'
       );
       
+      let newCount = prev;
+      
       // If setting to high and wasn't high before, increment
       if (newPriority === 'high' && !userHadHighPriority) {
-        return prev + 1;
+        newCount = prev + 1;
       }
       // If was high before but now isn't, decrement
       else if (newPriority !== 'high' && userHadHighPriority) {
-        return prev - 1;
+        newCount = prev - 1;
       }
       
-      return prev;
+      console.log(`updateHighPriorityCount - userId=${userId}, newPriority=${newPriority}, previous=${prev}, new=${newCount}`);
+      return newCount;
     });
   };
 

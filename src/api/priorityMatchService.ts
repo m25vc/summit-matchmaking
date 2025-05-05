@@ -9,29 +9,45 @@ type MatchPriority = Database['public']['Enums']['match_priority'] | null;
  * This version is more aggressive about removing problematic characters
  */
 function sanitizeInput(input: any): any {
+  console.log(`SANITIZE - Input type: ${typeof input}, value:`, input);
+  
   // Handle null/undefined
   if (input === null || input === undefined) {
+    console.log("SANITIZE - Returning null/undefined as is");
     return input;
   }
   
   // Handle strings - completely remove all control characters
   if (typeof input === 'string') {
     // Replace all control characters including newlines, tabs, etc.
-    return input.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    const sanitized = input.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    console.log(`SANITIZE - String sanitized from "${input}" to "${sanitized}"`);
+    return sanitized;
   }
   
   // Handle arrays
   if (Array.isArray(input)) {
-    return input.map(sanitizeInput);
+    console.log("SANITIZE - Processing array");
+    return input.map(item => {
+      const sanitized = sanitizeInput(item);
+      console.log(`SANITIZE - Array item sanitized:`, { before: item, after: sanitized });
+      return sanitized;
+    });
   }
   
   // Handle objects
   if (typeof input === 'object') {
+    console.log("SANITIZE - Processing object:", input);
     const result: Record<string, any> = {};
     
     for (const key in input) {
       if (Object.prototype.hasOwnProperty.call(input, key)) {
+        console.log(`SANITIZE - Processing object field: ${key}`);
         result[key] = sanitizeInput(input[key]);
+        console.log(`SANITIZE - Object field sanitized: ${key}`, { 
+          before: input[key], 
+          after: result[key] 
+        });
       }
     }
     
@@ -39,7 +55,21 @@ function sanitizeInput(input: any): any {
   }
   
   // Return other types as-is (numbers, booleans)
+  console.log(`SANITIZE - Returning non-string primitive as is: ${input}`);
   return input;
+}
+
+/**
+ * Checks if an object can be safely stringified to JSON
+ */
+function canStringifyToJson(obj: any): boolean {
+  try {
+    JSON.stringify(obj);
+    return true;
+  } catch (error) {
+    console.error("JSON Stringify Check Failed:", error);
+    return false;
+  }
 }
 
 /**
@@ -59,6 +89,14 @@ export async function setPriorityMatch(
   });
   
   try {
+    // Detailed logging of raw inputs
+    console.log("RAW INPUTS - PRE-SANITIZATION:", {
+      founderId: { value: founderId, type: typeof founderId, length: founderId?.length },
+      investorId: { value: investorId, type: typeof investorId, length: investorId?.length },
+      priority: { value: priority, type: typeof priority },
+      setBy: { value: setBy, type: typeof setBy, length: setBy?.length }
+    });
+    
     // Sanitize inputs
     const sanitizedFounderId = sanitizeInput(founderId);
     const sanitizedInvestorId = sanitizeInput(investorId);
@@ -82,16 +120,38 @@ export async function setPriorityMatch(
     };
     
     // Try to stringify and parse to catch any remaining JSON issues
-    try {
-      JSON.stringify(params);
-    } catch (jsonError) {
-      console.error("JSON stringify check failed:", jsonError);
+    if (!canStringifyToJson(params)) {
       throw new Error("Invalid input data cannot be converted to JSON");
     }
     
-    return supabase.rpc('set_priority_match', params);
+    console.log("MAKING RPC CALL with params:", JSON.stringify(params));
+    
+    // Use a more detailed error-handling approach
+    const { data, error, status, statusText } = await supabase.rpc('set_priority_match', params);
+    
+    // Log detailed response information
+    console.log("RPC Response:", {
+      status,
+      statusText,
+      data,
+      error
+    });
+    
+    if (error) {
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+    
+    console.log("setPriorityMatch completed successfully");
+    return { data, error };
   } catch (error) {
     console.error("Error in setPriorityMatch:", error);
+    console.error("Error stack:", error.stack);
     throw error;
   }
 }
@@ -105,6 +165,13 @@ export async function setNotInterested(
   setBy: string
 ) {
   try {
+    // Detailed logging of raw inputs
+    console.log("setNotInterested called with raw inputs:", {
+      founderId: { value: founderId, type: typeof founderId, length: founderId?.length },
+      investorId: { value: investorId, type: typeof investorId, length: investorId?.length },
+      setBy: { value: setBy, type: typeof setBy, length: setBy?.length }
+    });
+    
     // Sanitize all inputs
     const sanitizedFounderId = sanitizeInput(founderId);
     const sanitizedInvestorId = sanitizeInput(investorId);
@@ -124,16 +191,39 @@ export async function setNotInterested(
     };
     
     // Try to stringify and parse to catch any remaining JSON issues
-    try {
-      JSON.stringify(params);
-    } catch (jsonError) {
-      console.error("JSON stringify check failed:", jsonError);
+    if (!canStringifyToJson(params)) {
+      console.error("JSON stringify check failed for params:", params);
       throw new Error("Invalid input data cannot be converted to JSON");
     }
     
-    return supabase.rpc('set_not_interested', params);
+    console.log("MAKING RPC CALL to set_not_interested with params:", JSON.stringify(params));
+    
+    // Use a more detailed error-handling approach
+    const { data, error, status, statusText } = await supabase.rpc('set_not_interested', params);
+    
+    // Log detailed response information
+    console.log("RPC Response from set_not_interested:", {
+      status,
+      statusText,
+      data,
+      error
+    });
+    
+    if (error) {
+      console.error("Error from setNotInterested:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+    
+    console.log("setNotInterested completed successfully");
+    return { data, error };
   } catch (error) {
     console.error("Error in setNotInterested:", error);
+    console.error("Error stack:", error.stack);
     throw error;
   }
 }
@@ -146,6 +236,12 @@ export async function deletePriorityMatch(
   investorId: string
 ) {
   try {
+    // Detailed logging of raw inputs
+    console.log("deletePriorityMatch called with raw inputs:", {
+      founderId: { value: founderId, type: typeof founderId, length: founderId?.length },
+      investorId: { value: investorId, type: typeof investorId, length: investorId?.length }
+    });
+    
     // Sanitize all inputs
     const sanitizedFounderId = sanitizeInput(founderId);
     const sanitizedInvestorId = sanitizeInput(investorId);
@@ -162,16 +258,39 @@ export async function deletePriorityMatch(
     };
     
     // Try to stringify and parse to catch any remaining JSON issues
-    try {
-      JSON.stringify(params);
-    } catch (jsonError) {
-      console.error("JSON stringify check failed:", jsonError);
+    if (!canStringifyToJson(params)) {
+      console.error("JSON stringify check failed for params:", params);
       throw new Error("Invalid input data cannot be converted to JSON");
     }
     
-    return supabase.rpc('delete_priority_match', params);
+    console.log("MAKING RPC CALL to delete_priority_match with params:", JSON.stringify(params));
+    
+    // Use a more detailed error-handling approach
+    const { data, error, status, statusText } = await supabase.rpc('delete_priority_match', params);
+    
+    // Log detailed response information
+    console.log("RPC Response from delete_priority_match:", {
+      status,
+      statusText,
+      data,
+      error
+    });
+    
+    if (error) {
+      console.error("Error from deletePriorityMatch:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+    
+    console.log("deletePriorityMatch completed successfully");
+    return { data, error };
   } catch (error) {
     console.error("Error in deletePriorityMatch:", error);
+    console.error("Error stack:", error.stack);
     throw error;
   }
 }

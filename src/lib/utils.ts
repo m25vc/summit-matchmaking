@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -49,14 +48,8 @@ export function sanitizeJson<T>(obj: T): T {
       console.log('Found control character in string:', JSON.stringify(obj));
     }
     
-    // Replace newlines and other problematic characters with their escaped versions
-    // instead of spaces to maintain proper JSON format
-    const sanitized = obj
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
-      
-    return sanitized as unknown as T;
+    // Just return the string as-is - we'll let JSON.stringify handle proper escaping
+    return obj as unknown as T;
   }
   
   return obj;
@@ -72,10 +65,14 @@ export function deepSanitizeJson<T>(obj: T): T {
     const sanitized = sanitizeJson(obj);
     
     // Then stringify and parse to ensure it's valid JSON
+    // The JSON.stringify automatically handles proper escaping of control characters
     const jsonString = JSON.stringify(sanitized);
     console.log('Stringified JSON:', jsonString);
     
-    return JSON.parse(jsonString) as T;
+    // Parse back to JS object
+    const parsedObj = JSON.parse(jsonString) as T;
+    
+    return parsedObj;
   } catch (error) {
     console.error('Failed to deep sanitize JSON:', error);
     // Return a basic object if all else fails

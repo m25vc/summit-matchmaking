@@ -30,9 +30,9 @@ export function sanitizeJson<T>(obj: T): T {
         if (typeof obj[key] !== 'function' && key !== '__proto__') {
           const value = (obj as Record<string, any>)[key];
           
-          // Debug any problematic string values
-          if (typeof value === 'string' && (value.includes('\n') || value.includes('\r') || value.includes('\t'))) {
-            console.log(`Found special character in field '${key}':`, JSON.stringify(value));
+          // Debug any problematic string values and check for control characters
+          if (typeof value === 'string' && (/[\u0000-\u001F]/.test(value) || value.includes('\n') || value.includes('\r') || value.includes('\t'))) {
+            console.log(`Found control character in field '${key}':`, JSON.stringify(value));
           }
           
           result[key] = sanitizeJson(value);
@@ -45,15 +45,16 @@ export function sanitizeJson<T>(obj: T): T {
   // Convert special types that might cause issues in JSON
   if (typeof obj === 'string') {
     // Check for and log problematic characters
-    if (obj.includes('\n') || obj.includes('\r') || obj.includes('\t')) {
-      console.log('Found special character in string:', JSON.stringify(obj));
+    if (obj.includes('\n') || obj.includes('\r') || obj.includes('\t') || /[\u0000-\u001F]/.test(obj)) {
+      console.log('Found control character in string:', JSON.stringify(obj));
     }
     
-    // Replace newlines and other problematic characters
+    // Replace newlines and other problematic characters with their escaped versions
+    // instead of spaces to maintain proper JSON format
     const sanitized = obj
-      .replace(/\n/g, ' ')
-      .replace(/\r/g, ' ')
-      .replace(/\t/g, ' ');
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
       
     return sanitized as unknown as T;
   }

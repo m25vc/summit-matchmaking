@@ -37,12 +37,17 @@ export async function setPriorityMatch(
   const sanitizedPriority = priority ? sanitizeInput(priority) : null;
   const sanitizedSetBy = sanitizeInput(setBy);
   
-  return supabase.rpc('set_priority_match', {
-    p_founder_id: sanitizedFounderId,
-    p_investor_id: sanitizedInvestorId,
-    p_priority: sanitizedPriority,
-    p_set_by: sanitizedSetBy
-  });
+  try {
+    return supabase.rpc('set_priority_match', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId,
+      p_priority: sanitizedPriority,
+      p_set_by: sanitizedSetBy
+    });
+  } catch (error) {
+    console.error("Error in setPriorityMatch:", error);
+    throw error;
+  }
 }
 
 /**
@@ -58,11 +63,16 @@ export async function setNotInterested(
   const sanitizedInvestorId = sanitizeInput(investorId);
   const sanitizedSetBy = sanitizeInput(setBy);
   
-  return supabase.rpc('set_not_interested', {
-    p_founder_id: sanitizedFounderId,
-    p_investor_id: sanitizedInvestorId,
-    p_set_by: sanitizedSetBy
-  });
+  try {
+    return supabase.rpc('set_not_interested', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId,
+      p_set_by: sanitizedSetBy
+    });
+  } catch (error) {
+    console.error("Error in setNotInterested:", error);
+    throw error;
+  }
 }
 
 /**
@@ -76,8 +86,13 @@ export async function deletePriorityMatch(
   const sanitizedFounderId = sanitizeInput(founderId);
   const sanitizedInvestorId = sanitizeInput(investorId);
   
-  return supabase.rpc('delete_priority_match', {
-    p_founder_id: sanitizedFounderId,
-    p_investor_id: sanitizedInvestorId
-  });
+  try {
+    return supabase.rpc('delete_priority_match', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId
+    });
+  } catch (error) {
+    console.error("Error in deletePriorityMatch:", error);
+    throw error;
+  }
 }

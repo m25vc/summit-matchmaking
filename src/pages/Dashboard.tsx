@@ -23,7 +23,8 @@ const Dashboard = () => {
       profile: profile,
       userCount: users?.length,
       initialUserCount: initialUsers?.length,
-      highPriorityCount
+      highPriorityCount,
+      users: users
     });
   }, [loading, profile, users, initialUsers, highPriorityCount]);
 
@@ -35,12 +36,26 @@ const Dashboard = () => {
         ) : (
           <>
             <ProfileHeader profile={profile} />
-            <UserList 
-              users={users}
-              profile={profile}
-              highPriorityCount={highPriorityCount}
-              onPriorityChange={updatePriorityMatch}
-            />
+            {(users && users.length > 0) ? (
+              <UserList 
+                users={users}
+                profile={profile}
+                highPriorityCount={highPriorityCount}
+                onPriorityChange={updatePriorityMatch}
+              />
+            ) : (
+              <div className="p-8 text-center">
+                <h3 className="text-lg font-medium text-gray-900">No users found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  There are no other users available to match with at this time.
+                </p>
+                {initialUsers && initialUsers.length > 0 && (
+                  <p className="mt-4 text-amber-600">
+                    (Debug: {initialUsers.length} users are available but not showing)
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

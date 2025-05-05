@@ -96,21 +96,29 @@ export const useDashboardData = () => {
         }
 
         console.log("Other users fetched:", usersData?.length || 0);
+        
+        // Early return if no users found
+        if (!usersData || usersData.length === 0) {
+          console.log("No other users found");
+          setUsers([]);
+          setLoading(false);
+          return;
+        }
 
         // Map priority matches to users
-        const usersWithPriority = usersData?.map(user => {
+        const usersWithPriority = usersData.map(user => {
           const userMatches = profileData?.user_type === 'founder'
             ? priorityMatchesData?.filter(match => 
                 match.founder_id === profileData.id && match.investor_id === user.id)
             : priorityMatchesData?.filter(match => 
                 match.investor_id === profileData.id && 
-                (match.founder_id === user.id || match.investor_id === user.id));
+                match.founder_id === user.id);
 
           return {
             ...user,
             priority_matches: userMatches || []
           };
-        }) || [];
+        });
 
         console.log("Users with priority data:", usersWithPriority.length);
         setUsers(usersWithPriority);

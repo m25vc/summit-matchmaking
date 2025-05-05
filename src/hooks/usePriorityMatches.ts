@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';
 import type { Database } from '@/integrations/supabase/types';
@@ -13,8 +13,16 @@ export function usePriorityMatches(
   initialUsers: UserWithDetails[],
   initialHighPriorityCount: number
 ) {
-  const [users, setUsers] = useState<UserWithDetails[]>(initialUsers);
+  const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [highPriorityCount, setHighPriorityCount] = useState<number>(initialHighPriorityCount);
+
+  // Make sure users are properly set when initialUsers change
+  useEffect(() => {
+    if (initialUsers && initialUsers.length > 0) {
+      console.log("Setting users in usePriorityMatches", initialUsers.length);
+      setUsers(initialUsers);
+    }
+  }, [initialUsers]);
 
   /**
    * Update a user's priority match status

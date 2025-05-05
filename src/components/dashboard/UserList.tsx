@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from './ViewToggle';
@@ -28,8 +29,27 @@ export const UserList: React.FC<UserListProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  console.log("UserList component received users:", users?.length);
+  
+  // Make sure we have users array
+  if (!users || users.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <h3 className="text-lg font-medium text-gray-900">No users found</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          There are no other users available to match with at this time.
+        </p>
+      </div>
+    );
+  }
+
   const newUsers = users.filter(user => !user.priority_matches?.[0]?.priority);
   const priorityUsers = users.filter(user => user.priority_matches?.[0]?.priority);
+
+  console.log("Filtered users:", {
+    newUsers: newUsers.length,
+    priorityUsers: priorityUsers.length
+  });
 
   return (
     <div className="space-y-6">

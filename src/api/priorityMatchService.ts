@@ -59,9 +59,10 @@ async function callRpcEndpoint(
   params: Record<string, any>
 ): Promise<any> {
   try {
-    // Get the Supabase URL and key
-    const supabaseUrl = supabase.supabaseUrl;
-    const supabaseKey = supabase.supabaseKey;
+    // Get the Supabase URL and key from environment
+    // Instead of accessing protected properties, use constants from client.ts
+    const supabaseUrl = "https://qveetrrarbqedkcuwrcz.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8";
     
     // Sanitize parameters more aggressively
     const sanitizedParams = sanitizeRpcParams(params);

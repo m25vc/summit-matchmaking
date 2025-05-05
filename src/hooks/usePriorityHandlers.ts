@@ -1,9 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
-import { sanitizeJson, deepSanitizeJson } from '@/lib/utils';
+import { deepSanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -33,7 +32,7 @@ export const usePriorityHandlers = (
     if (notInterested) {
       console.log('Processing "not interested" case');
       try {
-        // Create initial data object
+        // Create initial data object - make sure all values are primitive
         const matchData = {
           founder_id: profile.user_type === 'founder' ? profile.id : userId,
           investor_id: profile.user_type === 'founder' ? userId : profile.id,
@@ -42,14 +41,11 @@ export const usePriorityHandlers = (
           set_by: profile.id
         };
         
-        // Properly sanitize the data using our improved function
-        const sanitizedData = deepSanitizeJson(matchData);
-        
         console.log('About to send upsert request to Supabase');
         
         const { error, data } = await supabase
           .from('priority_matches')
-          .upsert(sanitizedData, {
+          .upsert(matchData, {
             onConflict: 'founder_id,investor_id'
           });
 
@@ -154,7 +150,7 @@ export const usePriorityHandlers = (
         return;
       }
 
-      // Create initial data object
+      // Create initial data object with simple primitive values only
       const matchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
@@ -163,20 +159,17 @@ export const usePriorityHandlers = (
         not_interested: false
       };
       
-      // Properly sanitize with our improved function
-      const sanitizedData = deepSanitizeJson(matchData);
-      
-      console.log('PRIORITY UPDATE - Sanitized data:', sanitizedData);
-      console.log('PRIORITY UPDATE - matchData founder_id:', sanitizedData.founder_id);
-      console.log('PRIORITY UPDATE - matchData investor_id:', sanitizedData.investor_id);
-      console.log('PRIORITY UPDATE - matchData priority:', sanitizedData.priority);
-      console.log('PRIORITY UPDATE - matchData set_by:', sanitizedData.set_by);
+      console.log('PRIORITY UPDATE - matchData:', matchData);
+      console.log('PRIORITY UPDATE - matchData founder_id:', matchData.founder_id);
+      console.log('PRIORITY UPDATE - matchData investor_id:', matchData.investor_id);
+      console.log('PRIORITY UPDATE - matchData priority:', matchData.priority);
+      console.log('PRIORITY UPDATE - matchData set_by:', matchData.set_by);
 
-      // Use the sanitized object
+      // Send to Supabase directly - no need for sanitization since all values are primitives
       console.log('About to send priority upsert to Supabase');
       const { error, data } = await supabase
         .from('priority_matches')
-        .upsert(sanitizedData, {
+        .upsert(matchData, {
           onConflict: 'founder_id,investor_id'
         });
 
@@ -196,7 +189,7 @@ export const usePriorityHandlers = (
             return {
               ...user,
               priority_matches: [{
-                ...sanitizedData,
+                ...matchData,
                 id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
                 created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString()
               }]

@@ -6,6 +6,7 @@ import type { UserWithDetails } from '@/types/dashboard';
 import { sanitizeJson, deepSanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type MatchPriority = Database['public']['Enums']['match_priority'];
 
 export const usePriorityHandlers = (
   profile: Profile | null,
@@ -16,7 +17,7 @@ export const usePriorityHandlers = (
 ) => {
   const handlePriorityChange = async (
     userId: string, 
-    priority: 'high' | 'medium' | 'low' | null, 
+    priority: MatchPriority | null, 
     notInterested = false
   ) => {
     console.log('===== PRIORITY CHANGE DEBUGGING =====');
@@ -33,21 +34,6 @@ export const usePriorityHandlers = (
     if (notInterested) {
       console.log('🚫 Processing "not interested" case');
       try {
-        // Create initial data object
-        const matchData = {
-          founder_id: profile.user_type === 'founder' ? profile.id : userId,
-          investor_id: profile.user_type === 'founder' ? userId : profile.id,
-          priority: null,
-          not_interested: true,
-          set_by: profile.id
-        };
-        
-        console.log('📊 RAW matchData object:', matchData);
-        
-        // Try different approaches to creating a clean object
-        
-        // Approach 1: Use SQL functions directly
-        console.log('🧪 APPROACH 1: Using SQL function directly');
         const founderID = profile.user_type === 'founder' ? profile.id : userId;
         const investorID = profile.user_type === 'founder' ? userId : profile.id;
         
@@ -184,13 +170,16 @@ export const usePriorityHandlers = (
       
       console.log(`SQL function params: founderID=${founderID}, investorID=${investorID}, priority=${priority}, setBy=${profile.id}`);
       
+      // Cast the priority to match_priority enum explicitly using a string literal type
+      const priorityValue = priority as 'high' | 'medium' | 'low';
+      
       // Use the SQL function to set priority
       const { error: functionError } = await supabase.rpc(
         'set_priority_match', 
         { 
           p_founder_id: founderID, 
           p_investor_id: investorID,
-          p_priority: priority,
+          p_priority: priorityValue, // Use the explicitly typed value
           p_set_by: profile.id
         }
       );

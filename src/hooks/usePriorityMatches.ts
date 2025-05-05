@@ -26,6 +26,7 @@ export function usePriorityMatches(
 
   /**
    * Update a user's priority match status with improved error handling
+   * and detailed logging for debugging
    */
   const updatePriorityMatch = async (
     userId: string, 
@@ -33,6 +34,7 @@ export function usePriorityMatches(
     notInterested = false
   ) => {
     console.log(`updatePriorityMatch - START - userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
+    console.log(`updatePriorityMatch - DEBUGGING - current user count: ${users.length}, highPriorityCount: ${highPriorityCount}`);
     
     if (!profile) {
       console.error("updatePriorityMatch - ERROR - Profile not loaded");
@@ -42,6 +44,14 @@ export function usePriorityMatches(
 
     console.log(`Updating match: userId=${userId}, priority=${priority}, notInterested=${notInterested}`);
     console.log(`Current profile: ${profile.user_type}, id=${profile.id}`);
+    
+    // Debug user details
+    const targetUser = users.find(u => u.id === userId);
+    console.log("Target user details:", {
+      id: targetUser?.id,
+      name: targetUser ? `${targetUser.first_name} ${targetUser.last_name}` : 'unknown',
+      priorityMatch: targetUser?.priority_matches?.[0]
+    });
 
     try {
       // Determine founder and investor IDs based on user types
@@ -67,12 +77,19 @@ export function usePriorityMatches(
         
         if (result.error) {
           console.error('Error from setNotInterested:', result.error);
+          console.error('Error details:', {
+            message: result.error.message,
+            code: result.error.code,
+            details: result.error.details,
+            hint: result.error.hint
+          });
           throw result.error;
         }
         
         // Update local state with 'low' priority (not null) and not_interested=true
         updateUserState(userId, 'low', true);
         toast.success("Match marked as not interested");
+        console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY - Not interested");
         return;
       }
 
@@ -85,12 +102,19 @@ export function usePriorityMatches(
         
         if (result.error) {
           console.error('Error from deletePriorityMatch:', result.error);
+          console.error('Error details:', {
+            message: result.error.message,
+            code: result.error.code,
+            details: result.error.details,
+            hint: result.error.hint
+          });
           throw result.error;
         }
         
         // Update local state
         updateUserState(userId, null, false);
         toast.success("Priority match removed");
+        console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY - Removed priority");
         return;
       }
 
@@ -99,6 +123,8 @@ export function usePriorityMatches(
         const isAlreadyHighPriority = users.some(u => 
           u.id === userId && u.priority_matches?.[0]?.priority === 'high'
         );
+        
+        console.log(`updatePriorityMatch - HIGH PRIORITY CHECK - isAlreadyHighPriority: ${isAlreadyHighPriority}, currentCount: ${highPriorityCount}`);
         
         if (!isAlreadyHighPriority && highPriorityCount >= 5) {
           console.warn("updatePriorityMatch - WARNING - High priority limit reached");
@@ -115,24 +141,32 @@ export function usePriorityMatches(
       
       if (result.error) {
         console.error('Error from setPriorityMatch:', result.error);
+        console.error('Error details:', {
+          message: result.error.message,
+          code: result.error.code,
+          details: result.error.details,
+          hint: result.error.hint
+        });
         throw result.error;
       }
       
       // Update local state
       updateUserState(userId, priority, false);
       toast.success("Priority updated successfully");
-      console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY");
+      console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY - Updated priority");
       
     } catch (error) {
       console.error('Error updating priority:', error);
-      console.error('Error stack:', error.stack);
+      console.error('Error stack:', error?.stack);
       console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        status: error?.status
       });
-      toast.error(`Failed to update priority: ${error.message || 'Unknown error'}`);
+      toast.error(`Failed to update priority: ${error?.message || 'Unknown error'}`);
     }
   };
 

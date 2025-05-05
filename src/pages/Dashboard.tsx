@@ -4,24 +4,15 @@ import { ProfileHeader } from '@/components/dashboard/ProfileHeader';
 import { UserList } from '@/components/dashboard/UserList';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { useDashboardData } from '@/hooks/useDashboardData';
-import { usePriorityHandlers } from '@/hooks/usePriorityHandlers';
+import { usePriorityMatches } from '@/hooks/usePriorityMatches';
 
 const Dashboard = () => {
-  const { 
+  const { profile, users: initialUsers, loading, highPriorityCount: initialHighPriorityCount } = useDashboardData();
+  
+  const { users, highPriorityCount, updatePriorityMatch } = usePriorityMatches(
     profile, 
-    users, 
-    loading, 
-    highPriorityCount, 
-    setHighPriorityCount,
-    setUsers 
-  } = useDashboardData();
-
-  const { handlePriorityChange } = usePriorityHandlers(
-    profile,
-    users, 
-    highPriorityCount, 
-    setHighPriorityCount,
-    setUsers
+    initialUsers, 
+    initialHighPriorityCount
   );
 
   return (
@@ -36,7 +27,7 @@ const Dashboard = () => {
               users={users}
               profile={profile}
               highPriorityCount={highPriorityCount}
-              onPriorityChange={handlePriorityChange}
+              onPriorityChange={updatePriorityMatch}
             />
           </>
         )}

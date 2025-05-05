@@ -1,5 +1,6 @@
 
 import type { Database } from '@/integrations/supabase/types';
+import { toast } from "sonner";
 
 // Define the priority match type
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
@@ -13,31 +14,40 @@ export function usePriorityMatchService() {
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8";
 
   /**
-   * Make a direct API call to Supabase RPC endpoint with proper JSON escaping
+   * Special JSON stringification with character escaping
+   * This specifically handles the problematic 0x0A newline character
+   */
+  const safeStringify = (obj: any): string => {
+    return JSON.stringify(obj).replace(/\n/g, "\\n");
+  };
+
+  /**
+   * Make a direct API call to Supabase RPC endpoint
    */
   const callRpc = async (
     functionName: string,
     params: Record<string, any>
   ): Promise<any> => {
     try {
-      // Properly sanitize and escape all string values
-      const sanitizedParams: Record<string, any> = {};
+      // Pre-process all parameters to handle problematic characters
+      const processedParams: Record<string, any> = {};
       
+      // Process each parameter to ensure it's safe for JSON
       for (const key in params) {
         if (typeof params[key] === 'string') {
-          // Remove all newlines and control characters
-          sanitizedParams[key] = params[key].replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+          // Remove ALL control characters specifically targeting newlines (0x0A)
+          processedParams[key] = params[key]
+            .replace(/\n/g, "") // Newlines (LF)
+            .replace(/\r/g, "") // Carriage returns (CR)
+            .replace(/[\x00-\x1F\x7F-\x9F]/g, ""); // All other control chars
         } else {
-          sanitizedParams[key] = params[key];
+          processedParams[key] = params[key];
         }
       }
+
+      console.log(`RPC call to ${functionName} with processed params:`, processedParams);
       
-      // Convert to JSON using dollar-quoted string to handle special characters
-      const body = JSON.stringify(sanitizedParams);
-      
-      console.log(`Calling RPC ${functionName} with sanitized params:`, sanitizedParams);
-      
-      // Make the API call
+      // Make API call with specially formatted body
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
         method: 'POST',
         headers: {
@@ -46,23 +56,23 @@ export function usePriorityMatchService() {
           'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Prefer': 'return=minimal'
         },
-        body
+        body: safeStringify(processedParams)
       });
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`RPC call to ${functionName} failed:`, errorText);
+        console.error(`Error in RPC call to ${functionName}:`, errorText);
         throw new Error(`RPC call failed: ${response.status} - ${errorText}`);
       }
       
-      // Handle 204 No Content responses
+      // Handle 204 No Content successfully
       if (response.status === 204) {
         return { success: true };
       }
       
-      // Parse response
+      // Parse the response JSON
       const data = await response.json();
-      return { data };
+      return { success: true, data };
     } catch (error) {
       console.error(`Error in RPC call to ${functionName}:`, error);
       throw error;
@@ -78,21 +88,28 @@ export function usePriorityMatchService() {
     priority: MatchPriority,
     setBy: string
   ) => {
-    // Validate priority value
-    let validPriority = priority;
-    
-    // Default to low if null or invalid
-    if (priority === null || (typeof priority === 'string' && 
-        !['high', 'medium', 'low'].includes(priority))) {
-      validPriority = 'low';
+    try {
+      // Validate priority value
+      let validPriority: MatchPriority = priority;
+      
+      // Default to low if null or invalid
+      if (priority === null || (typeof priority === 'string' && 
+          !['high', 'medium', 'low'].includes(priority))) {
+        validPriority = 'low';
+      }
+      
+      const result = await callRpc('set_priority_match', {
+        p_founder_id: founderId,
+        p_investor_id: investorId,
+        p_priority: validPriority,
+        p_set_by: setBy
+      });
+      
+      return result;
+    } catch (error) {
+      toast.error("Failed to set priority match");
+      throw error;
     }
-    
-    return await callRpc('set_priority_match', {
-      p_founder_id: founderId,
-      p_investor_id: investorId,
-      p_priority: validPriority,
-      p_set_by: setBy
-    });
   };
 
   /**
@@ -103,11 +120,18 @@ export function usePriorityMatchService() {
     investorId: string,
     setBy: string
   ) => {
-    return await callRpc('set_not_interested', {
-      p_founder_id: founderId,
-      p_investor_id: investorId,
-      p_set_by: setBy
-    });
+    try {
+      const result = await callRpc('set_not_interested', {
+        p_founder_id: founderId,
+        p_investor_id: investorId,
+        p_set_by: setBy
+      });
+      
+      return result;
+    } catch (error) {
+      toast.error("Failed to mark as not interested");
+      throw error;
+    }
   };
 
   /**
@@ -117,10 +141,17 @@ export function usePriorityMatchService() {
     founderId: string,
     investorId: string
   ) => {
-    return await callRpc('delete_priority_match', {
-      p_founder_id: founderId,
-      p_investor_id: investorId
-    });
+    try {
+      const result = await callRpc('delete_priority_match', {
+        p_founder_id: founderId,
+        p_investor_id: investorId
+      });
+      
+      return result;
+    } catch (error) {
+      toast.error("Failed to delete priority match");
+      throw error;
+    }
   };
 
   return {

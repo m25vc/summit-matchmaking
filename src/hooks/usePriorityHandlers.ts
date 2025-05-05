@@ -33,24 +33,21 @@ export const usePriorityHandlers = (
     if (notInterested) {
       console.log('Processing "not interested" case');
       try {
-        // First use regular sanitization
-        let matchData = sanitizeJson({
+        // Create a plain JavaScript object with no circular references
+        const rawMatchData = {
           founder_id: profile.user_type === 'founder' ? profile.id : userId,
           investor_id: profile.user_type === 'founder' ? userId : profile.id,
           priority: null,
           not_interested: true,
           set_by: profile.id
-        });
+        };
         
-        // Then deep sanitize to ensure JSON validity
-        matchData = deepSanitizeJson(matchData);
-
-        // Log the raw data structure and stringified version
-        console.log('NOT INTERESTED - Raw matchData object:', matchData);
-        console.log('NOT INTERESTED - JSON string:', JSON.stringify(matchData));
-        console.log('NOT INTERESTED - matchData founder_id:', matchData.founder_id);
-        console.log('NOT INTERESTED - matchData investor_id:', matchData.investor_id);
-        console.log('NOT INTERESTED - matchData set_by:', matchData.set_by);
+        // Convert directly to a proper JSON string
+        const jsonString = JSON.stringify(rawMatchData);
+        console.log('NOT INTERESTED - Clean JSON string:', jsonString);
+        
+        // Parse it back to ensure it's valid
+        const matchData = JSON.parse(jsonString);
         
         console.log('About to send upsert request to Supabase');
         
@@ -161,26 +158,29 @@ export const usePriorityHandlers = (
         return;
       }
 
-      // Create and sanitize the object before sending it to Supabase
-      let matchData = sanitizeJson({
+      // Create a simple plain object with no special characters
+      const rawMatchData = {
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority,
         set_by: profile.id,
         not_interested: false
-      });
+      };
       
-      // Apply deep sanitization as a fallback measure
-      matchData = deepSanitizeJson(matchData);
+      // Convert directly to a clean JSON string
+      const jsonString = JSON.stringify(rawMatchData);
+      console.log('PRIORITY UPDATE - Clean JSON string:', jsonString);
       
-      console.log('PRIORITY UPDATE - Raw matchData object:', matchData);
-      console.log('PRIORITY UPDATE - JSON string:', JSON.stringify(matchData));
+      // Parse back to ensure it's valid JSON
+      const matchData = JSON.parse(jsonString);
+      
+      console.log('PRIORITY UPDATE - Validated matchData:', matchData);
       console.log('PRIORITY UPDATE - matchData founder_id:', matchData.founder_id);
       console.log('PRIORITY UPDATE - matchData investor_id:', matchData.investor_id);
       console.log('PRIORITY UPDATE - matchData priority:', matchData.priority);
       console.log('PRIORITY UPDATE - matchData set_by:', matchData.set_by);
 
-      // Use upsert with the sanitized object
+      // Use the validated JSON object
       console.log('About to send priority upsert to Supabase');
       const { error, data } = await supabase
         .from('priority_matches')

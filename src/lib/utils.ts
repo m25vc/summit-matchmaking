@@ -31,8 +31,8 @@ export function sanitizeJson<T>(obj: T): T {
           const value = (obj as Record<string, any>)[key];
           
           // Debug any problematic string values
-          if (typeof value === 'string' && value.includes('\n')) {
-            console.log(`Found newline in field '${key}':`, JSON.stringify(value));
+          if (typeof value === 'string' && (value.includes('\n') || value.includes('\r') || value.includes('\t'))) {
+            console.log(`Found special character in field '${key}':`, JSON.stringify(value));
           }
           
           result[key] = sanitizeJson(value);
@@ -45,8 +45,8 @@ export function sanitizeJson<T>(obj: T): T {
   // Convert special types that might cause issues in JSON
   if (typeof obj === 'string') {
     // Check for and log problematic characters
-    if (obj.includes('\n')) {
-      console.log('Found newline in string:', JSON.stringify(obj));
+    if (obj.includes('\n') || obj.includes('\r') || obj.includes('\t')) {
+      console.log('Found special character in string:', JSON.stringify(obj));
     }
     
     // Replace newlines and other problematic characters
@@ -71,7 +71,10 @@ export function deepSanitizeJson<T>(obj: T): T {
     const sanitized = sanitizeJson(obj);
     
     // Then stringify and parse to ensure it's valid JSON
-    return JSON.parse(JSON.stringify(sanitized)) as T;
+    const jsonString = JSON.stringify(sanitized);
+    console.log('Stringified JSON:', jsonString);
+    
+    return JSON.parse(jsonString) as T;
   } catch (error) {
     console.error('Failed to deep sanitize JSON:', error);
     // Return a basic object if all else fails

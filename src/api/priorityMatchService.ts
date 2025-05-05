@@ -6,38 +6,39 @@ type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
 /**
  * Thoroughly sanitizes input to prevent JSON parsing issues with special characters
+ * This version is more aggressive about removing problematic characters
  */
 function sanitizeInput(input: any): any {
-  // For null or undefined values, return as is
+  // Handle null/undefined
   if (input === null || input === undefined) {
     return input;
   }
   
-  // For strings, remove problematic characters and escape newlines
+  // Handle strings - completely remove all control characters
   if (typeof input === 'string') {
-    // Replace all newlines, tabs, and other control characters that could cause JSON issues
-    return input
-      .replace(/[\n\r]/g, '') // Remove newlines and carriage returns
-      .replace(/[\t]/g, ' ')  // Replace tabs with spaces
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove other control characters
+    // Replace all control characters including newlines, tabs, etc.
+    return input.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
   }
   
-  // For objects (including arrays), recursively sanitize each property
+  // Handle arrays
+  if (Array.isArray(input)) {
+    return input.map(sanitizeInput);
+  }
+  
+  // Handle objects
   if (typeof input === 'object') {
-    if (Array.isArray(input)) {
-      return input.map(item => sanitizeInput(item));
-    }
+    const result: Record<string, any> = {};
     
-    const sanitizedObj: Record<string, any> = {};
     for (const key in input) {
       if (Object.prototype.hasOwnProperty.call(input, key)) {
-        sanitizedObj[key] = sanitizeInput(input[key]);
+        result[key] = sanitizeInput(input[key]);
       }
     }
-    return sanitizedObj;
+    
+    return result;
   }
   
-  // For all other types (numbers, booleans, etc.), return as is
+  // Return other types as-is (numbers, booleans)
   return input;
 }
 
@@ -58,7 +59,7 @@ export async function setPriorityMatch(
   });
   
   try {
-    // Sanitize all inputs
+    // Sanitize inputs
     const sanitizedFounderId = sanitizeInput(founderId);
     const sanitizedInvestorId = sanitizeInput(investorId);
     const sanitizedPriority = priority ? sanitizeInput(priority) : null;
@@ -71,12 +72,23 @@ export async function setPriorityMatch(
       setBy: sanitizedSetBy
     });
     
-    return supabase.rpc('set_priority_match', {
+    // Extra validation for JSON safety
+    const params = {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId,
       p_priority: sanitizedPriority,
       p_set_by: sanitizedSetBy
-    });
+    };
+    
+    // Try to stringify and parse to catch any remaining JSON issues
+    try {
+      JSON.stringify(params);
+    } catch (jsonError) {
+      console.error("JSON stringify check failed:", jsonError);
+      throw new Error("Invalid input data cannot be converted to JSON");
+    }
+    
+    return supabase.rpc('set_priority_match', params);
   } catch (error) {
     console.error("Error in setPriorityMatch:", error);
     throw error;
@@ -103,11 +115,22 @@ export async function setNotInterested(
       setBy: sanitizedSetBy
     });
     
-    return supabase.rpc('set_not_interested', {
+    // Extra validation for JSON safety
+    const params = {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId,
       p_set_by: sanitizedSetBy
-    });
+    };
+    
+    // Try to stringify and parse to catch any remaining JSON issues
+    try {
+      JSON.stringify(params);
+    } catch (jsonError) {
+      console.error("JSON stringify check failed:", jsonError);
+      throw new Error("Invalid input data cannot be converted to JSON");
+    }
+    
+    return supabase.rpc('set_not_interested', params);
   } catch (error) {
     console.error("Error in setNotInterested:", error);
     throw error;
@@ -131,10 +154,21 @@ export async function deletePriorityMatch(
       investorId: sanitizedInvestorId
     });
     
-    return supabase.rpc('delete_priority_match', {
+    // Extra validation for JSON safety
+    const params = {
       p_founder_id: sanitizedFounderId,
       p_investor_id: sanitizedInvestorId
-    });
+    };
+    
+    // Try to stringify and parse to catch any remaining JSON issues
+    try {
+      JSON.stringify(params);
+    } catch (jsonError) {
+      console.error("JSON stringify check failed:", jsonError);
+      throw new Error("Invalid input data cannot be converted to JSON");
+    }
+    
+    return supabase.rpc('delete_priority_match', params);
   } catch (error) {
     console.error("Error in deletePriorityMatch:", error);
     throw error;

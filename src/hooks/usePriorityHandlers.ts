@@ -12,7 +12,6 @@ export const usePriorityHandlers = (
   setHighPriorityCount: (count: number | ((prev: number) => number)) => void,
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
-  // Completely rewritten function to bypass JSON issues
   const handlePriorityChange = async (
     userId: string, 
     priority: 'high' | 'medium' | 'low' | null, 
@@ -20,11 +19,8 @@ export const usePriorityHandlers = (
   ) => {
     console.log('------- PRIORITY CHANGE START -------');
     console.log('handlePriorityChange called with:', { userId, priority, notInterested });
-    console.log('Current profile:', profile);
-    console.log('Current highPriorityCount:', highPriorityCount);
     
     if (!profile) {
-      console.error('No profile available, aborting');
       toast.error("Profile not loaded");
       return;
     }
@@ -33,25 +29,22 @@ export const usePriorityHandlers = (
     if (priority === 'high' && highPriorityCount >= 5 && !users.find(u => 
       u.id === userId && u.priority_matches?.[0]?.priority === 'high'
     )) {
-      console.log('High priority limit reached');
       toast.error("You can only have up to 5 high priority matches");
-      console.log('------- PRIORITY CHANGE END - LIMIT REACHED -------');
       return;
     }
 
     try {
-      // Determine founder_id and investor_id
+      // Determine founder_id and investor_id directly
       const founderId = profile.user_type === 'founder' ? profile.id : userId;
       const investorId = profile.user_type === 'founder' ? userId : profile.id;
       
-      // For delete action (priority === null)
-      if (priority === null) {
-        console.log('Removing priority match');
-        
-        const { error } = await supabase.rpc('delete_priority_match', {
-          p_founder_id: founderId,
-          p_investor_id: investorId
-        });
+      // For delete operation
+      if (priority === null && !notInterested) {
+        const { error } = await supabase
+          .from('priority_matches')
+          .delete()
+          .eq('founder_id', founderId)
+          .eq('investor_id', investorId);
 
         if (error) throw error;
         
@@ -63,73 +56,52 @@ export const usePriorityHandlers = (
               if (wasHighPriority) {
                 setHighPriorityCount((prev) => prev - 1);
               }
-              return {
-                ...user,
-                priority_matches: []
-              };
+              return { ...user, priority_matches: [] };
             }
             return user;
           })
         );
 
         toast.success("Priority match removed");
-        console.log('------- PRIORITY CHANGE END - REMOVED -------');
         return;
       }
+     
+      // Prepare base parameters - VERY MINIMAL!
+      const baseParams = {
+        founder_id: founderId,
+        investor_id: investorId,
+        set_by: profile.id
+      };
       
-      // For "not interested" action
+      // Add additional parameters based on the action
+      let params;
+      
       if (notInterested) {
-        console.log('Processing "not interested" case');
-        
-        const { error } = await supabase.rpc('set_not_interested', {
-          p_founder_id: founderId,
-          p_investor_id: investorId,
-          p_set_by: profile.id
-        });
-
-        if (error) throw error;
-        
-        // Update UI state
-        setUsers((prevUsers) => {
-          return prevUsers.map(user => {
-            if (user.id === userId) {
-              const wasHighPriority = user.priority_matches?.[0]?.priority === 'high';
-              if (wasHighPriority) {
-                setHighPriorityCount((prev) => prev - 1);
-              }
-              
-              return {
-                ...user,
-                priority_matches: [{
-                  ...user.priority_matches?.[0],
-                  id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
-                  created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
-                  founder_id: founderId,
-                  investor_id: investorId,
-                  set_by: profile.id,
-                  priority: null,
-                  not_interested: true
-                }]
-              };
-            }
-            return user;
-          });
-        });
-
-        toast.success("Match marked as not interested");
-        console.log('------- PRIORITY CHANGE END - NOT INTERESTED -------');
-        return;
+        params = {
+          ...baseParams,
+          priority: null,
+          not_interested: true
+        };
+      } else {
+        params = {
+          ...baseParams,
+          priority: priority,
+          not_interested: false
+        };
       }
       
-      // For priority update
-      console.log('Setting priority:', priority);
-      
-      const { error } = await supabase.rpc('set_priority_match', {
-        p_founder_id: founderId,
-        p_investor_id: investorId,
-        p_priority: priority,
-        p_set_by: profile.id
-      });
+      // IMPORTANT: Insert directly with parameters, avoiding any complex objects
+      const { error } = await supabase
+        .from('priority_matches')
+        .upsert({
+          founder_id: params.founder_id,
+          investor_id: params.investor_id,
+          priority: params.priority,
+          not_interested: params.not_interested,
+          set_by: params.set_by
+        }, {
+          onConflict: 'founder_id,investor_id'
+        });
 
       if (error) throw error;
       
@@ -142,11 +114,11 @@ export const usePriorityHandlers = (
               priority_matches: [{
                 id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
                 created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
-                founder_id: founderId,
-                investor_id: investorId,
-                set_by: profile.id,
-                priority: priority,
-                not_interested: false
+                founder_id: params.founder_id,
+                investor_id: params.investor_id,
+                set_by: params.set_by,
+                priority: params.priority,
+                not_interested: params.not_interested
               }]
             };
           }
@@ -162,7 +134,7 @@ export const usePriorityHandlers = (
         if (!userHadHighPriority) {
           setHighPriorityCount((prev) => prev + 1);
         }
-      } else {
+      } else if (!notInterested) {
         const userHadHighPriority = users.find(u => 
           u.id === userId && u.priority_matches?.[0]?.priority === 'high'
         );
@@ -171,11 +143,12 @@ export const usePriorityHandlers = (
         }
       }
 
-      toast.success("Priority updated successfully");
-      console.log('------- PRIORITY CHANGE END - SUCCESS -------');
+      toast.success(notInterested 
+        ? "Match marked as not interested" 
+        : "Priority updated successfully");
+      
     } catch (error) {
       console.error('Error updating priority:', error);
-      console.log('------- PRIORITY CHANGE END - ERROR -------');
       toast.error("Failed to update priority");
     }
   };

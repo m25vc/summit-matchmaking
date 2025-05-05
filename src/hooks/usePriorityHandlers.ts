@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
-import { sanitizeJson } from '@/lib/utils';
+import { sanitizeJson, deepSanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -33,17 +33,21 @@ export const usePriorityHandlers = (
     if (notInterested) {
       console.log('Processing "not interested" case');
       try {
-        // Create a plain object with only the required fields
-        const matchData = sanitizeJson({
+        // First use regular sanitization
+        let matchData = sanitizeJson({
           founder_id: profile.user_type === 'founder' ? profile.id : userId,
           investor_id: profile.user_type === 'founder' ? userId : profile.id,
           priority: null,
           not_interested: true,
           set_by: profile.id
         });
+        
+        // Then deep sanitize to ensure JSON validity
+        matchData = deepSanitizeJson(matchData);
 
-        // Log the raw data structure
+        // Log the raw data structure and stringified version
         console.log('NOT INTERESTED - Raw matchData object:', matchData);
+        console.log('NOT INTERESTED - JSON string:', JSON.stringify(matchData));
         console.log('NOT INTERESTED - matchData founder_id:', matchData.founder_id);
         console.log('NOT INTERESTED - matchData investor_id:', matchData.investor_id);
         console.log('NOT INTERESTED - matchData set_by:', matchData.set_by);
@@ -158,7 +162,7 @@ export const usePriorityHandlers = (
       }
 
       // Create and sanitize the object before sending it to Supabase
-      const matchData = sanitizeJson({
+      let matchData = sanitizeJson({
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority,
@@ -166,7 +170,11 @@ export const usePriorityHandlers = (
         not_interested: false
       });
       
+      // Apply deep sanitization as a fallback measure
+      matchData = deepSanitizeJson(matchData);
+      
       console.log('PRIORITY UPDATE - Raw matchData object:', matchData);
+      console.log('PRIORITY UPDATE - JSON string:', JSON.stringify(matchData));
       console.log('PRIORITY UPDATE - matchData founder_id:', matchData.founder_id);
       console.log('PRIORITY UPDATE - matchData investor_id:', matchData.investor_id);
       console.log('PRIORITY UPDATE - matchData priority:', matchData.priority);
@@ -180,7 +188,7 @@ export const usePriorityHandlers = (
           onConflict: 'founder_id,investor_id'
         });
 
-      console.log('Supabase priority upsert response:', { error, data });
+      console.log('Supabase response:', { error, data });
 
       if (error) {
         console.error('Upsert error details:', error);

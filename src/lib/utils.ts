@@ -16,6 +16,9 @@ export function sanitizeJson<T>(obj: T): T {
   }
   
   if (typeof obj === 'object') {
+    // Add debugging to help identify problematic fields
+    console.log('Sanitizing object:', JSON.stringify(obj));
+    
     if (Array.isArray(obj)) {
       return obj.map(item => sanitizeJson(item)) as unknown as T;
     }
@@ -25,7 +28,14 @@ export function sanitizeJson<T>(obj: T): T {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         // Skip functions and non-serializable objects
         if (typeof obj[key] !== 'function' && key !== '__proto__') {
-          result[key] = sanitizeJson((obj as Record<string, any>)[key]);
+          const value = (obj as Record<string, any>)[key];
+          
+          // Debug any problematic string values
+          if (typeof value === 'string' && value.includes('\n')) {
+            console.log(`Found newline in field '${key}':`, JSON.stringify(value));
+          }
+          
+          result[key] = sanitizeJson(value);
         }
       }
     }
@@ -34,12 +44,37 @@ export function sanitizeJson<T>(obj: T): T {
   
   // Convert special types that might cause issues in JSON
   if (typeof obj === 'string') {
+    // Check for and log problematic characters
+    if (obj.includes('\n')) {
+      console.log('Found newline in string:', JSON.stringify(obj));
+    }
+    
     // Replace newlines and other problematic characters
-    return obj
+    const sanitized = obj
       .replace(/\n/g, ' ')
       .replace(/\r/g, ' ')
-      .replace(/\t/g, ' ') as unknown as T;
+      .replace(/\t/g, ' ');
+      
+    return sanitized as unknown as T;
   }
   
   return obj;
+}
+
+/**
+ * More aggressive JSON sanitization - use this if other methods fail
+ * Converts to JSON string and then parses back to ensure valid JSON
+ */
+export function deepSanitizeJson<T>(obj: T): T {
+  try {
+    // First sanitize using our regular function
+    const sanitized = sanitizeJson(obj);
+    
+    // Then stringify and parse to ensure it's valid JSON
+    return JSON.parse(JSON.stringify(sanitized)) as T;
+  } catch (error) {
+    console.error('Failed to deep sanitize JSON:', error);
+    // Return a basic object if all else fails
+    return {} as T;
+  }
 }

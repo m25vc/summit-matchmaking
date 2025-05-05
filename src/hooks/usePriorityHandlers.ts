@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
+import { sanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -33,13 +34,13 @@ export const usePriorityHandlers = (
       console.log('Processing "not interested" case');
       try {
         // Create a plain object with only the required fields
-        const matchData = {
+        const matchData = sanitizeJson({
           founder_id: profile.user_type === 'founder' ? profile.id : userId,
           investor_id: profile.user_type === 'founder' ? userId : profile.id,
           priority: null,
           not_interested: true,
           set_by: profile.id
-        };
+        });
 
         // Log the raw data structure
         console.log('NOT INTERESTED - Raw matchData object:', matchData);
@@ -156,14 +157,14 @@ export const usePriorityHandlers = (
         return;
       }
 
-      // Create a plain, simple object with only primitive values
-      const matchData = {
+      // Create and sanitize the object before sending it to Supabase
+      const matchData = sanitizeJson({
         founder_id: profile.user_type === 'founder' ? profile.id : userId,
         investor_id: profile.user_type === 'founder' ? userId : profile.id,
         priority,
         set_by: profile.id,
         not_interested: false
-      };
+      });
       
       console.log('PRIORITY UPDATE - Raw matchData object:', matchData);
       console.log('PRIORITY UPDATE - matchData founder_id:', matchData.founder_id);
@@ -171,7 +172,7 @@ export const usePriorityHandlers = (
       console.log('PRIORITY UPDATE - matchData priority:', matchData.priority);
       console.log('PRIORITY UPDATE - matchData set_by:', matchData.set_by);
 
-      // Use upsert with the plain object directly
+      // Use upsert with the sanitized object
       console.log('About to send priority upsert to Supabase');
       const { error, data } = await supabase
         .from('priority_matches')

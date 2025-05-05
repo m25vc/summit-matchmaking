@@ -133,7 +133,22 @@ export function usePriorityMatches(
       // Sanitize inputs - extra precaution
       const sanitizedFounderId = founderId?.replace(/[\n\r\t]/g, '');
       const sanitizedInvestorId = investorId?.replace(/[\n\r\t]/g, '');
-      const sanitizedPriority = typeof priority === 'string' ? priority.replace(/[\n\r\t]/g, '') : priority;
+      
+      // TYPE FIX: Ensure priority is treated as a valid MatchPriority type
+      let sanitizedPriority: MatchPriority = null;
+      
+      if (typeof priority === 'string') {
+        const cleanPriority = priority.replace(/[\n\r\t]/g, '');
+        // Validate that it's one of the allowed enum values
+        if (cleanPriority === 'high' || cleanPriority === 'medium' || cleanPriority === 'low') {
+          sanitizedPriority = cleanPriority as MatchPriority;
+        } else {
+          console.warn(`Invalid priority value: "${priority}" → defaulting to null`);
+        }
+      } else {
+        sanitizedPriority = priority;
+      }
+      
       const sanitizedProfileId = profile.id?.replace(/[\n\r\t]/g, '');
       
       console.log("Sanitized inputs:", {
@@ -158,7 +173,7 @@ export function usePriorityMatches(
       }
       
       // Update local state
-      updateUserState(userId, priority, false);
+      updateUserState(userId, sanitizedPriority, false);
       toast.success("Priority updated successfully");
       console.log("updatePriorityMatch - COMPLETED SUCCESSFULLY - Updated priority");
       

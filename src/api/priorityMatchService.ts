@@ -76,11 +76,23 @@ export async function setPriorityMatch(
     };
     
     // Special handling for the priority value that's causing issues
-    let safePriority = priority;
+    // TYPE FIX: Ensure priority is treated as a valid enum value or null
+    let safePriority: MatchPriority = null;
     if (typeof priority === 'string') {
-      // This is the critical fix - remove ALL newlines from the priority value
-      safePriority = priority.replace(/\n/g, '').replace(/\r/g, '').trim();
+      // Validate that the string is one of the allowed enum values
+      const cleanPriority = priority.replace(/\n/g, '').replace(/\r/g, '').trim();
+      
+      // Only assign if it's a valid match priority type
+      if (cleanPriority === 'high' || cleanPriority === 'medium' || cleanPriority === 'low') {
+        safePriority = cleanPriority;
+      } else {
+        console.warn(`Invalid priority value: "${priority}" → defaulting to null`);
+      }
+      
       console.log(`Priority value sanitized: "${priority}" → "${safePriority}"`);
+    } else {
+      // If it's already null or a valid type, use it directly
+      safePriority = priority;
     }
     
     // Build a new params object with the sanitized priority

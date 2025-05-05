@@ -16,6 +16,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 export function usePriorityMatchService() {
   /**
    * Sanitizes RPC parameters to prevent issues with special characters
+   * With enhanced handling for newline and control characters
    */
   const sanitizeRpcParams = (input: any): any => {
     // Handle null/undefined
@@ -23,9 +24,20 @@ export function usePriorityMatchService() {
       return input;
     }
     
-    // Handle strings - remove problematic characters
+    // Handle strings - aggressively remove all problematic characters
     if (typeof input === 'string') {
-      let sanitized = input.replace(/\n/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+      // First target the 0x0A newline character specifically that's causing issues
+      let sanitized = input.replace(/\n/g, '');
+      
+      // Also remove carriage returns
+      sanitized = sanitized.replace(/\r/g, '');
+      
+      // Then remove all control characters and other problematic characters
+      sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+      
+      // Final trim
+      sanitized = sanitized.trim();
+      
       return sanitized;
     }
     
@@ -50,22 +62,36 @@ export function usePriorityMatchService() {
   };
 
   /**
-   * Makes a secure RPC call to Supabase with enhanced error handling
+   * Makes a secure RPC call to Supabase with enhanced error handling and JSON sanitization
    */
   const callRpcEndpoint = async (
     functionName: string, 
     params: Record<string, any>
   ): Promise<any> => {
-    try {      
-      // Sanitize parameters
+    try {
+      // First, sanitize parameters to remove problematic characters 
       const sanitizedParams = sanitizeRpcParams(params);
       
-      // Convert parameters to a sanitized JSON string
-      const safeJsonParams = safeJsonStringify(sanitizedParams);
+      // Then stringify with extra safety
+      let safeJsonParams;
+      try {
+        // Use a custom stringify function with replacer function to handle special cases
+        safeJsonParams = JSON.stringify(sanitizedParams, (key, value) => {
+          if (typeof value === 'string') {
+            // Extra sanitization during stringify to ensure all newlines are gone
+            return value.replace(/\n/g, '').replace(/\r/g, '');
+          }
+          return value;
+        });
+      } catch (stringifyError) {
+        console.error('Failed to stringify params:', stringifyError);
+        // Fallback to our safe stringify utility
+        safeJsonParams = safeJsonStringify(sanitizedParams);
+      }
       
       console.log(`Calling RPC ${functionName} with params:`, safeJsonParams);
       
-      // Make direct fetch call
+      // Make direct fetch call with sanitized JSON
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
         method: 'POST',
         headers: {
@@ -104,6 +130,7 @@ export function usePriorityMatchService() {
 
   /**
    * Sets a priority match between a founder and investor
+   * With enhanced parameter sanitization
    */
   const setPriorityMatch = async (
     founderId: string,
@@ -114,25 +141,41 @@ export function usePriorityMatchService() {
     console.log("Setting priority match:", { founderId, investorId, priority, setBy });
     
     try {
-      // Validate priority value
+      // Aggressively sanitize all parameters
+      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
+      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
+      const safeSetBy = typeof setBy === 'string' ? setBy.replace(/[\n\r\t]/g, '') : setBy;
+      
+      // Validate and sanitize priority value
       let safePriority: MatchPriority = null;
       if (typeof priority === 'string') {
+        // Clean up the priority string
         const cleanPriority = priority.replace(/\n/g, '').replace(/\r/g, '').trim();
         
+        // Only assign if it's a valid match priority type
         if (cleanPriority === 'high' || cleanPriority === 'medium' || cleanPriority === 'low') {
           safePriority = cleanPriority as MatchPriority;
         } else {
-          console.warn(`Invalid priority value: "${priority}" → defaulting to null`);
+          console.warn(`Invalid priority value: "${priority}" → defaulting to low`);
+          safePriority = 'low';
         }
       } else {
-        safePriority = priority;
+        // If null, use 'low' since the database requires a non-null value
+        safePriority = priority || 'low';
       }
       
+      console.log(`Using sanitized values:`, {
+        founderId: safeFounderId,
+        investorId: safeInvestorId,
+        priority: safePriority,
+        setBy: safeSetBy
+      });
+      
       return await callRpcEndpoint('set_priority_match', {
-        p_founder_id: founderId,
-        p_investor_id: investorId,
+        p_founder_id: safeFounderId,
+        p_investor_id: safeInvestorId,
         p_priority: safePriority,
-        p_set_by: setBy
+        p_set_by: safeSetBy
       });
     } catch (error) {
       console.error("Error in setPriorityMatch:", error);
@@ -149,10 +192,15 @@ export function usePriorityMatchService() {
     setBy: string
   ) => {
     try {
+      // Sanitize all parameters
+      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
+      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
+      const safeSetBy = typeof setBy === 'string' ? setBy.replace(/[\n\r\t]/g, '') : setBy;
+      
       return await callRpcEndpoint('set_not_interested', {
-        p_founder_id: founderId,
-        p_investor_id: investorId,
-        p_set_by: setBy
+        p_founder_id: safeFounderId,
+        p_investor_id: safeInvestorId,
+        p_set_by: safeSetBy
       });
     } catch (error) {
       console.error("Error in setNotInterested:", error);
@@ -168,9 +216,13 @@ export function usePriorityMatchService() {
     investorId: string
   ) => {
     try {
+      // Sanitize parameters
+      const safeFounderId = typeof founderId === 'string' ? founderId.replace(/[\n\r\t]/g, '') : founderId;
+      const safeInvestorId = typeof investorId === 'string' ? investorId.replace(/[\n\r\t]/g, '') : investorId;
+      
       return await callRpcEndpoint('delete_priority_match', {
-        p_founder_id: founderId,
-        p_investor_id: investorId
+        p_founder_id: safeFounderId,
+        p_investor_id: safeInvestorId
       });
     } catch (error) {
       console.error("Error in deletePriorityMatch:", error);

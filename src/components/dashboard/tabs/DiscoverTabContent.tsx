@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterBar } from '../filters/FilterBar';
@@ -45,6 +44,22 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
   const getFilteredUsers = (users: UserWithDetails[]) => {
     console.log('Filter values:', { industryFilter, stageFilter });
     
+    // For debugging, output all users' details
+    if (stageFilter !== 'all') {
+      console.log('Users with filter details:');
+      users.forEach(user => {
+        if (user.user_type === 'investor') {
+          console.log(`User ${user.id} (${user.first_name} ${user.last_name}) - Type: ${user.user_type}`, 
+            `Industries: ${user.investor_details?.preferred_industries?.join(', ')}`,
+            `Stages: ${user.investor_details?.preferred_stages?.join(', ')}`);
+        } else {
+          console.log(`User ${user.id} (${user.first_name} ${user.last_name}) - Type: ${user.user_type}`, 
+            `Industry: ${user.founder_details?.industry}`,
+            `Stage: ${user.founder_details?.company_stage}`);
+        }
+      });
+    }
+    
     return users.filter(user => {
       // Check if we have the user details before filtering
       const investorDetails = user.investor_details;
@@ -55,15 +70,25 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
       
       if (!matchesIndustry) {
         if (user.user_type === 'investor') {
-          // Handle investors - check their preferred industries
-          matchesIndustry = !!investorDetails?.preferred_industries?.some(industry => 
-            industry.trim().toLowerCase() === industryFilter.trim().toLowerCase() ||
-            industry.trim().toLowerCase() === 'all'
-          );
+          // When filtering investors, check if they invest in the selected industry
+          matchesIndustry = false;
+          
+          if (investorDetails?.preferred_industries) {
+            for (const industry of investorDetails.preferred_industries) {
+              const cleanIndustry = industry.trim().toLowerCase();
+              if (cleanIndustry === 'all' || cleanIndustry === industryFilter.trim().toLowerCase()) {
+                matchesIndustry = true;
+                break;
+              }
+            }
+          }
+          
+          console.log(`Industry match for investor ${user.first_name}: ${matchesIndustry} (filter: ${industryFilter})`);
         } else {
-          // Handle founders - check their industry
-          const founderIndustry = founderDetails?.industry || '';
-          matchesIndustry = founderIndustry.trim().toLowerCase() === industryFilter.trim().toLowerCase();
+          // When filtering founders, check if their company is in the selected industry
+          const founderIndustry = (founderDetails?.industry || '').trim().toLowerCase();
+          matchesIndustry = founderIndustry === industryFilter.trim().toLowerCase();
+          console.log(`Industry match for founder ${user.first_name}: ${matchesIndustry} (${founderIndustry} vs ${industryFilter})`);
         }
       }
 
@@ -72,26 +97,25 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
       
       if (!matchesStage) {
         if (user.user_type === 'investor') {
-          // For investors - check their preferred stages
+          // When filtering investors, check if they invest in the selected stage
+          matchesStage = false;
+          
           if (investorDetails?.preferred_stages) {
-            // Debug logging
-            console.log(`Checking stages for investor ${user.first_name} ${user.last_name}:`, 
-              investorDetails.preferred_stages);
-              
-            matchesStage = investorDetails.preferred_stages.some(stage => 
-              stage.trim().toLowerCase() === stageFilter.trim().toLowerCase() ||
-              stage.trim().toLowerCase() === 'all'
-            );
-            
-            console.log(`Stage match for ${user.first_name} ${user.last_name}: ${matchesStage} (stageFilter: ${stageFilter})`);
-          } else {
-            matchesStage = false;
+            for (const stage of investorDetails.preferred_stages) {
+              const cleanStage = stage.trim().toLowerCase();
+              if (cleanStage === 'all' || cleanStage === stageFilter.trim().toLowerCase()) {
+                matchesStage = true;
+                break;
+              }
+            }
           }
+          
+          console.log(`Stage match for investor ${user.first_name}: ${matchesStage} (filter: ${stageFilter})`);
         } else {
-          // For founders - check their company stage
-          const founderStage = founderDetails?.company_stage || '';
-          console.log(`Comparing founder stage "${founderStage}" with filter "${stageFilter}"`);
-          matchesStage = founderStage.trim().toLowerCase() === stageFilter.trim().toLowerCase();
+          // When filtering founders, check if their company is at the selected stage
+          const founderStage = (founderDetails?.company_stage || '').trim().toLowerCase();
+          matchesStage = founderStage === stageFilter.trim().toLowerCase();
+          console.log(`Stage match for founder ${user.first_name}: ${matchesStage} (${founderStage} vs ${stageFilter})`);
         }
       }
 

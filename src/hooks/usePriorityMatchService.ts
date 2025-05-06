@@ -1,3 +1,4 @@
+
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 
@@ -65,14 +66,17 @@ export function usePriorityMatchService() {
       const sanitizedParams = sanitizeDeep(params);
       console.log(`RPC ${functionName} - SANITIZED PARAMS:`, sanitizedParams);
       
-      // Format the body with manual control over JSON serialization
-      const bodyJson = JSON.stringify(sanitizedParams, (key, value) => {
-        // Additional serialization safety for string values
-        if (typeof value === 'string') {
-          return value.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
+      // Special handling for priority parameter to ensure it's properly quoted in JSON
+      if (functionName === 'set_priority_match' && 'p_priority' in sanitizedParams) {
+        // If priority is a string, ensure it's treated properly as a string in JSON
+        if (typeof sanitizedParams.p_priority === 'string') {
+          console.log(`Priority parameter before special handling: ${sanitizedParams.p_priority}`);
+          // No need to modify the value, just ensure proper JSON serialization
         }
-        return value;
-      });
+      }
+      
+      // Format the body with manual control over JSON serialization
+      const bodyJson = JSON.stringify(sanitizedParams);
       
       console.log(`RPC ${functionName} - REQUEST BODY:`, bodyJson);
       

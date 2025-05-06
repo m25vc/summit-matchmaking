@@ -43,24 +43,56 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
     newUsers.filter(user => user.user_type === 'investor'), [newUsers]);
 
   const getFilteredUsers = (users: UserWithDetails[]) => {
+    console.log('Filter values:', { industryFilter, stageFilter });
+    
     return users.filter(user => {
-      // For investors, check their preferred industries array
-      // For founders, check their industry field
-      const matchesIndustry = industryFilter === 'all' || (
-        profile?.user_type === 'founder'
-          ? user.investor_details?.preferred_industries?.includes(industryFilter)
-          : user.founder_details?.industry === industryFilter
-      );
+      // Check if we have the user details before filtering
+      const investorDetails = user.investor_details;
+      const founderDetails = user.founder_details;
+      
+      // Debug each user's details
+      console.log('Filtering user:', {
+        id: user.id,
+        userType: user.user_type,
+        founderIndustry: founderDetails?.industry,
+        founderStage: founderDetails?.company_stage,
+        investorIndustries: investorDetails?.preferred_industries,
+        investorStages: investorDetails?.preferred_stages
+      });
+      
+      // For investors looking at founders, check founder's industry field
+      // For founders looking at investors, check investor's preferred_industries array
+      let matchesIndustry = industryFilter === 'all';
+      
+      if (!matchesIndustry) {
+        if (profile?.user_type === 'founder') {
+          // Founders looking at investors
+          matchesIndustry = investorDetails?.preferred_industries?.includes(industryFilter) || false;
+        } else {
+          // Investors looking at founders
+          matchesIndustry = founderDetails?.industry === industryFilter;
+        }
+        console.log(`Industry match for ${user.id}: ${matchesIndustry}`);
+      }
 
-      // For investors, check their preferred stages array
-      // For founders, check their company_stage field
-      const matchesStage = stageFilter === 'all' || (
-        profile?.user_type === 'founder'
-          ? user.investor_details?.preferred_stages?.includes(stageFilter)
-          : user.founder_details?.company_stage === stageFilter
-      );
+      // For investors looking at founders, check founder's company_stage
+      // For founders looking at investors, check investor's preferred_stages array
+      let matchesStage = stageFilter === 'all';
+      
+      if (!matchesStage) {
+        if (profile?.user_type === 'founder') {
+          // Founders looking at investors
+          matchesStage = investorDetails?.preferred_stages?.includes(stageFilter) || false;
+        } else {
+          // Investors looking at founders
+          matchesStage = founderDetails?.company_stage === stageFilter;
+        }
+        console.log(`Stage match for ${user.id}: ${matchesStage}`);
+      }
 
-      return matchesIndustry && matchesStage;
+      const isMatch = matchesIndustry && matchesStage;
+      console.log(`Final match for ${user.id}: ${isMatch}`);
+      return isMatch;
     });
   };
 
@@ -78,11 +110,17 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
     });
   };
 
-  const filteredFounders = useMemo(() => 
-    getSortedUsers(getFilteredUsers(founderUsers)), [founderUsers, industryFilter, stageFilter, sortBy]);
+  const filteredFounders = useMemo(() => {
+    const filtered = getFilteredUsers(founderUsers);
+    console.log(`Filtered founders: ${filtered.length} out of ${founderUsers.length}`);
+    return getSortedUsers(filtered);
+  }, [founderUsers, industryFilter, stageFilter, sortBy]);
     
-  const filteredInvestors = useMemo(() => 
-    getSortedUsers(getFilteredUsers(investorUsers)), [investorUsers, industryFilter, stageFilter, sortBy]);
+  const filteredInvestors = useMemo(() => {
+    const filtered = getFilteredUsers(investorUsers);
+    console.log(`Filtered investors: ${filtered.length} out of ${investorUsers.length}`);
+    return getSortedUsers(filtered);
+  }, [investorUsers, industryFilter, stageFilter, sortBy]);
 
   return (
     <>

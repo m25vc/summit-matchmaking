@@ -16,7 +16,7 @@ const INDUSTRY_OPTIONS = [
   'Other'
 ] as const;
 
-// Updated stage options to match registration, ensuring exact capitalization
+// Ensure EXACT stage names as stored in the database
 const STAGE_OPTIONS = [
   'Pre-Seed',
   'Seed',
@@ -48,6 +48,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setSortBy,
   showIndustryAndStage = true
 }) => {
+  console.log('FilterBar rendering with:', { industryFilter, stageFilter, sortBy });
+  
   return (
     <div className={`mb-6 grid gap-4 ${showIndustryAndStage ? 'md:grid-cols-3' : ''}`}>
       {showIndustryAndStage && (

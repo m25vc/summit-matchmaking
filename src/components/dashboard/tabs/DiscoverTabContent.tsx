@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterBar } from '../filters/FilterBar';
@@ -43,28 +44,20 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
 
   const getFilteredUsers = (users: UserWithDetails[]) => {
     return users.filter(user => {
-      const userIndustry = profile?.user_type === 'founder'
-        ? user.investor_details?.preferred_industries?.[0]
-        : user.founder_details?.industry;
-      
-      const userStage = profile?.user_type === 'founder'
-        ? user.investor_details?.preferred_stages?.[0]
-        : user.founder_details?.company_stage;
-
+      // For investors, check their preferred industries array
+      // For founders, check their industry field
       const matchesIndustry = industryFilter === 'all' || (
-        industryFilter === 'Other'
-          ? !['SaaS', 'Fintech', 'Healthcare', 'E-commerce', 'Enterprise'].includes(userIndustry as any)
-          : profile?.user_type === 'founder'
-            ? user.investor_details?.preferred_industries?.includes(industryFilter)
-            : userIndustry === industryFilter
+        profile?.user_type === 'founder'
+          ? user.investor_details?.preferred_industries?.includes(industryFilter)
+          : user.founder_details?.industry === industryFilter
       );
 
+      // For investors, check their preferred stages array
+      // For founders, check their company_stage field
       const matchesStage = stageFilter === 'all' || (
-        stageFilter === 'Other'
-          ? !['Pre-seed', 'Seed', 'Series A', 'Series B+'].includes(userStage as any)
-          : profile?.user_type === 'founder'
-            ? user.investor_details?.preferred_stages?.includes(stageFilter)
-            : userStage === stageFilter
+        profile?.user_type === 'founder'
+          ? user.investor_details?.preferred_stages?.includes(stageFilter)
+          : user.founder_details?.company_stage === stageFilter
       );
 
       return matchesIndustry && matchesStage;

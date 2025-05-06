@@ -2,20 +2,28 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Updated industry options to match registration
 const INDUSTRY_OPTIONS = [
-  'SaaS',
+  'AI',
+  'Adtech',
   'Fintech',
   'Healthcare',
   'E-commerce',
-  'Enterprise',
+  'SaaS',
+  'Crypto',
+  'Biotech',
+  'Edtech',
   'Other'
 ] as const;
 
+// Updated stage options to match registration
 const STAGE_OPTIONS = [
   'Pre-seed',
   'Seed',
   'Series A',
-  'Series B+',
+  'Series B',
+  'Series C+',
+  'Growth',
   'Other'
 ] as const;
 

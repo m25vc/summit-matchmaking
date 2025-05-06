@@ -16,9 +16,9 @@ const INDUSTRY_OPTIONS = [
   'Other'
 ] as const;
 
-// Updated stage options to match registration
+// Updated stage options to match registration, ensuring exact capitalization
 const STAGE_OPTIONS = [
-  'Pre-seed',
+  'Pre-Seed',
   'Seed',
   'Series A',
   'Series B',

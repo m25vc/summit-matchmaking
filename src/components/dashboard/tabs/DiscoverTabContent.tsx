@@ -67,10 +67,12 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
       if (!matchesIndustry) {
         if (profile?.user_type === 'founder') {
           // Founders looking at investors
-          matchesIndustry = investorDetails?.preferred_industries?.includes(industryFilter) || false;
+          matchesIndustry = investorDetails?.preferred_industries?.some(industry => 
+            industry.toLowerCase() === industryFilter.toLowerCase()
+          ) || false;
         } else {
           // Investors looking at founders
-          matchesIndustry = founderDetails?.industry === industryFilter;
+          matchesIndustry = founderDetails?.industry?.toLowerCase() === industryFilter.toLowerCase();
         }
         console.log(`Industry match for ${user.id}: ${matchesIndustry}`);
       }
@@ -82,12 +84,14 @@ export const DiscoverTabContent: React.FC<DiscoverTabContentProps> = ({
       if (!matchesStage) {
         if (profile?.user_type === 'founder') {
           // Founders looking at investors
-          matchesStage = investorDetails?.preferred_stages?.includes(stageFilter) || false;
+          matchesStage = investorDetails?.preferred_stages?.some(stage => 
+            stage.toLowerCase() === stageFilter.toLowerCase()
+          ) || false;
         } else {
           // Investors looking at founders
-          matchesStage = founderDetails?.company_stage === stageFilter;
+          matchesStage = founderDetails?.company_stage?.toLowerCase() === stageFilter.toLowerCase();
         }
-        console.log(`Stage match for ${user.id}: ${matchesStage}`);
+        console.log(`Stage match for ${user.id}: ${matchesStage}, looking for "${stageFilter}" in ${JSON.stringify(investorDetails?.preferred_stages)}`);
       }
 
       const isMatch = matchesIndustry && matchesStage;

@@ -1,3 +1,4 @@
+
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,6 +45,17 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
 
   const priorityStyles = getPriorityStyles();
   const hasNotInterested = user.priority_matches?.[0]?.not_interested;
+
+  // Simple function to handle priority changes
+  const handlePriorityChange = (value: string) => {
+    if (value === 'remove') {
+      onPriorityChange(user.id, null);
+    } else if (value === 'not_interested') {
+      onPriorityChange(user.id, null, true);
+    } else {
+      onPriorityChange(user.id, value as 'high' | 'medium' | 'low');
+    }
+  };
 
   return (
     <div 
@@ -115,15 +127,7 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
         <Select
           value={hasNotInterested ? 'not_interested' : 
             user.priority_matches?.[0]?.priority || ''}
-          onValueChange={(value: 'high' | 'medium' | 'low' | 'remove' | 'not_interested') => {
-            if (value === 'remove') {
-              onPriorityChange(user.id, null);
-            } else if (value === 'not_interested') {
-              onPriorityChange(user.id, null, true);
-            } else {
-              onPriorityChange(user.id, value);
-            }
-          }}
+          onValueChange={handlePriorityChange}
         >
           <SelectTrigger 
             className={`w-[140px] ${

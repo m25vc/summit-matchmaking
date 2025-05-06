@@ -1,3 +1,4 @@
+
 import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -8,13 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
-import type { PriorityMatch } from '@/hooks/useAdminData';
 import { Badge } from "@/components/ui/badge";
 import type { UserWithDetails } from '@/types/dashboard';
-
-type InvestorDetails = Database['public']['Tables']['investor_details']['Row'];
-type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface UserCardProps {
   user: UserWithDetails;
@@ -58,6 +54,17 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
 
   const priorityStyles = getPriorityStyles();
   const hasNotInterested = user.priority_matches?.[0]?.not_interested;
+
+  // Simple function to handle priority changes
+  const handlePriorityChange = (value: string) => {
+    if (value === 'remove') {
+      onPriorityChange(user.id, null);
+    } else if (value === 'not_interested') {
+      onPriorityChange(user.id, null, true);
+    } else {
+      onPriorityChange(user.id, value as 'high' | 'medium' | 'low');
+    }
+  };
 
   return (
     <Card 
@@ -130,15 +137,7 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
             <Select
               value={hasNotInterested ? 'not_interested' : 
                 user.priority_matches?.[0]?.priority || ''}
-              onValueChange={(value: 'high' | 'medium' | 'low' | 'remove' | 'not_interested') => {
-                if (value === 'remove') {
-                  onPriorityChange(user.id, null);
-                } else if (value === 'not_interested') {
-                  onPriorityChange(user.id, null, true);
-                } else {
-                  onPriorityChange(user.id, value);
-                }
-              }}
+              onValueChange={handlePriorityChange}
             >
               <SelectTrigger 
                 className={`w-[140px] ${
@@ -166,4 +165,4 @@ export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
       </CardContent>
     </Card>
   );
-};
+}

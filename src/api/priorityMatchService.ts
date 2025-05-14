@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 

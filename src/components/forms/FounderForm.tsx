@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { founderFormSchema, type FounderFormValues } from "@/schemas/profileSchemas";
+import { founderSchema, type FounderFormValues } from "@/schemas/profileSchemas";
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
@@ -27,7 +29,7 @@ export function FounderForm({
   onSubmit 
 }: FounderFormProps) {
   const form = useForm<FounderFormValues>({
-    resolver: zodResolver(founderFormSchema),
+    resolver: zodResolver(founderSchema),
     defaultValues: defaultValues || {},
   });
 

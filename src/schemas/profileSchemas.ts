@@ -1,3 +1,4 @@
+
 import * as z from "zod"
 
 export interface FounderFormValues {
@@ -12,7 +13,7 @@ export interface FounderFormValues {
   nextRaisePlanned: string;
   linkedinUrl: string;
   additionalNotes: string;
-  teamId?: string; // Add teamId field
+  teamId?: string;
 }
 
 export interface InvestorFormValues {
@@ -42,7 +43,7 @@ export const founderSchema = z.object({
   nextRaisePlanned: z.string().optional(),
   linkedinUrl: z.string().optional(),
   additionalNotes: z.string().optional(),
-  teamId: z.string().optional(), // Add teamId schema
+  teamId: z.string().optional(),
 });
 
 export const investorSchema = z.object({
@@ -59,3 +60,7 @@ export const investorSchema = z.object({
   linkedinUrl: z.string().optional(),
   additionalNotes: z.string().optional(),
 });
+
+// Export aliases for backward compatibility
+export const founderFormSchema = founderSchema;
+export const investorFormSchema = investorSchema;

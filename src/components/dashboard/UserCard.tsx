@@ -1,6 +1,6 @@
 
 import type { UserWithDetails } from '@/types/dashboard';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,21 +15,14 @@ import { UserProfileDialog } from './UserProfileDialog';
 
 interface UserCardProps {
   user: UserWithDetails;
-  currentUser: UserWithDetails;
   onPriorityChange: (
     userId: string, 
     priority: 'high' | 'medium' | 'low' | null, 
     notInterested?: boolean
   ) => Promise<void>;
-  showPriority?: boolean;
 }
 
-export function UserCard({
-  user,
-  currentUser,
-  onPriorityChange,
-  showPriority = true,
-}: UserCardProps) {
+export const UserCard = ({ user, onPriorityChange }: UserCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Define colors based on priority
@@ -64,8 +57,6 @@ export function UserCard({
 
   const priorityStyles = getPriorityStyles();
   const hasNotInterested = user.priority_matches?.[0]?.not_interested;
-  const isFounder = user.user_type === 'founder';
-  const hasTeam = isFounder && user.founder_details?.team_id;
 
   // Simple function to handle priority changes
   const handlePriorityChange = (value: string) => {
@@ -94,24 +85,25 @@ export function UserCard({
 
   return (
     <>
-      <Card className="overflow-hidden h-full flex flex-col">
-        <CardHeader className="pb-2">
+      <Card 
+        key={user.id}
+        className={`${priorityStyles.borderColor || ''} ${
+          hasNotInterested ? 'opacity-50 border-red-400' : priorityStyles.bgColor || ''
+        } transition-colors cursor-pointer hover:shadow-md`}
+        onClick={handleCardClick}
+      >
+        <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg font-bold">
-                {user.first_name} {user.last_name}
-              </CardTitle>
-              <CardDescription className="text-sm">
-                {user.job_title} at {user.company_name}
-                {hasTeam && " • Team Member"}
-              </CardDescription>
+              <CardTitle>{user.first_name} {user.last_name}</CardTitle>
+              <p className="text-sm text-gray-500">{user.company_name}</p>
             </div>
             <Badge variant={user.user_type === 'investor' ? 'secondary' : 'default'}>
               {user.user_type === 'investor' ? 'Investor' : 'Founder'}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent>
           <div className="space-y-4">
             {user.user_type === 'investor' ? (
               <>
@@ -193,42 +185,12 @@ export function UserCard({
             </div>
           </div>
         </CardContent>
-        <CardFooter className="pt-2 bg-muted/20 flex-shrink-0">
-          <div className="flex justify-between w-full">
-            <button
-              onClick={() => onPriorityChange(user.id, null)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Remove Match
-            </button>
-            <button
-              onClick={() => onPriorityChange(user.id, 'high')}
-              className="text-sm text-green-500 hover:text-green-700"
-            >
-              High Priority
-            </button>
-            <button
-              onClick={() => onPriorityChange(user.id, 'medium')}
-              className="text-sm text-yellow-500 hover:text-yellow-700"
-            >
-              Medium Priority
-            </button>
-            <button
-              onClick={() => onPriorityChange(user.id, 'low')}
-              className="text-sm text-red-500 hover:text-red-700"
-            >
-              Low Priority
-            </button>
-          </div>
-        </CardFooter>
       </Card>
       
       <UserProfileDialog 
         user={user} 
         open={dialogOpen} 
         onOpenChange={setDialogOpen} 
-        currentUser={currentUser}
-        onPriorityChange={() => {}}
       />
     </>
   );

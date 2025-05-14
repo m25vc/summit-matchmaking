@@ -23,7 +23,6 @@ export type Database = {
           next_raise_planned: string | null
           profile_id: string
           target_raise_amount: number | null
-          team_id: string | null
         }
         Insert: {
           additional_notes?: string | null
@@ -38,7 +37,6 @@ export type Database = {
           next_raise_planned?: string | null
           profile_id: string
           target_raise_amount?: number | null
-          team_id?: string | null
         }
         Update: {
           additional_notes?: string | null
@@ -53,7 +51,6 @@ export type Database = {
           next_raise_planned?: string | null
           profile_id?: string
           target_raise_amount?: number | null
-          team_id?: string | null
         }
         Relationships: [
           {
@@ -61,13 +58,6 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "founder_details_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -179,7 +169,6 @@ export type Database = {
           founder_id: string
           id: string
           investor_id: string
-          is_team_match: boolean | null
           not_interested: boolean | null
           priority: Database["public"]["Enums"]["match_priority"]
           set_by: string
@@ -189,7 +178,6 @@ export type Database = {
           founder_id: string
           id?: string
           investor_id: string
-          is_team_match?: boolean | null
           not_interested?: boolean | null
           priority: Database["public"]["Enums"]["match_priority"]
           set_by: string
@@ -199,7 +187,6 @@ export type Database = {
           founder_id?: string
           id?: string
           investor_id?: string
-          is_team_match?: boolean | null
           not_interested?: boolean | null
           priority?: Database["public"]["Enums"]["match_priority"]
           set_by?: string
@@ -270,72 +257,6 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
-        }
-        Relationships: []
-      }
-      team_members: {
-        Row: {
-          id: string
-          joined_at: string
-          profile_id: string
-          role: string
-          team_id: string
-        }
-        Insert: {
-          id?: string
-          joined_at?: string
-          profile_id: string
-          role?: string
-          team_id: string
-        }
-        Update: {
-          id?: string
-          joined_at?: string
-          profile_id?: string
-          role?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_members_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_members_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      teams: {
-        Row: {
-          created_at: string
-          created_by: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
         }
         Relationships: []
       }

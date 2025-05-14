@@ -1,66 +1,35 @@
 
-import * as z from "zod"
+import * as z from "zod";
 
-export interface FounderFormValues {
-  industry: string;
-  companyStage: string;
-  fundingStage: string;
-  companyDescription: string;
-  targetRaiseAmount: string;
-  companyWebsiteUrl: string;
-  lastRoundRaised: string;
-  currentRevenue: string;
-  nextRaisePlanned: string;
-  linkedinUrl: string;
-  additionalNotes: string;
-  teamId?: string;
-}
-
-export interface InvestorFormValues {
-  firmDescription: string;
-  investmentThesis: string;
-  minInvestmentAmount: string;
-  maxInvestmentAmount: string;
-  preferredIndustries: string[];
-  preferredStages: string[];
-  firmWebsiteUrl: string;
-  firmHQ: string;
-  geographicFocus: string[];
-  checkSize: string;
-  linkedinUrl: string;
-  additionalNotes: string;
-}
-
-export const founderSchema = z.object({
+export const founderFormSchema = z.object({
   industry: z.string().min(1, "Industry is required"),
   companyStage: z.string().min(1, "Company stage is required"),
   fundingStage: z.string().min(1, "Funding stage is required"),
-  companyDescription: z.string().min(10, "Description must be at least 10 characters"),
+  companyDescription: z.string().min(10, "Please provide a longer description"),
   targetRaiseAmount: z.string().optional(),
-  companyWebsiteUrl: z.string().optional(),
+  companyWebsiteUrl: z.string().url().optional().or(z.literal("")),
   lastRoundRaised: z.string().optional(),
   currentRevenue: z.string().optional(),
   nextRaisePlanned: z.string().optional(),
-  linkedinUrl: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),
-  teamId: z.string().optional(),
 });
 
-export const investorSchema = z.object({
-  firmDescription: z.string().min(10, "Firm description must be at least 10 characters"),
+// Updated schema to support arrays for multi-select fields
+export const investorFormSchema = z.object({
+  firmDescription: z.string().min(10, "Please provide a longer description"),
   investmentThesis: z.string().optional(),
   minInvestmentAmount: z.string().optional(),
   maxInvestmentAmount: z.string().optional(),
-  preferredIndustries: z.array(z.string()).optional(),
-  preferredStages: z.array(z.string()).optional(),
-  firmWebsiteUrl: z.string().optional(),
+  preferredIndustries: z.array(z.string()).min(1, "Please specify at least one preferred industry"),
+  preferredStages: z.array(z.string()).min(1, "Please specify at least one preferred stage"),
+  firmWebsiteUrl: z.string().url().optional().or(z.literal("")),
   firmHQ: z.string().optional(),
   geographicFocus: z.array(z.string()).optional(),
   checkSize: z.string().optional(),
-  linkedinUrl: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),
 });
 
-// Export aliases for backward compatibility
-export const founderFormSchema = founderSchema;
-export const investorFormSchema = investorSchema;
+export type FounderFormValues = z.infer<typeof founderFormSchema>;
+export type InvestorFormValues = z.infer<typeof investorFormSchema>;

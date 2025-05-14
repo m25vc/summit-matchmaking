@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
 import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';
+import { sanitizeJson } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
@@ -54,7 +55,11 @@ export function usePriorityMatches(
       
       // Handle "not interested" case
       if (notInterested) {
-        await setNotInterested(founderId, investorId, profile.id);
+        await setNotInterested(
+          sanitizeJson(founderId),
+          sanitizeJson(investorId),
+          sanitizeJson(profile.id)
+        );
         
         // Update local state
         updateUserState(userId, 'low', true);
@@ -64,7 +69,10 @@ export function usePriorityMatches(
 
       // Handle removing priority case
       if (priority === null) {
-        await deletePriorityMatch(founderId, investorId);
+        await deletePriorityMatch(
+          sanitizeJson(founderId),
+          sanitizeJson(investorId)
+        );
         
         // Update local state
         updateUserState(userId, null, false);
@@ -85,7 +93,12 @@ export function usePriorityMatches(
       }
 
       // Set priority match
-      await setPriorityMatch(founderId, investorId, priority, profile.id);
+      await setPriorityMatch(
+        sanitizeJson(founderId),
+        sanitizeJson(investorId), 
+        sanitizeJson(priority) as MatchPriority, 
+        sanitizeJson(profile.id)
+      );
       
       // Update local state
       updateUserState(userId, priority, false);

@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "@/hooks/use-toast";
+import { sanitizeJson } from '@/lib/utils';
 
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
@@ -18,8 +19,13 @@ export async function setPriorityMatch(
   try {
     console.log("setPriorityMatch called with:", { founderId, investorId, priority, setBy });
     
-    // Sanitize the priority to remove any control characters
-    const sanitizedPriority = priority ? String(priority).replace(/[\x00-\x1F\x7F-\x9F]/g, "") : null;
+    // Use sanitizeJson utility to remove all control characters
+    const sanitizedData = sanitizeJson({
+      p_founder_id: founderId,
+      p_investor_id: investorId,
+      p_priority: priority,
+      p_set_by: setBy
+    });
     
     // Use direct fetch for better control over the request
     const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/set_priority_match', {
@@ -30,12 +36,7 @@ export async function setPriorityMatch(
         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({
-        p_founder_id: founderId,
-        p_investor_id: investorId,
-        p_priority: sanitizedPriority,
-        p_set_by: setBy
-      })
+      body: JSON.stringify(sanitizedData)
     });
     
     if (!response.ok) {
@@ -63,6 +64,13 @@ export async function setNotInterested(
   try {
     console.log("setNotInterested called with:", { founderId, investorId, setBy });
     
+    // Use sanitizeJson utility to remove all control characters
+    const sanitizedData = sanitizeJson({
+      p_founder_id: founderId,
+      p_investor_id: investorId,
+      p_set_by: setBy
+    });
+    
     const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/set_not_interested', {
       method: 'POST',
       headers: {
@@ -71,11 +79,7 @@ export async function setNotInterested(
         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({
-        p_founder_id: founderId,
-        p_investor_id: investorId,
-        p_set_by: setBy
-      })
+      body: JSON.stringify(sanitizedData)
     });
     
     if (!response.ok) {
@@ -102,6 +106,12 @@ export async function deletePriorityMatch(
   try {
     console.log("deletePriorityMatch called with:", { founderId, investorId });
     
+    // Use sanitizeJson utility to remove all control characters
+    const sanitizedData = sanitizeJson({
+      p_founder_id: founderId,
+      p_investor_id: investorId
+    });
+    
     const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/delete_priority_match', {
       method: 'POST',
       headers: {
@@ -110,10 +120,7 @@ export async function deletePriorityMatch(
         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({
-        p_founder_id: founderId,
-        p_investor_id: investorId
-      })
+      body: JSON.stringify(sanitizedData)
     });
     
     if (!response.ok) {

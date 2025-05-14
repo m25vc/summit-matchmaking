@@ -1,5 +1,4 @@
-
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
 import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';

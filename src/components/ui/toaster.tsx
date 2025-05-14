@@ -1,4 +1,5 @@
 
+// Update imports to use our custom hook
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,

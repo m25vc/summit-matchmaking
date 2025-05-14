@@ -1,4 +1,5 @@
 
+// Change import to correctly import toast from our custom hook
 import { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';

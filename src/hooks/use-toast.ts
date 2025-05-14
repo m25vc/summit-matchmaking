@@ -1,8 +1,8 @@
 
+import { ReactNode } from "react";
 import { toast as sonnerToast } from "sonner";
-import type { ReactNode } from "react";
 
-type ToastProps = {
+export type ToastProps = {
   title?: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
@@ -11,9 +11,6 @@ type ToastProps = {
   id?: string;
 };
 
-const TOAST_LIMIT = 1;
-export const TOAST_REMOVE_DELAY = 1000000;
-
 export type ToasterToast = ToastProps & {
   id: string;
   title?: ReactNode;
@@ -21,21 +18,7 @@ export type ToasterToast = ToastProps & {
   action?: ReactNode;
 };
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const;
-
-let count = 0;
-
-function generateId() {
-  return `${Date.now()}-${++count}`;
-}
-
-// This is a simplified implementation that mimics the behavior of the toast store
-// without using a full state management solution
+// Empty array for compatibility with the Toaster component
 const toasts: ToasterToast[] = [];
 
 export const toast = {
@@ -48,25 +31,33 @@ export const toast = {
       onDismiss: props.onDismiss,
     });
   },
-
-  // Success toast
+  
+  // Success variant
   success: (message: string, description?: string) => {
-    sonnerToast.success(message, { description });
+    sonnerToast.success(message, {
+      description,
+    });
   },
-
-  // Error toast
+  
+  // Error variant
   error: (message: string, description?: string) => {
-    sonnerToast.error(message, { description });
+    sonnerToast.error(message, {
+      description,
+    });
   },
-
-  // Info toast
+  
+  // Info variant
   info: (message: string, description?: string) => {
-    sonnerToast.info(message, { description });
+    sonnerToast.info(message, {
+      description,
+    });
   },
-
-  // Warning toast
+  
+  // Warning variant
   warning: (message: string, description?: string) => {
-    sonnerToast.warning(message, { description });
+    sonnerToast.warning(message, {
+      description,
+    });
   }
 };
 
@@ -74,6 +65,6 @@ export const toast = {
 export const useToast = () => {
   return { 
     toast,
-    toasts: [] // Return an empty array for compatibility with the Toaster component
+    toasts // Return the empty array for compatibility with the Toaster component
   };
 };

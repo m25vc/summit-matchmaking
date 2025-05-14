@@ -18,6 +18,9 @@ export async function setPriorityMatch(
   try {
     console.log("setPriorityMatch called with:", { founderId, investorId, priority, setBy });
     
+    // Sanitize the priority to remove any control characters
+    const sanitizedPriority = priority ? String(priority).replace(/[\x00-\x1F\x7F-\x9F]/g, "") : null;
+    
     // Use direct fetch for better control over the request
     const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/set_priority_match', {
       method: 'POST',
@@ -30,7 +33,7 @@ export async function setPriorityMatch(
       body: JSON.stringify({
         p_founder_id: founderId,
         p_investor_id: investorId,
-        p_priority: priority,
+        p_priority: sanitizedPriority,
         p_set_by: setBy
       })
     });

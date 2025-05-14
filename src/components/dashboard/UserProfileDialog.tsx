@@ -1,14 +1,17 @@
+
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import type { UserWithDetails } from '@/types/dashboard';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfileDialogProps {
   user: UserWithDetails | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentUser: any;
-  onPriorityChange: (user: UserWithDetails) => void;
+  currentUser?: any;
+  onPriorityChange?: (user: UserWithDetails) => void;
 }
 
 export function UserProfileDialog({ 

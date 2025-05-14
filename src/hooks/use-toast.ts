@@ -8,7 +8,35 @@ type ToastProps = {
   action?: ReactNode;
   cancel?: ReactNode;
   onDismiss?: () => void;
+  id?: string;
 };
+
+const TOAST_LIMIT = 1;
+export const TOAST_REMOVE_DELAY = 1000000;
+
+export type ToasterToast = ToastProps & {
+  id: string;
+  title?: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+};
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+let count = 0;
+
+function generateId() {
+  return `${Date.now()}-${++count}`;
+}
+
+// This is a simplified implementation that mimics the behavior of the toast store
+// without using a full state management solution
+const toasts: ToasterToast[] = [];
 
 export const toast = {
   // Base toast method
@@ -42,7 +70,10 @@ export const toast = {
   }
 };
 
-// Also export the hook for compatibility with existing code
+// Export the hook for compatibility with existing code
 export const useToast = () => {
-  return { toast };
+  return { 
+    toast,
+    toasts: [] // Return an empty array for compatibility with the Toaster component
+  };
 };

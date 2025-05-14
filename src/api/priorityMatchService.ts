@@ -2,13 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "@/hooks/use-toast";
-import { sanitizeJson } from '@/lib/utils';
+import { sanitizeJson, validateEnum } from '@/lib/utils';
 
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
+const validPriorities: MatchPriority[] = ['high', 'medium', 'low'];
 
 /**
- * Sets a priority match between a founder and investor using a 
- * direct fetch approach with minimal serialization complexity
+ * Sets a priority match between a founder and investor
+ * using the Supabase RPC method with proper sanitization
  */
 export async function setPriorityMatch(
   founderId: string,
@@ -17,44 +18,50 @@ export async function setPriorityMatch(
   setBy: string
 ) {
   try {
+    // Validate authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error("Authentication required to set priority match");
+      toast.error("Please login to update priority");
+      return { error: "Authentication required" };
+    }
+
     console.log("setPriorityMatch called with:", { founderId, investorId, priority, setBy });
     
-    // Use sanitizeJson utility to remove all control characters
-    const sanitizedData = sanitizeJson({
-      p_founder_id: founderId,
-      p_investor_id: investorId,
-      p_priority: priority,
-      p_set_by: setBy
+    // Validate and sanitize inputs
+    const sanitizedFounderId = sanitizeJson(founderId);
+    const sanitizedInvestorId = sanitizeJson(investorId);
+    const sanitizedSetBy = sanitizeJson(setBy);
+    
+    // Special handling for priority (validate enum values)
+    const validatedPriority = validateEnum(priority as string, validPriorities);
+    console.log(`Priority validation: ${priority} → ${validatedPriority}`);
+    
+    // Use Supabase RPC method for better reliability
+    const { data, error } = await supabase.rpc('set_priority_match', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId,
+      p_priority: validatedPriority || 'low', // Default to 'low' if validation fails
+      p_set_by: sanitizedSetBy
     });
     
-    // Use direct fetch for better control over the request
-    const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/set_priority_match', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(sanitizedData)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`RPC call failed with status ${response.status}:`, errorText);
-      throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
+    if (error) {
+      console.error("RPC error in setPriorityMatch:", error);
+      toast.error(`Failed to set priority: ${error.message}`);
+      return { error };
     }
     
-    return { success: true };
+    console.log("Priority match set successfully:", data);
+    return { success: true, data };
   } catch (error) {
     console.error("Error in setPriorityMatch:", error);
     toast.error("Failed to set priority match");
-    throw error;
+    return { error };
   }
 }
 
 /**
- * Marks a match as "not interested" using direct fetch
+ * Marks a match as "not interested" using Supabase RPC
  */
 export async function setNotInterested(
   founderId: string,
@@ -62,77 +69,82 @@ export async function setNotInterested(
   setBy: string
 ) {
   try {
-    console.log("setNotInterested called with:", { founderId, investorId, setBy });
-    
-    // Use sanitizeJson utility to remove all control characters
-    const sanitizedData = sanitizeJson({
-      p_founder_id: founderId,
-      p_investor_id: investorId,
-      p_set_by: setBy
-    });
-    
-    const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/set_not_interested', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(sanitizedData)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`RPC call failed with status ${response.status}:`, errorText);
-      throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
+    // Validate authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error("Authentication required to set not interested");
+      toast.error("Please login to update match status");
+      return { error: "Authentication required" };
     }
     
-    return { success: true };
+    console.log("setNotInterested called with:", { founderId, investorId, setBy });
+    
+    // Sanitize inputs
+    const sanitizedFounderId = sanitizeJson(founderId);
+    const sanitizedInvestorId = sanitizeJson(investorId);
+    const sanitizedSetBy = sanitizeJson(setBy);
+    
+    // Use Supabase RPC method
+    const { data, error } = await supabase.rpc('set_not_interested', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId,
+      p_set_by: sanitizedSetBy
+    });
+    
+    if (error) {
+      console.error("RPC error in setNotInterested:", error);
+      toast.error(`Failed to mark as not interested: ${error.message}`);
+      return { error };
+    }
+    
+    console.log("Match marked as not interested successfully:", data);
+    return { success: true, data };
   } catch (error) {
     console.error("Error in setNotInterested:", error);
     toast.error("Failed to mark as not interested");
-    throw error;
+    return { error };
   }
 }
 
 /**
- * Removes a priority match using direct fetch
+ * Removes a priority match using Supabase RPC
  */
 export async function deletePriorityMatch(
   founderId: string,
   investorId: string
 ) {
   try {
-    console.log("deletePriorityMatch called with:", { founderId, investorId });
-    
-    // Use sanitizeJson utility to remove all control characters
-    const sanitizedData = sanitizeJson({
-      p_founder_id: founderId,
-      p_investor_id: investorId
-    });
-    
-    const response = await fetch('https://qveetrrarbqedkcuwrcz.supabase.co/rest/v1/rpc/delete_priority_match', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZWV0cnJhcmJxZWRrY3V3cmN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjExMDMsImV4cCI6MjA1NDg5NzEwM30.NTciPlMER1I9D5os0pLEca-Nbq_ri6ykM7ekYYfkza8`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(sanitizedData)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`RPC call failed with status ${response.status}:`, errorText);
-      throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
+    // Validate authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error("Authentication required to delete priority match");
+      toast.error("Please login to remove match");
+      return { error: "Authentication required" };
     }
     
-    return { success: true };
+    console.log("deletePriorityMatch called with:", { founderId, investorId });
+    
+    // Sanitize inputs
+    const sanitizedFounderId = sanitizeJson(founderId);
+    const sanitizedInvestorId = sanitizeJson(investorId);
+    
+    // Use Supabase RPC method
+    const { data, error } = await supabase.rpc('delete_priority_match', {
+      p_founder_id: sanitizedFounderId,
+      p_investor_id: sanitizedInvestorId
+    });
+    
+    if (error) {
+      console.error("RPC error in deletePriorityMatch:", error);
+      toast.error(`Failed to delete match: ${error.message}`);
+      return { error };
+    }
+    
+    console.log("Priority match deleted successfully:", data);
+    return { success: true, data };
   } catch (error) {
     console.error("Error in deletePriorityMatch:", error);
     toast.error("Failed to delete priority match");
-    throw error;
+    return { error };
   }
 }

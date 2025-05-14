@@ -1,8 +1,10 @@
 
+import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { UserWithDetails } from '@/types/dashboard';
+import { UserProfileDialog } from './UserProfileDialog';
 
 interface UserListViewProps {
   user: UserWithDetails;
@@ -14,6 +16,8 @@ interface UserListViewProps {
 }
 
 export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  
   const getPriorityStyles = () => {
     const priority = user.priority_matches?.[0]?.priority;
     
@@ -57,100 +61,126 @@ export const UserListView = ({ user, onPriorityChange }: UserListViewProps) => {
     }
   };
 
-  return (
-    <div 
-      className={`p-4 rounded-lg border ${
-        hasNotInterested ? 'border-red-400' : priorityStyles.borderColor || 'border-border'
-      } ${
-        hasNotInterested ? 'bg-red-50' : priorityStyles.bgColor || 'bg-background'
-      } transition-colors ${hasNotInterested ? 'opacity-50' : ''}`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
-            <Badge variant={user.user_type === 'investor' ? 'secondary' : 'default'}>
-              {user.user_type === 'investor' ? 'Investor' : 'Founder'}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">{user.company_name}</p>
-          
-          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
-            {user.user_type === 'investor' ? (
-              <>
-                <div className="text-sm">
-                  <span className="font-medium">Industries:</span>{' '}
-                  {user.investor_details?.preferred_industries?.join(', ')}
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium">Stages:</span>{' '}
-                  {user.investor_details?.preferred_stages?.join(', ')}
-                </div>
-                {user.investor_details?.firm_website_url && (
-                  <a 
-                    href={user.investor_details.firm_website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Visit Firm Website
-                  </a>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="text-sm">
-                  <span className="font-medium">Industry:</span>{' '}
-                  {user.founder_details?.industry}
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium">Stage:</span>{' '}
-                  {user.founder_details?.company_stage}
-                </div>
-                {user.founder_details?.company_website_url && (
-                  <a 
-                    href={user.founder_details.company_website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Visit Company Website
-                  </a>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+  const handleItemClick = (e: React.MouseEvent) => {
+    // Prevent opening dialog when clicking on the priority select or links
+    if (
+      e.target instanceof HTMLElement && 
+      (e.target.closest('select') || 
+       e.target.closest('a') || 
+       e.target.closest('button'))
+    ) {
+      return;
+    }
+    
+    setDialogOpen(true);
+  };
 
-        <Select
-          value={hasNotInterested ? 'not_interested' : 
-            user.priority_matches?.[0]?.priority || ''}
-          onValueChange={handlePriorityChange}
-        >
-          <SelectTrigger 
-            className={`w-[140px] ${
-              hasNotInterested ? 'text-red-700' : priorityStyles.textColor
-            }`}
+  return (
+    <>
+      <div 
+        className={`p-4 rounded-lg border ${
+          hasNotInterested ? 'border-red-400' : priorityStyles.borderColor || 'border-border'
+        } ${
+          hasNotInterested ? 'bg-red-50' : priorityStyles.bgColor || 'bg-background'
+        } transition-colors ${hasNotInterested ? 'opacity-50' : ''} cursor-pointer hover:shadow-md`}
+        onClick={handleItemClick}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
+              <Badge variant={user.user_type === 'investor' ? 'secondary' : 'default'}>
+                {user.user_type === 'investor' ? 'Investor' : 'Founder'}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{user.company_name}</p>
+            
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+              {user.user_type === 'investor' ? (
+                <>
+                  <div className="text-sm">
+                    <span className="font-medium">Industries:</span>{' '}
+                    {user.investor_details?.preferred_industries?.join(', ')}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Stages:</span>{' '}
+                    {user.investor_details?.preferred_stages?.join(', ')}
+                  </div>
+                  {user.investor_details?.firm_website_url && (
+                    <a 
+                      href={user.investor_details.firm_website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Visit Firm Website
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="text-sm">
+                    <span className="font-medium">Industry:</span>{' '}
+                    {user.founder_details?.industry}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Stage:</span>{' '}
+                    {user.founder_details?.company_stage}
+                  </div>
+                  {user.founder_details?.company_website_url && (
+                    <a 
+                      href={user.founder_details.company_website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Visit Company Website
+                    </a>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <Select
+            value={hasNotInterested ? 'not_interested' : 
+              user.priority_matches?.[0]?.priority || ''}
+            onValueChange={handlePriorityChange}
           >
-            <SelectValue 
-              placeholder={hasNotInterested ? 'Not Interested' : 'Set priority'} 
-            />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="high" className="text-green-700">High Priority</SelectItem>
-            <SelectItem value="medium" className="text-yellow-700">Medium Priority</SelectItem>
-            <SelectItem value="low" className="text-red-700">Low Priority</SelectItem>
-            {user.priority_matches?.[0]?.priority && (
-              <SelectItem value="remove" className="text-gray-900">Remove Match</SelectItem>
-            )}
-            <SelectItem value="not_interested" className="text-red-900">
-              Not Interested
-            </SelectItem>
-          </SelectContent>
-        </Select>
+            <SelectTrigger 
+              className={`w-[140px] ${
+                hasNotInterested ? 'text-red-700' : priorityStyles.textColor
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SelectValue 
+                placeholder={hasNotInterested ? 'Not Interested' : 'Set priority'} 
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high" className="text-green-700">High Priority</SelectItem>
+              <SelectItem value="medium" className="text-yellow-700">Medium Priority</SelectItem>
+              <SelectItem value="low" className="text-red-700">Low Priority</SelectItem>
+              {user.priority_matches?.[0]?.priority && (
+                <SelectItem value="remove" className="text-gray-900">Remove Match</SelectItem>
+              )}
+              <SelectItem value="not_interested" className="text-red-900">
+                Not Interested
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-    </div>
+      
+      <UserProfileDialog 
+        user={user} 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+      />
+    </>
   );
 };

@@ -1,5 +1,4 @@
 
-// Change import to correctly import toast from our custom hook
 import { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';
@@ -35,18 +34,25 @@ export function usePriorityMatches(
   );
 
   /**
-   * Wrapper function to pass through to usePriorityHandlers
+   * Wrapper function to handle priority updates with authentication validation
    */
   const updatePriorityMatch = async (
     userId: string, 
     priority: MatchPriority, 
     notInterested = false
   ) => {
-    // Log auth status at time of call
-    const isLoggedIn = !!(await supabase.auth.getSession()).data.session;
+    // Check authentication status first
+    const { data } = await supabase.auth.getSession();
+    const isLoggedIn = !!data.session;
+    
     console.log(`updatePriorityMatch called - Auth status: ${isLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN'}`);
     
-    // Call through to handler
+    if (!isLoggedIn) {
+      toast.error("Please login to update priorities");
+      return;
+    }
+    
+    // Call the handler with validated data
     return handlePriorityChange(userId, priority, notInterested);
   };
 
@@ -57,5 +63,5 @@ export function usePriorityMatches(
   };
 }
 
-// This ensures we have access to supabase
+// Ensure Supabase client is available
 import { supabase } from '@/integrations/supabase/client';

@@ -16,8 +16,8 @@ BEGIN
   
   RAISE LOG 'set_priority_match - BEGIN - %', v_debug_info;
   
-  -- Explicitly sanitize the priority string to remove problematic characters
-  -- This is a much more aggressive cleaning approach, removing ALL control characters
+  -- Explicitly sanitize the priority string to remove ALL control characters
+  -- This is a much more aggressive cleaning approach for maximum safety
   v_sanitized_priority := regexp_replace(COALESCE(p_priority, 'low'), '[[:cntrl:]]', '', 'g');
   
   RAISE LOG 'set_priority_match - SANITIZED PRIORITY - before: %, after: %', p_priority, v_sanitized_priority;

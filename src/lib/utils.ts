@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Enhanced JSON sanitizer with comprehensive control character removal
- * and proper validation to prevent PostgreSQL/Supabase parsing issues
+ * Enhanced JSON sanitizer that aggressively removes ALL control characters
+ * to prevent PostgreSQL parsing issues
  */
 export function sanitizeJson(value: any): any {
   // Base case: null or undefined values pass through unchanged
@@ -17,10 +17,9 @@ export function sanitizeJson(value: any): any {
   
   // Handle string values - our primary concern for sanitization
   if (typeof value === 'string') {
-    // Aggressively remove ALL control and non-printable characters
-    // This includes newlines, tabs, null bytes, and other problematic chars
-    const sanitized = value.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
-    return sanitized;
+    // AGGRESSIVELY remove ALL control and non-printable characters
+    // This removes newlines, tabs, null bytes, and any other problematic chars
+    return value.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
   }
   
   // Handle arrays recursively
@@ -44,13 +43,12 @@ export function sanitizeJson(value: any): any {
 }
 
 /**
- * Validate enum values to ensure they match expected options
- * Helps prevent invalid data from being sent to the database
+ * Strict enum value validator to ensure data matches expected options
  */
 export function validateEnum<T extends string>(value: string | null | undefined, validValues: T[]): T | null {
   if (value === null || value === undefined) return null;
   
-  // Sanitize the string first
+  // Sanitize the string first to remove any problematic characters
   const sanitized = sanitizeJson(value) as string;
   
   // Check if the sanitized value is valid

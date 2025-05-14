@@ -5,7 +5,7 @@ import type { UserWithDetails } from '@/types/dashboard';
 import { setPriorityMatch, setNotInterested, deletePriorityMatch } from '@/api/priorityMatchService';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type MatchPriority = Database['public']['Enums']['match_priority'];
+type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 
 /**
  * Unified hook for handling priority match operations
@@ -18,81 +18,71 @@ export const usePriorityHandlers = (
   setUsers: (users: UserWithDetails[] | ((prev: UserWithDetails[]) => UserWithDetails[])) => void
 ) => {
   /**
-   * Handle all priority changes with comprehensive debugging
+   * Handle priority changes with optimistic updates and rollback
    */
   const handlePriorityChange = async (
     userId: string, 
-    priority: MatchPriority | null, 
+    priority: MatchPriority, 
     notInterested = false
   ) => {
-    console.log('===== PRIORITY CHANGE DEBUGGING =====');
-    console.log(`Call params - userId: ${userId}, priority: ${priority}, notInterested: ${notInterested}`);
+    console.log('Priority change initiated:', {
+      userId,
+      priority,
+      notInterested,
+      currentUser: profile?.id
+    });
     
     if (!profile) {
-      console.error('No profile available, aborting');
-      toast.error("Profile not loaded");
+      toast.error("Your profile is not loaded");
       return;
     }
 
-    // Determine founder and investor IDs based on user types
-    const founderId = profile.user_type === 'founder' ? profile.id : userId;
-    const investorId = profile.user_type === 'founder' ? userId : profile.id;
-    console.log(`Determined IDs - founderId: ${founderId}, investorId: ${investorId}`);
+    // Store original state for potential rollback
+    const originalUsers = [...users];
+    const originalHighPriorityCount = highPriorityCount;
 
     try {
-      // Handle "not interested" case
+      // Determine roles based on user types
+      const founderId = profile.user_type === 'founder' ? profile.id : userId;
+      const investorId = profile.user_type === 'founder' ? userId : profile.id;
+      
+      // Apply optimistic update to UI immediately
+      updateUserState(userId, priority, notInterested);
+      
+      // Handle the not interested case
       if (notInterested) {
-        console.log('🚫 Processing "not interested" case');
-        
-        const result = await setNotInterested(
-          founderId,
-          investorId,
-          profile.id
-        );
+        const result = await setNotInterested(founderId, investorId, profile.id);
         
         if (result.error) {
           throw new Error(`Failed to mark as not interested: ${result.error}`);
         }
-
-        // Update local state
-        updateUserState(userId, null, true);
-        toast.success("Match marked as not interested");
+        
         return;
       }
 
-      // Handle removing priority case
+      // Handle removing priority case (null priority)
       if (priority === null) {
-        console.log('🗑️ Removing priority match');
-        
-        const result = await deletePriorityMatch(
-          founderId,
-          investorId
-        );
+        const result = await deletePriorityMatch(founderId, investorId);
         
         if (result.error) {
           throw new Error(`Failed to remove match: ${result.error}`);
         }
-
-        // Update local state
-        updateUserState(userId, null, false);
-        toast.success("Priority match removed");
+        
         return;
       }
 
-      // Check if setting high priority would exceed limit
+      // Check high priority limit
       if (priority === 'high') {
-        const isAlreadyHighPriority = users.some(u => 
+        const isAlreadyHighPriority = originalUsers.some(u => 
           u.id === userId && u.priority_matches?.[0]?.priority === 'high'
         );
         
-        if (!isAlreadyHighPriority && highPriorityCount >= 5) {
-          console.log('⚠️ High priority limit reached');
+        if (!isAlreadyHighPriority && originalHighPriorityCount >= 5) {
+          setUsers(originalUsers); // Revert optimistic update
           toast.error("You can only have up to 5 high priority matches");
           return;
         }
       }
-
-      console.log('✏️ Setting priority match to:', priority);
       
       // Set priority match
       const result = await setPriorityMatch(
@@ -105,22 +95,23 @@ export const usePriorityHandlers = (
       if (result.error) {
         throw new Error(`Failed to set priority: ${result.error}`);
       }
-
-      // Update local state
-      updateUserState(userId, priority, false);
-      toast.success("Priority updated successfully");
       
     } catch (error) {
-      console.error('❌ Error updating priority:', error);
+      console.error('Error updating priority:', error);
+      
+      // Rollback to original state on error
+      setUsers(originalUsers);
+      setHighPriorityCount(originalHighPriorityCount);
+      
       toast.error(error instanceof Error ? error.message : "Failed to update priority");
     }
   };
 
   /**
-   * Helper function to update local state after API calls
+   * Update local state with optimistic changes
    */
-  const updateUserState = (userId: string, priority: MatchPriority | null, notInterested: boolean) => {
-    // Update users state
+  const updateUserState = (userId: string, priority: MatchPriority, notInterested: boolean) => {
+    // Update users state with optimistic changes
     setUsers(prevUsers => {
       return prevUsers.map(user => {
         if (user.id === userId) {
@@ -134,7 +125,7 @@ export const usePriorityHandlers = (
               id: user.priority_matches?.[0]?.id || crypto.randomUUID(),
               created_at: user.priority_matches?.[0]?.created_at || new Date().toISOString(),
               founder_id: profile?.user_type === 'founder' ? profile.id : userId,
-              investor_id: profile?.user_type === 'founder' ? userId : profile.id,
+              investor_id: profile?.user_type === 'founder' ? userId : profile?.id,
               set_by: profile?.id || '',
               priority: priority || 'low', // Default to 'low' if null
               not_interested: notInterested
@@ -147,16 +138,15 @@ export const usePriorityHandlers = (
       });
     });
 
-    // Update high priority count based on state changes
+    // Update high priority count
     updateHighPriorityCount(userId, priority);
   };
 
   /**
-   * Helper function to update high priority count
+   * Update high priority count based on changes
    */
-  const updateHighPriorityCount = (userId: string, newPriority: MatchPriority | null) => {
+  const updateHighPriorityCount = (userId: string, newPriority: MatchPriority) => {
     setHighPriorityCount(prev => {
-      // Check if user previously had high priority
       const userHadHighPriority = users.some(u => 
         u.id === userId && u.priority_matches?.[0]?.priority === 'high'
       );

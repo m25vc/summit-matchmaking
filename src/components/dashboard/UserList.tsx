@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from './ViewToggle';
 import { DiscoverTabContent } from './tabs/DiscoverTabContent';
 import { PriorityTabContent } from './tabs/PriorityTabContent';
+import { MutualMatchesTabContent } from './tabs/MutualMatchesTabContent';
 import type { Profile, UserWithDetails } from '@/types/dashboard';
 
 interface UserListProps {
@@ -26,6 +27,7 @@ export const UserList: React.FC<UserListProps> = ({
   const [mainTab, setMainTab] = useState<string>('discover');
   const [userTypeTab, setUserTypeTab] = useState<string>('founders');
   const [priorityTypeTab, setPriorityTypeTab] = useState<string>('founders');
+  const [mutualTypeTab, setMutualTypeTab] = useState<string>('mutual');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -65,7 +67,7 @@ export const UserList: React.FC<UserListProps> = ({
       </p>
       
       <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 p-2 bg-muted/20">
+        <TabsList className="grid w-full grid-cols-3 p-2 bg-muted/20">
           <TabsTrigger 
             value="discover"
             className="text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
@@ -77,6 +79,12 @@ export const UserList: React.FC<UserListProps> = ({
             className="text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
           >
             My Shortlist ({priorityUsers.length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="matches"
+            className="text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
+          >
+            Matches
           </TabsTrigger>
         </TabsList>
         
@@ -107,6 +115,19 @@ export const UserList: React.FC<UserListProps> = ({
             onPriorityChange={onPriorityChange}
             priorityTypeTab={priorityTypeTab}
             setPriorityTypeTab={setPriorityTypeTab}
+          />
+        </TabsContent>
+        
+        <TabsContent value="matches">
+          <MutualMatchesTabContent 
+            profile={profile}
+            users={users}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            viewMode={viewMode}
+            onPriorityChange={onPriorityChange}
+            mutualTypeTab={mutualTypeTab}
+            setMutualTypeTab={setMutualTypeTab}
           />
         </TabsContent>
       </Tabs>

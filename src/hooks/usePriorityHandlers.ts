@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';

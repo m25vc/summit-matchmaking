@@ -22,6 +22,8 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
   const [lastName, setLastName] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [userType, setUserType] = useState<'founder' | 'investor'>('founder');
+  const [joinTeam, setJoinTeam] = useState<boolean>(false);
+  const [teamCode, setTeamCode] = useState('');
   
   const [firmName, setFirmName] = useState('');
   const [firmHQ, setFirmHQ] = useState('');
@@ -86,6 +88,13 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
       });
       
       if (signInError) throw signInError;
+      
+      // If user wants to join a team with a code, handle that here
+      if (joinTeam && teamCode.trim()) {
+        // Here you would implement the logic to find and join a team by code
+        // This is a placeholder for future implementation
+        toast.info("Team join functionality will be implemented soon!");
+      }
       
       onSuccess();
       toast.success("Account created successfully!");
@@ -189,6 +198,35 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="joinTeam"
+            checked={joinTeam}
+            onChange={(e) => setJoinTeam(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="joinTeam" className="block text-sm text-gray-700">
+            Join an existing team
+          </label>
+        </div>
+
+        {joinTeam && (
+          <div>
+            <label htmlFor="teamCode" className="block text-sm font-medium text-gray-700">
+              Team Code
+            </label>
+            <Input
+              id="teamCode"
+              type="text"
+              placeholder="Enter team invitation code"
+              value={teamCode}
+              onChange={(e) => setTeamCode(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+        )}
         
         {userType === 'investor' ? (
           <InvestorRegistrationFields

@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -14,21 +13,72 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { founderFormSchema, type FounderFormValues } from "@/schemas/profileSchemas";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 interface FounderFormProps {
   defaultValues?: Partial<FounderFormValues>;
   onSubmit: (values: FounderFormValues) => Promise<void>;
 }
 
-export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
+export function FounderForm({ 
+  defaultValues, 
+  onSubmit 
+}: FounderFormProps) {
   const form = useForm<FounderFormValues>({
     resolver: zodResolver(founderFormSchema),
     defaultValues: defaultValues || {},
   });
 
+  const [teams, setTeams] = useState<{ id: string, name: string }[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(
+    defaultValues?.teamId || undefined
+  );
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: memberships, error: membershipError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('profile_id', user.id);
+
+      if (membershipError) {
+        console.error('Error fetching team memberships:', membershipError);
+        return;
+      }
+
+      if (!memberships || memberships.length === 0) return;
+
+      const teamIds = memberships.map(m => m.team_id);
+
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select('id, name')
+        .in('id', teamIds);
+
+      if (teamsError) {
+        console.error('Error fetching teams:', teamsError);
+        return;
+      }
+
+      setTeams(teamsData);
+    };
+
+    fetchTeams();
+  }, []);
+
+  const {
+    handleSubmit,
+    formState: { isSubmitting },
+  } = form;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="companyDescription"
@@ -230,7 +280,34 @@ export function FounderForm({ defaultValues, onSubmit }: FounderFormProps) {
           )}
         />
 
-        <Button type="submit">Save Profile</Button>
+        {teams.length > 0 && (
+          <div className="space-y-2">
+            <Label>Team (Optional)</Label>
+            <Select
+              value={selectedTeamId}
+              onValueChange={setSelectedTeamId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a team (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No team</SelectItem>
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Associate this profile with a team for group matching
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
+          </Button>
+        </div>
       </form>
     </Form>
   );

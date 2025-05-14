@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -105,6 +104,7 @@ export default function EditProfile() {
           next_raise_planned: values.nextRaisePlanned || null,
           linkedin_url: values.linkedinUrl || null,
           additional_notes: values.additionalNotes || null,
+          team_id: values.teamId || null,
         });
 
       if (error) {
@@ -186,6 +186,7 @@ export default function EditProfile() {
     nextRaisePlanned: founderDetails.next_raise_planned || '',
     linkedinUrl: founderDetails.linkedin_url || '',
     additionalNotes: founderDetails.additional_notes || '',
+    teamId: founderDetails.team_id || undefined,
   } : undefined;
 
   const investorDefaultValues = investorDetails ? {

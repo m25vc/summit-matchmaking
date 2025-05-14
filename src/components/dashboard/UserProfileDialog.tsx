@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -8,23 +7,53 @@ interface UserProfileDialogProps {
   user: UserWithDetails | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currentUser: any;
+  onPriorityChange: (user: UserWithDetails) => void;
 }
 
-export const UserProfileDialog = ({ user, open, onOpenChange }: UserProfileDialogProps) => {
+export function UserProfileDialog({ 
+  user, 
+  open, 
+  onOpenChange, 
+  currentUser,
+  onPriorityChange
+}: UserProfileDialogProps) {
   if (!user) return null;
   
+  // Check if user is part of team
+  const isFounder = user?.user_type === 'founder';
+  const hasTeam = isFounder && user?.founder_details?.team_id;
+  const [teamName, setTeamName] = useState<string | null>(null);
+
+  // Fetch team name if user has a team
+  useEffect(() => {
+    if (hasTeam && user?.founder_details?.team_id) {
+      const fetchTeamName = async () => {
+        const { data, error } = await supabase
+          .from('teams')
+          .select('name')
+          .eq('id', user.founder_details.team_id)
+          .single();
+          
+        if (!error && data) {
+          setTeamName(data.name);
+        }
+      };
+      
+      fetchTeamName();
+    }
+  }, [hasTeam, user?.founder_details?.team_id]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl">{user.first_name} {user.last_name}</DialogTitle>
-            <Badge variant={user.user_type === 'investor' ? 'secondary' : 'default'} className="ml-2">
-              {user.user_type === 'investor' ? 'Investor' : 'Founder'}
-            </Badge>
-          </div>
-          <DialogDescription className="text-base">
-            {user.job_title} at {user.company_name}
+          <DialogTitle>
+            {user?.first_name} {user?.last_name}
+          </DialogTitle>
+          <DialogDescription>
+            {user?.job_title} at {user?.company_name}
+            {teamName && ` • Team ${teamName}`}
           </DialogDescription>
         </DialogHeader>
         
@@ -246,4 +275,4 @@ export const UserProfileDialog = ({ user, open, onOpenChange }: UserProfileDialo
       </DialogContent>
     </Dialog>
   );
-};
+}

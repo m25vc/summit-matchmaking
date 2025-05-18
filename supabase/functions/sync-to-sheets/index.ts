@@ -2,18 +2,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { create } from "https://deno.land/x/djwt@v2.8/mod.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 // Get environment variables
 const GOOGLE_SHEETS_PRIVATE_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')?.replace(/\\n/g, '\n')
 const GOOGLE_SHEETS_CLIENT_EMAIL = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL')
 const SPREADSHEET_ID = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID')
-const SHEET_NAME = 'Matches' // Default sheet name, will be created if it doesn't exist
+const MATCH_SHEET_NAME = 'Matches' // Default sheet name for matches
+const AVAILABILITY_SHEET_NAME = 'Availability' // New sheet for availability data
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 // CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Initialize Supabase client with service role key
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 // Get Google OAuth2 token using service account credentials
 async function getGoogleAuthToken() {
@@ -195,6 +202,101 @@ function processMatchesData(matches) {
   return [headers, ...matchRows];
 }
 
+// Process availability data for Google Sheets
+function processAvailabilityData(users) {
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return [['No availability data']];
+  }
+  
+  // Add headers as the first row
+  const headers = [
+    'User ID',
+    'Email',
+    'First Name',
+    'Last Name',
+    'Date 1',
+    'Time Slots (Day 1)',
+    'Date 2',
+    'Time Slots (Day 2)'
+  ];
+  
+  // Format the user availability data for Google Sheets
+  const userRows = users.map((user) => {
+    const availability = user.raw_user_meta_data?.availability || {};
+    const dates = Object.keys(availability).sort();
+    
+    // Handle case with no availability data
+    if (dates.length === 0) {
+      return [
+        user.id || '',
+        user.email || '',
+        user.raw_user_meta_data?.first_name || '',
+        user.raw_user_meta_data?.last_name || '',
+        '', '', '', ''
+      ];
+    }
+    
+    // Get first date's data
+    const date1 = dates[0] || '';
+    const timeSlots1 = availability[date1] ? availability[date1].join(', ') : '';
+    
+    // Get second date's data if available
+    const date2 = dates[1] || '';
+    const timeSlots2 = availability[date2] ? availability[date2].join(', ') : '';
+    
+    return [
+      user.id || '',
+      user.email || '',
+      user.raw_user_meta_data?.first_name || '',
+      user.raw_user_meta_data?.last_name || '',
+      date1,
+      timeSlots1,
+      date2,
+      timeSlots2
+    ];
+  });
+  
+  // Combine headers and data
+  return [headers, ...userRows];
+}
+
+// Update a specific sheet with data
+async function updateSheet(accessToken, spreadsheetId, sheetName, values) {
+  if (!values || values.length === 0) {
+    console.log(`No data to update in sheet ${sheetName}`);
+    return { updatedRows: 0, updatedColumns: 0, updatedCells: 0 };
+  }
+  
+  console.log(`Updating sheet ${sheetName} with ${values.length} rows of data`);
+  
+  const rowCount = values.length;
+  const columnCount = values[0].length;
+  const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}?valueInputOption=RAW`;
+  
+  const response = await fetch(sheetUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      range: `${sheetName}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}`,
+      majorDimension: 'ROWS',
+      values,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Error updating sheet ${sheetName}:`, response.status, errorText);
+    throw new Error(`Failed to update sheet ${sheetName}: ${response.status} ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log(`Successfully updated ${result.updatedCells} cells in sheet ${sheetName}`);
+  return result;
+}
+
 serve(async (req) => {
   console.log("Function invoked with method:", req.method);
   
@@ -207,61 +309,48 @@ serve(async (req) => {
     console.log("Parsing request body...");
     // Get matches data from the request
     const data = await req.json();
+    const matches = data.matches || [];
     
-    if (!data.matches) {
-      console.error("Invalid request data:", data);
-      throw new Error('Invalid or missing matches data in request');
-    }
-    
-    const matches = data.matches;
     console.log(`Processing ${matches.length} matches...`);
     
     // Format the match data for Google Sheets
-    const values = processMatchesData(matches);
+    const matchValues = processMatchesData(matches);
 
     console.log("Getting Google OAuth token...");
     const accessToken = await getGoogleAuthToken();
 
-    // Ensure the sheet exists
-    await ensureSheetExists(accessToken, SPREADSHEET_ID, SHEET_NAME);
-
-    // Update Google Sheets with OAuth2 token
-    console.log(`Updating Google Sheet ${SPREADSHEET_ID}, sheet ${SHEET_NAME}...`);
-    const rowCount = values.length;
-    const columnCount = values[0].length;
-    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}?valueInputOption=RAW`;
+    // Ensure both sheets exist
+    await ensureSheetExists(accessToken, SPREADSHEET_ID, MATCH_SHEET_NAME);
+    await ensureSheetExists(accessToken, SPREADSHEET_ID, AVAILABILITY_SHEET_NAME);
     
-    console.log("Sending request to Google Sheets API...");
-    const response = await fetch(sheetUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        range: `${SHEET_NAME}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}`,
-        majorDimension: 'ROWS',
-        values,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Sheets API Error:', response.status, errorText);
-      let errorData = {};
-      try {
-        errorData = JSON.parse(errorText);
-      } catch (e) {
-        console.error('Could not parse error response as JSON');
-      }
-      throw new Error(`Failed to update Google Sheets: ${response.status} ${JSON.stringify(errorData)}`);
+    // Update matches sheet
+    console.log(`Updating matches in Google Sheet ${SPREADSHEET_ID}, sheet ${MATCH_SHEET_NAME}...`);
+    const matchesResult = await updateSheet(accessToken, SPREADSHEET_ID, MATCH_SHEET_NAME, matchValues);
+    
+    // Fetch user data with availability information
+    console.log("Fetching user availability data...");
+    const { data: usersWithAvailability, error: usersError } = await supabase.auth.admin.listUsers();
+    
+    if (usersError) {
+      console.error("Error fetching users:", usersError);
+      throw new Error(`Failed to fetch users: ${usersError.message}`);
     }
+    
+    // Process and update availability data
+    console.log(`Processing availability data for ${usersWithAvailability.users.length} users...`);
+    const availabilityValues = processAvailabilityData(usersWithAvailability.users);
+    
+    console.log(`Updating availability in Google Sheet ${SPREADSHEET_ID}, sheet ${AVAILABILITY_SHEET_NAME}...`);
+    const availabilityResult = await updateSheet(accessToken, SPREADSHEET_ID, AVAILABILITY_SHEET_NAME, availabilityValues);
 
-    const result = await response.json();
-    console.log(`Google Sheets update successful: Updated ${result.updatedCells} cells`);
+    console.log("Google Sheets update successful");
 
     return new Response(
-      JSON.stringify({ success: true, updatedCells: result.updatedCells }),
+      JSON.stringify({ 
+        success: true, 
+        matchesUpdated: matchesResult.updatedCells,
+        availabilityUpdated: availabilityResult.updatedCells
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {

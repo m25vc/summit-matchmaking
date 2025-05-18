@@ -10,23 +10,39 @@ interface SheetSyncButtonProps {
 
 export function SheetSyncButton({ onSyncComplete }: SheetSyncButtonProps) {
   const [localSyncing, setLocalSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('Sync to Sheets');
   const { syncMatchesToSheets, isSyncing } = useSheetSync();
 
   const handleSync = async () => {
     if (localSyncing || isSyncing) return;
     
     setLocalSyncing(true);
+    setSyncMessage('Syncing data...');
+    
     try {
       console.log("Starting sheet sync via button");
       const result = await syncMatchesToSheets();
       
       if (result.success) {
         console.log("Sync completed successfully");
+        setSyncMessage('Sync complete');
+        
+        // Reset message after 2 seconds
+        setTimeout(() => {
+          setSyncMessage('Sync to Sheets');
+        }, 2000);
+        
         if (onSyncComplete) {
           onSyncComplete();
         }
       } else {
         console.error("Sync failed:", result.error);
+        setSyncMessage('Sync failed');
+        
+        // Reset message after 2 seconds
+        setTimeout(() => {
+          setSyncMessage('Try again');
+        }, 2000);
       }
     } finally {
       setLocalSyncing(false);
@@ -45,7 +61,7 @@ export function SheetSyncButton({ onSyncComplete }: SheetSyncButtonProps) {
       className="ml-2"
     >
       <RefreshCw className={`h-4 w-4 mr-2 ${isButtonSyncing ? 'animate-spin' : ''}`} />
-      {isButtonSyncing ? 'Syncing...' : 'Sync to Sheets'}
+      {syncMessage}
     </Button>
   );
 }

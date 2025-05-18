@@ -102,7 +102,14 @@ export function useSheetSync() {
 
       const result = await response.json();
       console.log('Sync to sheets successful:', result);
-      toast.success('Successfully synced matches to sheets');
+      
+      // Include detailed information about the sync in the toast
+      if (result.matchesUpdated && result.availabilityUpdated) {
+        toast.success(`Synced ${result.matchesUpdated} match cells and ${result.availabilityUpdated} availability cells to sheets`);
+      } else {
+        toast.success('Successfully synced data to sheets');
+      }
+      
       return { success: true, data: result };
     } catch (error) {
       console.error('Exception in syncMatchesToSheets:', error);

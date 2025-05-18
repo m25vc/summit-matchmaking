@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Database } from '@/integrations/supabase/types';
 import type { UserWithDetails } from '@/types/dashboard';
 import { usePriorityHandlers } from './usePriorityHandlers';
+import { sanitizeJson, validateEnum } from '@/lib/utils';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
@@ -52,8 +53,17 @@ export function usePriorityMatches(
       return;
     }
     
+    // Validate and sanitize priority value before passing to handler
+    // This ensures we're only sending valid enum values to the database
+    const sanitizedPriority = priority ? validateEnum(
+      priority, 
+      ['high', 'medium', 'low']
+    ) : null;
+    
+    console.log(`Priority value: original=${priority}, sanitized=${sanitizedPriority}`);
+    
     // Call the handler with validated data
-    return handlePriorityChange(userId, priority, notInterested);
+    return handlePriorityChange(userId, sanitizedPriority, notInterested);
   };
 
   return {

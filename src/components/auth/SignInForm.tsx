@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
+import TimeSlotSelector from "./TimeSlotSelector";
 
 interface SignInFormProps {
   loading: boolean;
@@ -15,6 +16,8 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [showTimeSlotSelector, setShowTimeSlotSelector] = useState(false);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<{[date: string]: string[]}>({});
   const isProcessing = useRef(false);
   
   // Clean up auth state to prevent conflicts
@@ -49,6 +52,9 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If we're already showing the time slot selector, return
+    if (showTimeSlotSelector) return;
     
     // Prevent multiple submissions
     if (isProcessing.current) {
@@ -104,13 +110,11 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         }
       }
       
-      // Call onSuccess and let it handle navigation
-      console.log("Auth: Executing onSuccess callback");
+      setLoading(false);
+      isProcessing.current = false;
       
-      // Add a small delay to ensure state updates complete
-      setTimeout(() => {
-        onSuccess();
-      }, 100);
+      // Show time slot selector instead of redirecting
+      setShowTimeSlotSelector(true);
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
       isProcessing.current = false;
@@ -128,6 +132,49 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       setSubmitAttempted(false);
     }
   };
+
+  const handleTimeSlotComplete = async (slots: {[date: string]: string[]}) => {
+    setSelectedTimeSlots(slots);
+    setLoading(true);
+    
+    try {
+      // Store the time slots in the user's metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { 
+          availability: slots
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Time slots saved successfully!");
+      
+      // Add a small delay to ensure state updates complete
+      setTimeout(() => {
+        onSuccess();
+      }, 100);
+    } catch (error) {
+      console.error("Error saving time slots:", error);
+      toast.error("Failed to save time slots. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  // Go back to sign in form
+  const handleBackToSignIn = () => {
+    setShowTimeSlotSelector(false);
+  };
+  
+  if (showTimeSlotSelector) {
+    return (
+      <TimeSlotSelector 
+        onComplete={handleTimeSlotComplete} 
+        onBack={handleBackToSignIn}
+      />
+    );
+  }
 
   return (
     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

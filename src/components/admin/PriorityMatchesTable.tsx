@@ -8,12 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, RefreshCw, Check, ExternalLink } from "lucide-react";
+import { FileSpreadsheet, RefreshCw, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import type { PriorityMatch } from '@/hooks/useAdminData';
 import { sanitizeJson } from '@/lib/utils';
+import { SheetSyncButton } from './SheetSyncButton';
 
 interface PriorityMatchesTableProps {
   matches: PriorityMatch[] | null;
@@ -67,6 +68,13 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     setIsSyncing(true);
     
     try {
+      // Get authenticated user session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        throw new Error('Authentication required to sync matches');
+      }
+      
       // Sanitize matches data before sending to Supabase function
       const sanitizedMatches = sanitizeJson(matches);
       
@@ -87,13 +95,17 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
     }
   };
 
+  const refreshPage = () => {
+    toast.success("Data refreshed");
+    window.location.reload();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between mb-4 items-center">
         <div className="flex items-center gap-2">
-          <Check className="h-5 w-5 text-green-500" />
-          <span className="text-sm text-green-700">
-            Automatic syncing to Google Sheets is enabled
+          <span className="text-sm text-gray-700">
+            Use the sync button to manually update Google Sheets
           </span>
           <a 
             href={spreadsheetUrl}
@@ -109,10 +121,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
             <FileSpreadsheet className="h-4 w-4" />
             Export to Excel
           </Button>
-          <Button onClick={syncToGoogleSheets} className="gap-2" disabled={isSyncing}>
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            Manual Sync
-          </Button>
+          <SheetSyncButton onSyncComplete={refreshPage} />
         </div>
       </div>
 

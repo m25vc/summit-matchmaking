@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -33,7 +33,19 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         sessionStorage.removeItem(key);
       }
     });
+    console.log("Auth: All auth state cleaned up");
   };
+  
+  // Run cleanup on component mount for a fresher state
+  useEffect(() => {
+    console.log("Auth: SignInForm mounted, cleaning up any stale auth state");
+    // Add a small timeout to ensure DOM is fully loaded
+    const timer = setTimeout(() => {
+      cleanupAuthState();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +89,20 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
       }
       
       console.log("Auth: Sign-in successful, session created", data.session.user.id);
+      
+      // Verify the session was stored properly
+      const checkSession = await supabase.auth.getSession();
+      if (!checkSession.data?.session) {
+        console.warn("Auth: Session verification failed, trying to store manually");
+        // Session might not be stored properly, let's try to remedy this
+        try {
+          await supabase.auth.setSession(data.session);
+          console.log("Auth: Session manually set");
+        } catch (sessionError) {
+          console.error("Auth: Failed to manually set session", sessionError);
+          // Continue anyway, the onSuccess might force a redirect which will refresh auth state
+        }
+      }
       
       // Call onSuccess and let it handle navigation
       console.log("Auth: Executing onSuccess callback");

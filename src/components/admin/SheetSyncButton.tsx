@@ -9,33 +9,43 @@ interface SheetSyncButtonProps {
 }
 
 export function SheetSyncButton({ onSyncComplete }: SheetSyncButtonProps) {
-  const [syncing, setSyncing] = useState(false);
-  const { syncMatchesToSheets } = useSheetSync();
+  const [localSyncing, setLocalSyncing] = useState(false);
+  const { syncMatchesToSheets, isSyncing } = useSheetSync();
 
   const handleSync = async () => {
-    if (syncing) return;
+    if (localSyncing || isSyncing) return;
     
-    setSyncing(true);
+    setLocalSyncing(true);
     try {
+      console.log("Starting sheet sync via button");
       const result = await syncMatchesToSheets();
-      if (result.success && onSyncComplete) {
-        onSyncComplete();
+      
+      if (result.success) {
+        console.log("Sync completed successfully");
+        if (onSyncComplete) {
+          onSyncComplete();
+        }
+      } else {
+        console.error("Sync failed:", result.error);
       }
     } finally {
-      setSyncing(false);
+      setLocalSyncing(false);
     }
   };
+
+  // Use either the local or hook syncing state
+  const isButtonSyncing = localSyncing || isSyncing;
 
   return (
     <Button 
       variant="outline"
       size="sm"
       onClick={handleSync}
-      disabled={syncing}
+      disabled={isButtonSyncing}
       className="ml-2"
     >
-      <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-      {syncing ? 'Syncing...' : 'Sync to Sheets'}
+      <RefreshCw className={`h-4 w-4 mr-2 ${isButtonSyncing ? 'animate-spin' : ''}`} />
+      {isButtonSyncing ? 'Syncing...' : 'Sync to Sheets'}
     </Button>
   );
 }

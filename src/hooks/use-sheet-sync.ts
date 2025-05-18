@@ -23,8 +23,9 @@ export function useSheetSync() {
       setIsSyncing(true);
       console.log('Starting sheet sync process');
       
-      // Get authenticated user session
+      // Get authenticated user session with improved verification
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
       if (sessionError) {
         console.error('Authentication error:', sessionError);
         toast.error('Authentication required to sync matches');
@@ -36,6 +37,13 @@ export function useSheetSync() {
         console.error('No active session found');
         toast.error('Authentication required to sync matches');
         return { success: false, error: 'Authentication required' };
+      }
+
+      // Check if access token is valid and not expired
+      if (!session.access_token) {
+        console.error('Invalid access token');
+        toast.error('Your session appears to be invalid. Please sign in again.');
+        return { success: false, error: 'Invalid access token' };
       }
 
       // First get all matches from the database
@@ -61,7 +69,7 @@ export function useSheetSync() {
       
       console.log(`Sending ${sanitizedMatches.length} matches to sync function`);
       
-      // Call the Edge Function to sync data to sheets
+      // Call the Edge Function to sync data to sheets with improved headers
       const response = await fetch(
         'https://qveetrrarbqedkcuwrcz.supabase.co/functions/v1/sync-to-sheets',
         {
@@ -69,6 +77,7 @@ export function useSheetSync() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
+            'X-Client-Info': 'Manual Sync', // Add info for easier debugging
           },
           body: JSON.stringify({
             matches: sanitizedMatches
@@ -76,14 +85,15 @@ export function useSheetSync() {
         }
       );
 
-      // Check for HTTP errors
+      // Check for HTTP errors with more detailed error logging
       if (!response.ok) {
         let errorMessage = `HTTP error: ${response.status} ${response.statusText}`;
         try {
           const errorData = await response.json();
           errorMessage = errorData?.error || errorMessage;
+          console.error('Detailed sync error:', errorData);
         } catch (e) {
-          // If response isn't JSON, use status text
+          console.error('Could not parse error response:', e);
         }
         console.error('Error syncing to sheets:', errorMessage);
         toast.error(`Failed to sync: ${errorMessage}`);

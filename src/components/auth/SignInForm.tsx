@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,24 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const isProcessing = useRef(false);
   
+  // Clean up auth state to prevent conflicts
+  const cleanupAuthState = () => {
+    // Remove standard auth tokens
+    localStorage.removeItem('supabase.auth.token');
+    // Remove all Supabase auth keys from localStorage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    // Remove from sessionStorage if in use
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -30,6 +49,17 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
     setSubmitAttempted(true);
 
     try {
+      console.log("Auth: Cleaning up existing auth state");
+      cleanupAuthState();
+      
+      // Try global sign out to ensure clean state
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (signOutError) {
+        console.log("Auth: Pre-signin signout attempt failed, continuing", signOutError);
+        // Continue with sign-in even if this fails
+      }
+      
       console.log("Auth: Attempting to sign in with email");
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -46,7 +76,7 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         throw new Error("No session returned. Please try again.");
       }
       
-      console.log("Auth: Sign-in successful, session created");
+      console.log("Auth: Sign-in successful, session created", data.session.user.id);
       
       // Call onSuccess and let it handle navigation
       console.log("Auth: Executing onSuccess callback");

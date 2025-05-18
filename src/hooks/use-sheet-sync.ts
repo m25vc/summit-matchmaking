@@ -2,21 +2,40 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { sanitizeJson } from '@/lib/utils';
+import { useState } from 'react';
 
 /**
  * Custom hook to manage sheet synchronization
  */
 export function useSheetSync() {
+  const [isSyncing, setIsSyncing] = useState(false);
+
   /**
    * Manually synchronize matches data to Google Sheets
    */
   const syncMatchesToSheets = async () => {
+    if (isSyncing) {
+      console.log('Sync already in progress, ignoring request');
+      return { success: false, error: 'Sync already in progress' };
+    }
+
     try {
+      setIsSyncing(true);
+      console.log('Starting sheet sync process');
+      
       // Get authenticated user session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Authentication error:', sessionError);
+        toast.error('Authentication required to sync matches');
+        return { success: false, error: sessionError };
+      }
+
+      const session = sessionData?.session;
       if (!session) {
-        console.error('Authentication required to sync matches');
-        return { error: 'Authentication required' };
+        console.error('No active session found');
+        toast.error('Authentication required to sync matches');
+        return { success: false, error: 'Authentication required' };
       }
 
       // First get all matches from the database
@@ -27,16 +46,20 @@ export function useSheetSync() {
 
       if (matchesError) {
         console.error('Error fetching matches for sync:', matchesError);
-        return { error: matchesError };
+        toast.error(`Failed to fetch matches: ${matchesError.message}`);
+        return { success: false, error: matchesError };
       }
 
       if (!matchesData || matchesData.length === 0) {
         console.log('No matches to sync to sheets');
+        toast.success('No matches to sync');
         return { success: true, message: 'No matches to sync' };
       }
 
       // Sanitize the data before sending
       const sanitizedMatches = sanitizeJson(matchesData);
+      
+      console.log(`Sending ${sanitizedMatches.length} matches to sync function`);
       
       // Call the Edge Function to sync data to sheets
       const response = await fetch(
@@ -53,11 +76,18 @@ export function useSheetSync() {
         }
       );
 
+      // Check for HTTP errors
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error syncing to sheets:', errorData);
-        toast.error(`Failed to sync to sheets: ${errorData.error || response.statusText}`);
-        return { error: errorData };
+        let errorMessage = `HTTP error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData?.error || errorMessage;
+        } catch (e) {
+          // If response isn't JSON, use status text
+        }
+        console.error('Error syncing to sheets:', errorMessage);
+        toast.error(`Failed to sync: ${errorMessage}`);
+        return { success: false, error: errorMessage };
       }
 
       const result = await response.json();
@@ -66,10 +96,12 @@ export function useSheetSync() {
       return { success: true, data: result };
     } catch (error) {
       console.error('Exception in syncMatchesToSheets:', error);
-      toast.error('Failed to sync matches to sheets');
-      return { error };
+      toast.error(`Sync error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return { success: false, error };
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  return { syncMatchesToSheets };
+  return { syncMatchesToSheets, isSyncing };
 }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "@/hooks/use-toast";
 import { sanitizeJson, validateEnum } from '@/lib/utils';
+import { useSheetSync } from '@/hooks/use-sheet-sync';
 
 type MatchPriority = Database['public']['Enums']['match_priority'] | null;
 const validPriorities: MatchPriority[] = ['high', 'medium', 'low'];
@@ -66,6 +67,18 @@ export async function setPriorityMatch(
       return { error };
     }
     
+    // Manually trigger sync to sheets after successful DB update
+    try {
+      const { syncMatchesToSheets } = useSheetSync();
+      // We don't await this since it's not critical for the user flow
+      setTimeout(() => {
+        syncMatchesToSheets().catch(e => console.error('Background sync error:', e));
+      }, 0);
+    } catch (syncError) {
+      // Just log sync errors, don't break the priority flow
+      console.error('Error during sheet sync:', syncError);
+    }
+    
     toast.success("Priority updated successfully");
     return { success: true, data };
   } catch (error) {
@@ -117,6 +130,16 @@ export async function setNotInterested(
       return { error };
     }
     
+    // Manually trigger sync to sheets after successful DB update
+    try {
+      const { syncMatchesToSheets } = useSheetSync();
+      setTimeout(() => {
+        syncMatchesToSheets().catch(e => console.error('Background sync error:', e));
+      }, 0);
+    } catch (syncError) {
+      console.error('Error during sheet sync:', syncError);
+    }
+    
     toast.success("Marked as not interested");
     return { success: true, data };
   } catch (error) {
@@ -157,6 +180,16 @@ export async function deletePriorityMatch(
       console.error("Error deleting priority match:", error);
       toast.error(`Failed to remove match: ${error.message}`);
       return { error };
+    }
+    
+    // Manually trigger sync to sheets after successful DB update
+    try {
+      const { syncMatchesToSheets } = useSheetSync();
+      setTimeout(() => {
+        syncMatchesToSheets().catch(e => console.error('Background sync error:', e));
+      }, 0);
+    } catch (syncError) {
+      console.error('Error during sheet sync:', syncError);
     }
     
     toast.success("Priority match removed");

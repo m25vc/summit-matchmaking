@@ -163,6 +163,38 @@ async function ensureSheetExists(accessToken, spreadsheetId, sheetName) {
   console.log(`Successfully created sheet ${sheetName}.`);
 }
 
+// Process match data to prepare it for Google Sheets
+function processMatchesData(matches) {
+  if (!matches || !Array.isArray(matches) || matches.length === 0) {
+    return [['No matches data available']];
+  }
+  
+  // Add headers as the first row
+  const headers = [
+    'ID',
+    'Founder ID',
+    'Investor ID', 
+    'Priority',
+    'Not Interested',
+    'Set By',
+    'Created At'
+  ];
+  
+  // Format the match data for Google Sheets
+  const matchRows = matches.map((match) => [
+    match.id || '',
+    match.founder_id || '',
+    match.investor_id || '',
+    match.priority || 'low',
+    match.not_interested ? 'Yes' : 'No',
+    match.set_by || '',
+    match.created_at ? new Date(match.created_at).toISOString() : ''
+  ]);
+  
+  // Combine headers and data
+  return [headers, ...matchRows];
+}
+
 serve(async (req) => {
   console.log("Function invoked with method:", req.method);
   
@@ -176,7 +208,7 @@ serve(async (req) => {
     // Get matches data from the request
     const data = await req.json();
     
-    if (!data.matches || !Array.isArray(data.matches)) {
+    if (!data.matches) {
       console.error("Invalid request data:", data);
       throw new Error('Invalid or missing matches data in request');
     }
@@ -185,34 +217,7 @@ serve(async (req) => {
     console.log(`Processing ${matches.length} matches...`);
     
     // Format the match data for Google Sheets
-    // Each row will contain: 
-    // [Initiator Name, Initiator Company, Initiator Email, Target Name, Target Company, Target Email, Score, Mutual Match]
-    const values = matches.map((match) => [
-      `${match.initiator?.first_name || ''} ${match.initiator?.last_name || ''}`, 
-      match.initiator?.company_name || '',
-      match.initiator?.email || '',
-      `${match.target?.first_name || ''} ${match.target?.last_name || ''}`,
-      match.target?.company_name || '',
-      match.target?.email || '',
-      match.score || 0,
-      match.has_mutual_match ? 'Yes' : 'No',
-      new Date(match.created_at).toISOString()
-    ]);
-    
-    // Add headers as the first row
-    const headers = [
-      'Initiator Name', 
-      'Initiator Company', 
-      'Initiator Email', 
-      'Target Name', 
-      'Target Company', 
-      'Target Email', 
-      'Score', 
-      'Mutual Match',
-      'Date'
-    ];
-    
-    values.unshift(headers);
+    const values = processMatchesData(matches);
 
     console.log("Getting Google OAuth token...");
     const accessToken = await getGoogleAuthToken();
@@ -222,7 +227,9 @@ serve(async (req) => {
 
     // Update Google Sheets with OAuth2 token
     console.log(`Updating Google Sheet ${SPREADSHEET_ID}, sheet ${SHEET_NAME}...`);
-    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:I${values.length}?valueInputOption=RAW`;
+    const rowCount = values.length;
+    const columnCount = values[0].length;
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}?valueInputOption=RAW`;
     
     console.log("Sending request to Google Sheets API...");
     const response = await fetch(sheetUrl, {
@@ -232,7 +239,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        range: `${SHEET_NAME}!A1:I${values.length}`,
+        range: `${SHEET_NAME}!A1:${String.fromCharCode(65 + columnCount - 1)}${rowCount}`,
         majorDimension: 'ROWS',
         values,
       }),

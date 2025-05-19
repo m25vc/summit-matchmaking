@@ -39,11 +39,42 @@ const RegistrationForm = ({ loading, setLoading, onSuccess }: RegistrationFormPr
   const [lastRoundRaised, setLastRoundRaised] = useState('');
   const [nextRaisePlanned, setNextRaisePlanned] = useState('');
 
+  const checkEmailAllowed = async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('allowed_emails')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .eq('active', true)
+        .single();
+      
+      if (error || !data) {
+        console.log("Email not found in allowlist:", email);
+        return false;
+      }
+      
+      console.log("Email found in allowlist:", email);
+      return true;
+    } catch (error) {
+      console.error("Error checking email allowlist:", error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Check if email is in the allowed list
+      const isEmailAllowed = await checkEmailAllowed(email);
+      
+      if (!isEmailAllowed) {
+        toast.error("Sorry, you're not on the invitation list. Please contact the administrator.");
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

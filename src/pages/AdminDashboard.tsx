@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersTable } from '@/components/admin/UsersTable';
 import { PriorityMatchesTable } from '@/components/admin/PriorityMatchesTable';
+import { AllowedEmailsTable } from '@/components/admin/AllowedEmailsTable';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -48,6 +49,7 @@ const AdminDashboard = () => {
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="priorities">Priority Matches</TabsTrigger>
+            <TabsTrigger value="allowlist">Email Allowlist</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -56,6 +58,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="priorities">
             <PriorityMatchesTable matches={sanitizeJson(priorityMatches)} />
+          </TabsContent>
+
+          <TabsContent value="allowlist">
+            <AllowedEmailsTable />
           </TabsContent>
         </Tabs>
       </div>

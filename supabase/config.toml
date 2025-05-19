@@ -4,3 +4,5 @@ project_id = "qveetrrarbqedkcuwrcz"
 verify_jwt = false
 [functions.sync-to-sheets]
 verify_jwt = false
+[functions.sync-allowed-emails]
+verify_jwt = false

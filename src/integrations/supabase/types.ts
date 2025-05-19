@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      allowed_emails: {
+        Row: {
+          active: boolean | null
+          added_at: string
+          email: string
+          id: string
+          synced_from_sheet: boolean | null
+        }
+        Insert: {
+          active?: boolean | null
+          added_at?: string
+          email: string
+          id?: string
+          synced_from_sheet?: boolean | null
+        }
+        Update: {
+          active?: boolean | null
+          added_at?: string
+          email?: string
+          id?: string
+          synced_from_sheet?: boolean | null
+        }
+        Relationships: []
+      }
       founder_details: {
         Row: {
           additional_notes: string | null

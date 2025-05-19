@@ -5,8 +5,9 @@ import { GoogleAuth } from 'https://esm.sh/google-auth-library@7.0.2';
 import { sheets } from 'https://esm.sh/@googleapis/sheets@4.0.1';
 
 // Constants
-const ALLOWED_EMAILS_SHEET_NAME = "Allowed Emails"; // Adjust if your sheet name is different
-const EMAIL_COLUMN_INDEX = 0; // Assuming emails are in column A, adjust if different
+const ALLOWED_EMAILS_SHEET_NAME = "EBData"; // Updated sheet name
+const EMAIL_COLUMN_INDEX = 5; // Column F is index 5 (0-based indexing)
+const DATA_START_ROW = 3; // Row 4 is index 3 (0-based indexing)
 
 serve(async (req: Request) => {
   // CORS headers
@@ -82,20 +83,18 @@ serve(async (req: Request) => {
       throw new Error('Allowlist Spreadsheet ID not configured');
     }
 
-    // Fetch allowed emails from Google Sheets
+    // Fetch allowed emails from Google Sheets - targeting column F
     const response = await sheetsClient.spreadsheets.values.get({
       spreadsheetId,
-      range: `${ALLOWED_EMAILS_SHEET_NAME}!A:A`, // Assuming emails are in column A
+      range: `${ALLOWED_EMAILS_SHEET_NAME}!F:F`, // Column F for emails
     });
 
     const rows = response.data.values || [];
     
-    // Skip header row if present
-    const startRow = rows[0] && rows[0][0]?.toLowerCase().includes('email') ? 1 : 0;
-    
+    // Skip to start row (4th row, index 3)
     // Extract emails, filter out empty rows
-    const emails = rows.slice(startRow)
-      .map(row => row[EMAIL_COLUMN_INDEX]?.trim().toLowerCase())
+    const emails = rows.slice(DATA_START_ROW)
+      .map(row => row[0]?.trim().toLowerCase()) // First (and only) value in each row
       .filter(email => email && email.includes('@'));
 
     console.log(`Found ${emails.length} emails from sheet`);
@@ -138,7 +137,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully synced ${emails.length} emails from dedicated Google Sheet` 
+        message: `Successfully synced ${emails.length} emails from dedicated Google Sheet (column F)` 
       }),
       { 
         status: 200,

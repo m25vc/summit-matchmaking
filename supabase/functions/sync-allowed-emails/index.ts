@@ -76,10 +76,10 @@ serve(async (req: Request) => {
       auth: await auth.getClient(),
     });
 
-    // Get the spreadsheet ID from environment variable
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID');
+    // Get the dedicated spreadsheet ID for allowed emails from environment variable
+    const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID');
     if (!spreadsheetId) {
-      throw new Error('Spreadsheet ID not configured');
+      throw new Error('Allowlist Spreadsheet ID not configured');
     }
 
     // Fetch allowed emails from Google Sheets
@@ -138,7 +138,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully synced ${emails.length} emails from Google Sheet` 
+        message: `Successfully synced ${emails.length} emails from dedicated Google Sheet` 
       }),
       { 
         status: 200,

@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { GoogleAuth } from 'https://esm.sh/google-auth-library@7.0.2';
-import { sheets_v4, sheets } from 'https://esm.sh/@googleapis/sheets@2.0.0';
+import { sheets } from 'https://esm.sh/@googleapis/sheets@4.0.1';
 
 // Constants
 const ALLOWED_EMAILS_SHEET_NAME = "Allowed Emails"; // Adjust if your sheet name is different

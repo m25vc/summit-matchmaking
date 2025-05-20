@@ -110,10 +110,17 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
         }
       }
       
+      // Check for existing availability in user metadata
+      let existingTimeSlots = {};
+      if (data.user?.user_metadata?.availability) {
+        existingTimeSlots = data.user.user_metadata.availability;
+      }
+      
       setLoading(false);
       isProcessing.current = false;
       
       // Show time slot selector instead of redirecting
+      setSelectedTimeSlots(existingTimeSlots);
       setShowTimeSlotSelector(true);
     } catch (error) {
       console.error("Auth: Error in sign-in process", error);
@@ -170,8 +177,10 @@ const SignInForm = ({ loading, setLoading, onSuccess }: SignInFormProps) => {
   if (showTimeSlotSelector) {
     return (
       <TimeSlotSelector 
+        initialTimeSlots={selectedTimeSlots}
         onComplete={handleTimeSlotComplete} 
         onBack={handleBackToSignIn}
+        showBackButton={true}
       />
     );
   }

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -13,10 +13,17 @@ interface TimeSlot {
 
 interface TimeSlotSelectorProps {
   onComplete: (selectedSlots: {[date: string]: string[]}) => void;
-  onBack: () => void;
+  onBack?: () => void;
+  initialTimeSlots?: {[date: string]: string[]};
+  showBackButton?: boolean;
 }
 
-export default function TimeSlotSelector({ onComplete, onBack }: TimeSlotSelectorProps) {
+export default function TimeSlotSelector({ 
+  onComplete, 
+  onBack, 
+  initialTimeSlots = {},
+  showBackButton = true 
+}: TimeSlotSelectorProps) {
   // Fixed dates for day 1 and day 2
   const today = new Date();
   const tomorrow = new Date(today);
@@ -25,23 +32,28 @@ export default function TimeSlotSelector({ onComplete, onBack }: TimeSlotSelecto
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(today);
   
   // Generate time slots from 9 AM to 3 PM in 30-minute increments
-  const generateTimeSlots = () => {
+  const generateTimeSlots = (dateStr: string) => {
     const slots: TimeSlot[] = [];
+    const initialSlotsForDate = initialTimeSlots[dateStr] || [];
+    
     for (let hour = 9; hour < 15; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push({
           time: timeString,
-          selected: false
+          selected: initialSlotsForDate.includes(timeString)
         });
       }
     }
     return slots;
   };
   
+  const todayStr = format(today, 'yyyy-MM-dd');
+  const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
+  
   // State to track selected time slots for each day
-  const [day1Slots, setDay1Slots] = useState<TimeSlot[]>(generateTimeSlots());
-  const [day2Slots, setDay2Slots] = useState<TimeSlot[]>(generateTimeSlots());
+  const [day1Slots, setDay1Slots] = useState<TimeSlot[]>(() => generateTimeSlots(todayStr));
+  const [day2Slots, setDay2Slots] = useState<TimeSlot[]>(() => generateTimeSlots(tomorrowStr));
   
   // Toggle selection for a time slot
   const toggleTimeSlot = (daySlots: TimeSlot[], setDaySlots: React.Dispatch<React.SetStateAction<TimeSlot[]>>, index: number) => {
@@ -53,8 +65,8 @@ export default function TimeSlotSelector({ onComplete, onBack }: TimeSlotSelecto
   // Handle submission of selected time slots
   const handleSubmit = () => {
     const selectedSlots = {
-      [format(today, 'yyyy-MM-dd')]: day1Slots.filter(slot => slot.selected).map(slot => slot.time),
-      [format(tomorrow, 'yyyy-MM-dd')]: day2Slots.filter(slot => slot.selected).map(slot => slot.time)
+      [todayStr]: day1Slots.filter(slot => slot.selected).map(slot => slot.time),
+      [tomorrowStr]: day2Slots.filter(slot => slot.selected).map(slot => slot.time)
     };
     onComplete(selectedSlots);
   };
@@ -109,19 +121,22 @@ export default function TimeSlotSelector({ onComplete, onBack }: TimeSlotSelecto
       </div>
       
       <div className="flex justify-between pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onBack}
-        >
-          Back
-        </Button>
+        {showBackButton && onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+          >
+            Back
+          </Button>
+        )}
+        {!showBackButton && <div></div>}
         <Button
           type="button"
           onClick={handleSubmit}
           disabled={[...day1Slots, ...day2Slots].filter(slot => slot.selected).length === 0}
         >
-          Continue
+          {showBackButton ? 'Continue' : 'Save Availability'}
         </Button>
       </div>
     </div>

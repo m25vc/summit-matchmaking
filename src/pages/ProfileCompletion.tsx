@@ -7,7 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { FounderForm } from '@/components/forms/FounderForm';
 import { InvestorForm } from '@/components/forms/InvestorForm';
+import TimeSlotSelector from '@/components/auth/TimeSlotSelector';
 import type { FounderFormValues, InvestorFormValues } from '@/schemas/profileSchemas';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
@@ -19,6 +21,8 @@ export default function ProfileCompletion() {
   const [founderDetails, setFounderDetails] = useState<FounderDetails | null>(null);
   const [investorDetails, setInvestorDetails] = useState<InvestorDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [availabilityTimeSlots, setAvailabilityTimeSlots] = useState<{[date: string]: string[]}>({});
+  const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,6 +53,12 @@ export default function ProfileCompletion() {
         }
 
         setProfile(profileData);
+
+        // Get user metadata containing availability
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userData?.user?.user_metadata?.availability) {
+          setAvailabilityTimeSlots(userData.user.user_metadata.availability);
+        }
 
         // Load existing details if any
         if (profileData.user_type === 'founder') {
@@ -159,6 +169,31 @@ export default function ProfileCompletion() {
     }
   };
 
+  const handleTimeSlotComplete = async (slots: {[date: string]: string[]}) => {
+    try {
+      setLoading(true);
+      // Store the time slots in the user's metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { 
+          availability: slots
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setAvailabilityTimeSlots(slots);
+      toast.success("Availability updated successfully");
+      setLoading(false);
+      setActiveTab('profile');
+    } catch (error) {
+      console.error("Error saving time slots:", error);
+      toast.error("Failed to save availability");
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -212,17 +247,34 @@ export default function ProfileCompletion() {
             : "Please provide additional information to complete your profile"}
         </p>
         
-        {profile.user_type === 'founder' ? (
-          <FounderForm 
-            defaultValues={founderDefaultValues}
-            onSubmit={onFounderSubmit} 
-          />
-        ) : profile.user_type === 'investor' ? (
-          <InvestorForm 
-            defaultValues={investorDefaultValues}
-            onSubmit={onInvestorSubmit} 
-          />
-        ) : null}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="profile">Profile Details</TabsTrigger>
+            <TabsTrigger value="availability">Availability</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="profile">
+            {profile.user_type === 'founder' ? (
+              <FounderForm 
+                defaultValues={founderDefaultValues}
+                onSubmit={onFounderSubmit} 
+              />
+            ) : profile.user_type === 'investor' ? (
+              <InvestorForm 
+                defaultValues={investorDefaultValues}
+                onSubmit={onInvestorSubmit} 
+              />
+            ) : null}
+          </TabsContent>
+          
+          <TabsContent value="availability">
+            <TimeSlotSelector
+              initialTimeSlots={availabilityTimeSlots} 
+              onComplete={handleTimeSlotComplete}
+              showBackButton={false}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

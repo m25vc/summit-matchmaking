@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 // Constants
@@ -120,7 +120,7 @@ async function validateAdminUser(supabaseClient, authHeader) {
 }
 
 /**
- * Get Google OAuth token for sheets access using the same approach as sync-to-sheets
+ * Get Google OAuth token for sheets access using JWT approach
  */
 async function getGoogleAuthToken(sheetsClientEmail, sheetsPrivateKey) {
   logMessage("INFO", "GOOGLE", "Starting Google OAuth token process");

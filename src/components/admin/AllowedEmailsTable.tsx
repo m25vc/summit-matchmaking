@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SheetSyncButton } from "./SheetSyncButton";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Mail, Plus, RefreshCw, Trash } from "lucide-react";
 
 interface AllowedEmail {
@@ -29,8 +29,8 @@ export function AllowedEmailsTable() {
   const [syncing, setSyncing] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [addingEmail, setAddingEmail] = useState(false);
-  const [syncDetails, setSyncDetails] = useState<string | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncLog, setSyncLog] = useState<string[]>([]);
+  const [showSyncLog, setShowSyncLog] = useState(false);
 
   useEffect(() => {
     fetchAllowedEmails();
@@ -63,8 +63,8 @@ export function AllowedEmailsTable() {
   // Sync emails from Google Sheet
   const syncEmailsFromSheet = async () => {
     setSyncing(true);
-    setSyncDetails(null);
-    setSyncError(null);
+    setSyncLog([]);
+    
     try {
       console.log("Starting email sync from Google Sheet...");
       const { data: { session } } = await supabase.auth.getSession();
@@ -76,6 +76,7 @@ export function AllowedEmailsTable() {
       }
 
       console.log("Session found, proceeding with sync");
+      addToSyncLog("Session found, calling sync-allowed-emails function");
       
       try {
         const response = await fetch(
@@ -89,12 +90,11 @@ export function AllowedEmailsTable() {
           }
         );
 
-        console.log("Response status:", response.status);
-        console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+        addToSyncLog(`Response status: ${response.status}`);
         
         // Get the response body
         const responseText = await response.text();
-        console.log("Raw response:", responseText);
+        addToSyncLog(`Raw response: ${responseText.substring(0, 100)}...`);
         
         // Try to parse as JSON
         let result;
@@ -102,34 +102,44 @@ export function AllowedEmailsTable() {
           result = JSON.parse(responseText);
         } catch (parseError) {
           console.error("Failed to parse response as JSON:", parseError);
-          console.log("Response was not valid JSON:", responseText);
+          addToSyncLog("Response was not valid JSON");
           throw new Error(`Invalid response format: ${responseText}`);
         }
 
         if (!response.ok) {
           console.error("Error response from sync function:", result);
+          addToSyncLog(`Error: ${result.error || 'Unknown error'}`);
           throw new Error(result.error || "Failed to sync emails");
         }
 
         console.log("Sync successful:", result);
+        addToSyncLog(`Success: ${result.message || 'Emails synced'}`);
         
-        // Set details for debugging
-        setSyncDetails(JSON.stringify(result, null, 2));
+        if (result.stats) {
+          addToSyncLog(`Stats: ${result.stats.totalEmails} emails found`);
+          addToSyncLog(`${result.stats.deleted} emails removed, ${result.stats.inserted} emails added`);
+        }
         
         toast.success(result.message || "Successfully synced emails from sheet");
+        setShowSyncLog(true);
         fetchAllowedEmails();
       } catch (fetchError: any) {
         console.error("Fetch error:", fetchError);
-        setSyncError(`Fetch error: ${fetchError.message}`);
+        addToSyncLog(`Fetch error: ${fetchError.message}`);
         throw fetchError;
       }
     } catch (error: any) {
       console.error("Error syncing emails:", error);
-      setSyncError(`Error: ${error.message}`);
+      addToSyncLog(`Error: ${error.message}`);
       toast.error(`Failed to sync emails: ${error.message}`);
+      setShowSyncLog(true);
     } finally {
       setSyncing(false);
     }
+  };
+
+  const addToSyncLog = (message: string) => {
+    setSyncLog(prev => [...prev, `[${new Date().toISOString()}] ${message}`]);
   };
 
   // Add a new email manually
@@ -195,15 +205,48 @@ export function AllowedEmailsTable() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-medium">Allowed Emails</h2>
         <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={syncEmailsFromSheet}
-            disabled={syncing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing..." : "Sync from Sheet"}
-          </Button>
+          <Sheet open={showSyncLog} onOpenChange={setShowSyncLog}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={syncEmailsFromSheet}
+                disabled={syncing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync from Sheet"}
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-[400px] sm:w-[540px]">
+              <SheetHeader>
+                <SheetTitle>Sync Log</SheetTitle>
+                <SheetDescription>
+                  Details about the email synchronization process
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6">
+                <div className="bg-gray-50 p-4 rounded-md border">
+                  <h3 className="text-sm font-medium mb-2">Synchronization Log</h3>
+                  <pre className="text-xs font-mono overflow-auto max-h-[400px] p-2 bg-gray-100 rounded whitespace-pre-wrap">
+                    {syncLog.length > 0 ? syncLog.join('\n') : 'No logs available'}
+                  </pre>
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowSyncLog(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={fetchAllowedEmails}
+                  >
+                    Refresh Email List
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
           <Button
             variant="outline"
             size="sm"
@@ -215,24 +258,6 @@ export function AllowedEmailsTable() {
           </Button>
         </div>
       </div>
-
-      {syncError && (
-        <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-          <h3 className="text-sm font-medium mb-2 text-red-700">Sync Error</h3>
-          <pre className="text-xs overflow-auto max-h-40 p-2 bg-red-100 rounded text-red-800">
-            {syncError}
-          </pre>
-        </div>
-      )}
-
-      {syncDetails && (
-        <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
-          <h3 className="text-sm font-medium mb-2">Last Sync Details</h3>
-          <pre className="text-xs overflow-auto max-h-40 p-2 bg-gray-100 rounded">
-            {syncDetails}
-          </pre>
-        </div>
-      )}
 
       <div className="flex items-center space-x-2 mb-4">
         <div className="relative flex-1">

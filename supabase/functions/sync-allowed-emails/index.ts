@@ -60,21 +60,22 @@ serve(async (req: Request) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const sheetsPrivateKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
     const sheetsClientEmail = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL');
-    const allowlistSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID');
+    // Use the same spreadsheet ID as the priority matches function
+    const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID');
     
     logDebug("ENV VARS", `SUPABASE_URL set: ${!!supabaseUrl}`);
     logDebug("ENV VARS", `SUPABASE_SERVICE_ROLE_KEY set: ${!!supabaseServiceRoleKey}`);
     logDebug("ENV VARS", `GOOGLE_SHEETS_API_KEY set: ${!!sheetsPrivateKey}`);
     logDebug("ENV VARS", `GOOGLE_SHEETS_API_KEY length: ${sheetsPrivateKey ? sheetsPrivateKey.length : 0}`);
     logDebug("ENV VARS", `GOOGLE_SHEETS_CLIENT_EMAIL set: ${!!sheetsClientEmail}`);
-    logDebug("ENV VARS", `GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID set: ${!!allowlistSpreadsheetId}`);
-    logDebug("ENV VARS", `GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID value: ${allowlistSpreadsheetId || 'not set'}`);
+    logDebug("ENV VARS", `GOOGLE_SHEETS_SPREADSHEET_ID set: ${!!spreadsheetId}`);
+    logDebug("ENV VARS", `GOOGLE_SHEETS_SPREADSHEET_ID value: ${spreadsheetId || 'not set'}`);
     
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error("Missing required Supabase credentials");
     }
     
-    if (!sheetsPrivateKey || !sheetsClientEmail || !allowlistSpreadsheetId) {
+    if (!sheetsPrivateKey || !sheetsClientEmail || !spreadsheetId) {
       throw new Error("Missing required Google Sheets credentials");
     }
     
@@ -260,9 +261,9 @@ serve(async (req: Request) => {
         logDebug("SHEETS", "Client created successfully");
         
         // Verify spreadsheet access
-        logDebug("SHEETS", `Verifying access to spreadsheet ID: ${allowlistSpreadsheetId}`);
+        logDebug("SHEETS", `Verifying access to spreadsheet ID: ${spreadsheetId}`);
         const metadataResponse = await sheetsClient.spreadsheets.get({
-          spreadsheetId: allowlistSpreadsheetId,
+          spreadsheetId: spreadsheetId,
         });
         
         logDebug("SHEETS", `Successfully accessed spreadsheet: ${metadataResponse.data.properties?.title}`);
@@ -287,7 +288,7 @@ serve(async (req: Request) => {
         logDebug("SHEETS", `Fetching data from sheet "${ALLOWED_EMAILS_SHEET_NAME}", column F (index ${EMAIL_COLUMN_INDEX}), starting from row ${DATA_START_ROW + 1}`);
         
         const response = await sheetsClient.spreadsheets.values.get({
-          spreadsheetId: allowlistSpreadsheetId,
+          spreadsheetId: spreadsheetId,
           range: `${ALLOWED_EMAILS_SHEET_NAME}!F:F`, // Column F for emails
         });
 

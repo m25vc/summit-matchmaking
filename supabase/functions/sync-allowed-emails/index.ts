@@ -4,7 +4,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 // Constants
-const ALLOWED_EMAILS_SHEET_NAME = "Matches"; // Using the same sheet as priority matches
+const ALLOWED_EMAILS_SHEET_NAME = "EBData"; // Changed sheet name from Matches to EBData
 const EMAIL_COLUMN_INDEX = 5; // Column F is index 5 (0-based indexing)
 const DATA_START_ROW = 3; // Row 4 is index 3 (0-based indexing)
 

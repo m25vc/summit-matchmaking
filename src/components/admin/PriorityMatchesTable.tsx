@@ -75,8 +75,29 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
         throw new Error('Authentication required to sync matches');
       }
       
-      // Make sure we're sending the full match data with profiles included
-      const sanitizedMatches = sanitizeJson(matches);
+      // Ensure we're sending complete match data including profiles
+      const fullMatches = matches.map(match => ({
+        ...match,
+        initiator: match.initiator ? {
+          first_name: match.initiator.first_name,
+          last_name: match.initiator.last_name,
+          company_name: match.initiator.company_name,
+          email: match.initiator.email,
+          user_type: match.initiator.user_type
+        } : null,
+        target: match.target ? {
+          first_name: match.target.first_name,
+          last_name: match.target.last_name,
+          company_name: match.target.company_name,
+          email: match.target.email,
+          user_type: match.target.user_type
+        } : null
+      }));
+      
+      // Sanitize the data to prevent JSON issues
+      const sanitizedMatches = sanitizeJson(fullMatches);
+      
+      console.log("Sending matches to sheets:", sanitizedMatches);
       
       const { error } = await supabase.functions.invoke('sync-to-sheets', {
         body: { matches: sanitizedMatches }

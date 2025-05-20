@@ -173,8 +173,11 @@ async function ensureSheetExists(accessToken, spreadsheetId, sheetName) {
 // Process match data to prepare it for Google Sheets
 function processMatchesData(matches) {
   if (!matches || !Array.isArray(matches) || matches.length === 0) {
+    console.log("No match data available or invalid data:", matches);
     return [['No matches data available']];
   }
+  
+  console.log("Processing matches data. First match sample:", JSON.stringify(matches[0], null, 2));
   
   // Add headers as the first row
   const headers = [
@@ -194,21 +197,29 @@ function processMatchesData(matches) {
   ];
   
   // Format the match data for Google Sheets
-  const matchRows = matches.map((match) => [
-    match.id || '',
-    match.initiator ? `${match.initiator.first_name} ${match.initiator.last_name}` : '',
-    match.initiator ? match.initiator.company_name : '',
-    match.initiator ? match.initiator.email : '',
-    match.target ? `${match.target.first_name} ${match.target.last_name}` : '',
-    match.target ? match.target.company_name : '',
-    match.target ? match.target.email : '',
-    match.priority || 'low',
-    match.not_interested ? 'Yes' : 'No',
-    match.set_by || '',
-    match.created_at ? new Date(match.created_at).toISOString() : '',
-    match.has_mutual_match ? 'Yes' : 'No',
-    match.score || 0
-  ]);
+  const matchRows = matches.map((match) => {
+    console.log("Processing match:", match.id, 
+                "Initiator:", match.initiator ? 
+                `${match.initiator.first_name} ${match.initiator.last_name}` : "missing", 
+                "Target:", match.target ? 
+                `${match.target.first_name} ${match.target.last_name}` : "missing");
+    
+    return [
+      match.id || '',
+      match.initiator ? `${match.initiator.first_name} ${match.initiator.last_name}` : '',
+      match.initiator ? match.initiator.company_name : '',
+      match.initiator ? match.initiator.email : '',
+      match.target ? `${match.target.first_name} ${match.target.last_name}` : '',
+      match.target ? match.target.company_name : '',
+      match.target ? match.target.email : '',
+      match.priority || 'low',
+      match.not_interested ? 'Yes' : 'No',
+      match.set_by || '',
+      match.created_at ? new Date(match.created_at).toISOString() : '',
+      match.has_mutual_match ? 'Yes' : 'No',
+      match.score || 0
+    ];
+  });
   
   // Combine headers and data
   return [headers, ...matchRows];
@@ -323,7 +334,8 @@ serve(async (req) => {
     const data = await req.json();
     const matches = data.matches || [];
     
-    console.log(`Processing ${matches.length} matches...`);
+    console.log(`Processing ${matches.length} matches... First match ID: ${matches.length > 0 ? matches[0].id : 'none'}`);
+    console.log("Sample match data:", JSON.stringify(matches.slice(0, 1), null, 2));
     
     // Format the match data for Google Sheets
     const matchValues = processMatchesData(matches);

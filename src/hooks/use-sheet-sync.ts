@@ -46,10 +46,14 @@ export function useSheetSync() {
         return { success: false, error: 'Invalid access token' };
       }
 
-      // First get all matches from the database
+      // First get all matches from the database with profile data
       const { data: matchesData, error: matchesError } = await supabase
         .from('priority_matches')
-        .select('*')
+        .select(`
+          *,
+          initiator:founder_id(id, first_name, last_name, email, company_name, user_type),
+          target:investor_id(id, first_name, last_name, email, company_name, user_type)
+        `)
         .order('created_at', { ascending: false });
 
       if (matchesError) {
@@ -68,6 +72,7 @@ export function useSheetSync() {
       const sanitizedMatches = sanitizeJson(matchesData);
       
       console.log(`Sending ${sanitizedMatches.length} matches to sync function`);
+      console.log('Sample match data:', JSON.stringify(sanitizedMatches[0], null, 2));
       
       // Call the Edge Function to sync data to sheets with improved headers
       const response = await fetch(

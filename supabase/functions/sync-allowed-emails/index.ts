@@ -2,10 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
-import { sheets } from 'https://esm.sh/@googleapis/sheets@4.0.1';
 
 // Constants
-const ALLOWED_EMAILS_SHEET_NAME = "EBData"; // Sheet name
+const ALLOWED_EMAILS_SHEET_NAME = "Matches"; // Using the same sheet as priority matches
 const EMAIL_COLUMN_INDEX = 5; // Column F is index 5 (0-based indexing)
 const DATA_START_ROW = 3; // Row 4 is index 3 (0-based indexing)
 
@@ -121,7 +120,7 @@ async function validateAdminUser(supabaseClient, authHeader) {
 }
 
 /**
- * Get Google OAuth token for sheets access
+ * Get Google OAuth token for sheets access using the same approach as sync-to-sheets
  */
 async function getGoogleAuthToken(sheetsClientEmail, sheetsPrivateKey) {
   logMessage("INFO", "GOOGLE", "Starting Google OAuth token process");
@@ -143,47 +142,39 @@ async function getGoogleAuthToken(sheetsClientEmail, sheetsPrivateKey) {
     };
     
     // Import private key for signing
-    let privateKeyJWT;
     try {
-      // Handle key with or without headers
-      if (privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        logMessage("INFO", "GOOGLE", "Using key with headers");
-        // Remove header and footer and decode
-        const keyContent = privateKey
+      logMessage("INFO", "GOOGLE", "Preparing private key");
+      // Remove header and footer if present and decode
+      let privateKeyContent = privateKey;
+      if (privateKeyContent.includes('-----BEGIN PRIVATE KEY-----')) {
+        privateKeyContent = privateKeyContent
           .replace('-----BEGIN PRIVATE KEY-----', '')
           .replace('-----END PRIVATE KEY-----', '')
           .replace(/\s+/g, '');
-          
-        const binaryKey = Uint8Array.from(atob(keyContent), c => c.charCodeAt(0));
-        
-        privateKeyJWT = await crypto.subtle.importKey(
-          'pkcs8',
-          binaryKey,
-          { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-          false,
-          ['sign']
-        );
-      } else {
-        // Direct base64 decode
-        logMessage("INFO", "GOOGLE", "Using key without headers");
-        const binaryKey = Uint8Array.from(atob(privateKey), c => c.charCodeAt(0));
-        privateKeyJWT = await crypto.subtle.importKey(
-          'pkcs8',
-          binaryKey,
-          { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-          false,
-          ['sign']
-        );
       }
       
-      logMessage("INFO", "GOOGLE", "Successfully imported private key");
+      // Import the key using crypto APIs
+      logMessage("INFO", "GOOGLE", "Importing private key");
+      const binaryKey = Uint8Array.from(atob(privateKeyContent), c => c.charCodeAt(0));
       
-      // Create and sign JWT
+      const privateKeyJWT = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryKey,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      logMessage("INFO", "GOOGLE", "Key successfully imported, creating JWT");
+      
+      // Create and sign the JWT
       const jwt = await create(
         { alg: 'RS256', typ: 'JWT' },
         jwtPayload,
         privateKeyJWT
       );
+      
+      logMessage("INFO", "GOOGLE", "JWT created, exchanging for access token");
       
       // Exchange JWT for access token
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -217,45 +208,55 @@ async function getGoogleAuthToken(sheetsClientEmail, sheetsPrivateKey) {
 }
 
 /**
- * Fetch emails from Google Sheets
+ * Fetch emails from Google Sheets using direct API calls with fetch
  */
 async function fetchEmails(accessToken, spreadsheetId) {
-  logMessage("INFO", "SHEETS", "Creating Google Sheets client");
-  
-  // Create sheets client with auth token
-  const sheetsClient = sheets({
-    version: 'v4',
-    auth: accessToken,  // This is where we pass the auth token
-  });
-  
   logMessage("INFO", "SHEETS", `Accessing spreadsheet: ${spreadsheetId}`);
   
-  // Verify spreadsheet access and find sheet
-  const metadata = await sheetsClient.spreadsheets.get({
-    spreadsheetId: spreadsheetId,
+  // First, verify spreadsheet exists and get sheet metadata
+  const spreadsheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+  const metadataResponse = await fetch(spreadsheetUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
   });
   
-  logMessage("INFO", "SHEETS", `Spreadsheet title: ${metadata.data.properties?.title}`);
+  if (!metadataResponse.ok) {
+    const errorText = await metadataResponse.text();
+    logMessage("ERROR", "SHEETS", `Error accessing spreadsheet: ${metadataResponse.status} ${errorText}`);
+    throw new Error(`Failed to access spreadsheet: ${metadataResponse.status} ${errorText}`);
+  }
   
-  // Check if our target sheet exists
-  const sheetExists = metadata.data.sheets?.some(
-    s => s.properties?.title === ALLOWED_EMAILS_SHEET_NAME
-  );
+  const metadata = await metadataResponse.json();
+  logMessage("INFO", "SHEETS", `Spreadsheet title: ${metadata.properties?.title}`);
   
-  if (!sheetExists) {
+  // Check if the sheet exists
+  const sheet = metadata.sheets?.find(s => s.properties?.title === ALLOWED_EMAILS_SHEET_NAME);
+  if (!sheet) {
     logMessage("ERROR", "SHEETS", `Sheet "${ALLOWED_EMAILS_SHEET_NAME}" not found`);
     throw new Error(`Sheet "${ALLOWED_EMAILS_SHEET_NAME}" not found in spreadsheet`);
   }
   
   // Fetch data from column F
+  const rangeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${ALLOWED_EMAILS_SHEET_NAME}!F:F`;
   logMessage("INFO", "SHEETS", `Fetching column F from row ${DATA_START_ROW + 1}`);
   
-  const response = await sheetsClient.spreadsheets.values.get({
-    spreadsheetId: spreadsheetId,
-    range: `${ALLOWED_EMAILS_SHEET_NAME}!F:F`, // Column F for emails
+  const valuesResponse = await fetch(rangeUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
   });
   
-  const rows = response.data.values || [];
+  if (!valuesResponse.ok) {
+    const errorText = await valuesResponse.text();
+    logMessage("ERROR", "SHEETS", `Error fetching values: ${valuesResponse.status} ${errorText}`);
+    throw new Error(`Failed to fetch values: ${valuesResponse.status} ${errorText}`);
+  }
+  
+  const valuesData = await valuesResponse.json();
+  const rows = valuesData.values || [];
   logMessage("INFO", "SHEETS", `Found ${rows.length} rows in total`);
   
   // Extract valid emails, starting from the specified row
@@ -342,10 +343,10 @@ async function handleRequest(req) {
     // Validate admin user
     await validateAdminUser(supabaseClient, req.headers.get('authorization'));
     
-    // Get Google OAuth token
+    // Get Google OAuth token using the manual JWT approach
     const accessToken = await getGoogleAuthToken(sheetsClientEmail, sheetsPrivateKey);
     
-    // Fetch emails from Google Sheet
+    // Fetch emails from Google Sheet using direct API calls
     const emails = await fetchEmails(accessToken, spreadsheetId);
     
     // Sync emails to database

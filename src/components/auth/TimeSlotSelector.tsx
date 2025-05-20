@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 interface TimeSlot {
   time: string;
   selected: boolean;
+  displayTime: string;
 }
 
 interface TimeSlotSelectorProps {
@@ -31,6 +32,17 @@ export default function TimeSlotSelector({
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(today);
   
+  const todayStr = format(today, 'yyyy-MM-dd');
+  const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
+  
+  // Function to convert 24-hour time to 12-hour format
+  const formatTo12Hour = (time24: string): string => {
+    const [hours, minutes] = time24.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+  
   // Generate time slots from 9 AM to 3 PM in 30-minute increments
   const generateTimeSlots = (dateStr: string) => {
     const slots: TimeSlot[] = [];
@@ -40,16 +52,14 @@ export default function TimeSlotSelector({
       for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push({
-          time: timeString,
+          time: timeString, // Store in 24-hour format for backend
+          displayTime: formatTo12Hour(timeString), // Display in 12-hour format
           selected: initialSlotsForDate.includes(timeString)
         });
       }
     }
     return slots;
   };
-  
-  const todayStr = format(today, 'yyyy-MM-dd');
-  const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
   
   // State to track selected time slots for each day
   const [day1Slots, setDay1Slots] = useState<TimeSlot[]>(() => generateTimeSlots(todayStr));
@@ -82,7 +92,7 @@ export default function TimeSlotSelector({
         <div className="flex-1 border rounded-md p-4">
           <h3 className="font-medium flex items-center mb-3">
             <CalendarClock className="mr-2 h-5 w-5" />
-            Day 1: {format(today, 'EEEE, MMMM d')}
+            Day 1
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {day1Slots.map((slot, index) => (
@@ -93,7 +103,7 @@ export default function TimeSlotSelector({
                 onClick={() => toggleTimeSlot(day1Slots, setDay1Slots, index)}
                 className="text-sm h-10"
               >
-                {slot.time}
+                {slot.displayTime}
               </Button>
             ))}
           </div>
@@ -102,7 +112,7 @@ export default function TimeSlotSelector({
         <div className="flex-1 border rounded-md p-4">
           <h3 className="font-medium flex items-center mb-3">
             <CalendarClock className="mr-2 h-5 w-5" />
-            Day 2: {format(tomorrow, 'EEEE, MMMM d')}
+            Day 2
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {day2Slots.map((slot, index) => (
@@ -113,7 +123,7 @@ export default function TimeSlotSelector({
                 onClick={() => toggleTimeSlot(day2Slots, setDay2Slots, index)}
                 className="text-sm h-10"
               >
-                {slot.time}
+                {slot.displayTime}
               </Button>
             ))}
           </div>

@@ -11,9 +11,9 @@ const DATA_START_ROW = 3; // Row 4 is index 3 (0-based indexing)
 
 // Define CORS headers - must be added to all responses
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', 
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
 serve(async (req: Request) => {
@@ -23,7 +23,7 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     console.log("🔎 Handling OPTIONS request - returning CORS headers");
     return new Response('ok', { 
-      status: 200,
+      status: 204,
       headers: corsHeaders 
     });
   }
@@ -95,7 +95,7 @@ serve(async (req: Request) => {
 
     console.log("✅ Admin access confirmed");
 
-    // Get Google OAuth2 token using the same approach as sync-to-sheets
+    // Get Google OAuth2 token using service account credentials
     const accessToken = await getGoogleAuthToken();
 
     // Fetch spreadsheet metadata to verify it exists and we have access
@@ -111,7 +111,7 @@ serve(async (req: Request) => {
     console.log("📊 Using spreadsheet ID:", spreadsheetId);
     
     try {
-      // Create sheets client without using GoogleAuth
+      // Create sheets client
       const sheetsClient = sheets({
         version: 'v4',
         auth: accessToken, // Use the token directly
@@ -241,7 +241,7 @@ serve(async (req: Request) => {
   }
 });
 
-// Get Google OAuth2 token using service account credentials - using the approach from sync-to-sheets
+// Get Google OAuth2 token using service account credentials
 async function getGoogleAuthToken() {
   const GOOGLE_SHEETS_PRIVATE_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')?.replace(/\\n/g, '\n');
   const GOOGLE_SHEETS_CLIENT_EMAIL = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL');

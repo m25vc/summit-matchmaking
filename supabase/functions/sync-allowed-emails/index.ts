@@ -284,17 +284,27 @@ async function fetchEmails(accessToken, spreadsheetId) {
 async function syncEmailsToDatabase(supabaseClient, emails) {
   // Clear existing emails from DB
   logMessage("INFO", "DB", "Clearing existing synced emails from database");
-  const { error: clearError, count: deletedCount } = await supabaseClient
+  
+  // FIX: Don't use count in RETURNING clause
+  const { error: clearError } = await supabaseClient
     .from('allowed_emails')
     .delete()
-    .eq('synced_from_sheet', true)
-    .select('count');
+    .eq('synced_from_sheet', true);
 
   if (clearError) {
     logMessage("ERROR", "DB", `Error clearing emails: ${safeStringify(clearError)}`);
     throw new Error(`Error clearing existing emails: ${clearError.message}`);
+  }
+  
+  // Count how many were deleted (in a separate query)
+  const { count: deletedCount, error: countError } = await supabaseClient
+    .from('allowed_emails')
+    .select('*', { count: 'exact', head: true });
+    
+  if (countError) {
+    logMessage("WARN", "DB", `Error counting records: ${safeStringify(countError)}`);
   } else {
-    logMessage("INFO", "DB", `Deleted ${deletedCount} existing synced emails`);
+    logMessage("INFO", "DB", `Count after deletion: ${deletedCount || 0} records remain`);
   }
 
   // Insert new emails
@@ -306,21 +316,32 @@ async function syncEmailsToDatabase(supabaseClient, emails) {
 
   logMessage("INFO", "DB", `Inserting ${emailRows.length} emails into database`);
   
-  const { error: insertError, count: insertedCount } = await supabaseClient
+  // FIX: Don't use count in RETURNING clause
+  const { error: insertError } = await supabaseClient
     .from('allowed_emails')
-    .insert(emailRows)
-    .select('count');
+    .insert(emailRows);
 
   if (insertError) {
     logMessage("ERROR", "DB", `Error inserting emails: ${safeStringify(insertError)}`);
     throw new Error(`Error inserting emails: ${insertError.message}`);
   }
 
-  logMessage("SUCCESS", "DB", `Successfully inserted ${insertedCount} emails`);
+  // Get the actual count (in a separate query)
+  const { count: currentCount, error: finalCountError } = await supabaseClient
+    .from('allowed_emails')
+    .select('*', { count: 'exact', head: true });
+    
+  const insertedCount = currentCount - (deletedCount || 0);
+  
+  if (finalCountError) {
+    logMessage("WARN", "DB", `Error counting final records: ${safeStringify(finalCountError)}`);
+  } else {
+    logMessage("SUCCESS", "DB", `Successfully inserted approximately ${insertedCount} emails`);
+  }
   
   return {
-    deletedCount,
-    insertedCount
+    deletedCount: deletedCount || 0,
+    insertedCount: insertedCount
   };
 }
 

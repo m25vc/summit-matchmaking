@@ -9,19 +9,23 @@ const ALLOWED_EMAILS_SHEET_NAME = "EBData"; // Sheet name
 const EMAIL_COLUMN_INDEX = 5; // Column F is index 5 (0-based indexing)
 const DATA_START_ROW = 3; // Row 4 is index 3 (0-based indexing)
 
-serve(async (req: Request) => {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
+// Define CORS headers - must be added to all responses
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', 
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
+serve(async (req: Request) => {
   console.log("📝 Function invoked with method:", req.method);
 
-  // Handle OPTIONS request for CORS
+  // Handle OPTIONS request for CORS preflight
   if (req.method === 'OPTIONS') {
     console.log("🔎 Handling OPTIONS request - returning CORS headers");
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -31,7 +35,10 @@ serve(async (req: Request) => {
       console.error("🛑 Missing authorization header");
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -52,7 +59,10 @@ serve(async (req: Request) => {
       console.error("⛔ User authentication failed:", userError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized', details: userError }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -76,7 +86,10 @@ serve(async (req: Request) => {
       console.error("🚫 User is not an admin. Role:", profileData?.role);
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -160,7 +173,10 @@ serve(async (req: Request) => {
         console.warn("⚠️ No valid emails found in the spreadsheet");
         return new Response(
           JSON.stringify({ error: 'No valid emails found in the spreadsheet' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
         );
       }
 
@@ -196,7 +212,10 @@ serve(async (req: Request) => {
         console.error('❌ Error inserting emails:', insertError);
         return new Response(
           JSON.stringify({ error: 'Error inserting emails', details: insertError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
         );
       }
 

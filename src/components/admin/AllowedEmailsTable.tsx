@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -30,6 +30,11 @@ export function AllowedEmailsTable() {
   const [newEmail, setNewEmail] = useState("");
   const [addingEmail, setAddingEmail] = useState(false);
   const [syncDetails, setSyncDetails] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAllowedEmails();
+  }, []);
 
   // Fetch allowed emails on component mount
   const fetchAllowedEmails = async () => {
@@ -59,6 +64,7 @@ export function AllowedEmailsTable() {
   const syncEmailsFromSheet = async () => {
     setSyncing(true);
     setSyncDetails(null);
+    setSyncError(null);
     try {
       console.log("Starting email sync from Google Sheet...");
       const { data: { session } } = await supabase.auth.getSession();
@@ -70,48 +76,56 @@ export function AllowedEmailsTable() {
       }
 
       console.log("Session found, proceeding with sync");
-      const response = await fetch(
-        "https://qveetrrarbqedkcuwrcz.supabase.co/functions/v1/sync-allowed-emails",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
       
-      // Get the response body
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-      
-      // Try to parse as JSON
-      let result;
       try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse response as JSON:", parseError);
-        console.log("Response was not valid JSON:", responseText);
-        throw new Error("Invalid response format");
-      }
+        const response = await fetch(
+          "https://qveetrrarbqedkcuwrcz.supabase.co/functions/v1/sync-allowed-emails",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}`,
+            },
+          }
+        );
 
-      if (!response.ok) {
-        console.error("Error response from sync function:", result);
-        throw new Error(result.error || "Failed to sync emails");
-      }
+        console.log("Response status:", response.status);
+        console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+        
+        // Get the response body
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+        
+        // Try to parse as JSON
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse response as JSON:", parseError);
+          console.log("Response was not valid JSON:", responseText);
+          throw new Error(`Invalid response format: ${responseText}`);
+        }
 
-      console.log("Sync successful:", result);
-      
-      // Set details for debugging
-      setSyncDetails(JSON.stringify(result, null, 2));
-      
-      toast.success(result.message || "Successfully synced emails from sheet");
-      fetchAllowedEmails();
-    } catch (error) {
+        if (!response.ok) {
+          console.error("Error response from sync function:", result);
+          throw new Error(result.error || "Failed to sync emails");
+        }
+
+        console.log("Sync successful:", result);
+        
+        // Set details for debugging
+        setSyncDetails(JSON.stringify(result, null, 2));
+        
+        toast.success(result.message || "Successfully synced emails from sheet");
+        fetchAllowedEmails();
+      } catch (fetchError: any) {
+        console.error("Fetch error:", fetchError);
+        setSyncError(`Fetch error: ${fetchError.message}`);
+        throw fetchError;
+      }
+    } catch (error: any) {
       console.error("Error syncing emails:", error);
+      setSyncError(`Error: ${error.message}`);
       toast.error(`Failed to sync emails: ${error.message}`);
     } finally {
       setSyncing(false);
@@ -176,11 +190,6 @@ export function AllowedEmailsTable() {
     }
   };
 
-  // Load emails on component mount
-  useState(() => {
-    fetchAllowedEmails();
-  });
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -206,6 +215,15 @@ export function AllowedEmailsTable() {
           </Button>
         </div>
       </div>
+
+      {syncError && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-md">
+          <h3 className="text-sm font-medium mb-2 text-red-700">Sync Error</h3>
+          <pre className="text-xs overflow-auto max-h-40 p-2 bg-red-100 rounded text-red-800">
+            {syncError}
+          </pre>
+        </div>
+      )}
 
       {syncDetails && (
         <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">

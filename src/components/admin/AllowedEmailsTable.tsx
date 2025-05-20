@@ -29,10 +29,12 @@ export function AllowedEmailsTable() {
   const [syncing, setSyncing] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [addingEmail, setAddingEmail] = useState(false);
+  const [syncDetails, setSyncDetails] = useState<string | null>(null);
 
   // Fetch allowed emails on component mount
   const fetchAllowedEmails = async () => {
     setLoading(true);
+    console.log("Fetching allowed emails...");
     try {
       const { data, error } = await supabase
         .from("allowed_emails")
@@ -43,6 +45,7 @@ export function AllowedEmailsTable() {
         throw error;
       }
 
+      console.log(`Fetched ${data?.length || 0} allowed emails`);
       setEmails(data || []);
     } catch (error) {
       console.error("Error fetching allowed emails:", error);
@@ -55,14 +58,18 @@ export function AllowedEmailsTable() {
   // Sync emails from Google Sheet
   const syncEmailsFromSheet = async () => {
     setSyncing(true);
+    setSyncDetails(null);
     try {
+      console.log("Starting email sync from Google Sheet...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.error("No active session found");
         toast.error("Authentication required");
         return;
       }
 
+      console.log("Session found, proceeding with sync");
       const response = await fetch(
         "https://qveetrrarbqedkcuwrcz.supabase.co/functions/v1/sync-allowed-emails",
         {
@@ -74,12 +81,33 @@ export function AllowedEmailsTable() {
         }
       );
 
-      const result = await response.json();
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      
+      // Get the response body
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+      
+      // Try to parse as JSON
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", parseError);
+        console.log("Response was not valid JSON:", responseText);
+        throw new Error("Invalid response format");
+      }
 
       if (!response.ok) {
+        console.error("Error response from sync function:", result);
         throw new Error(result.error || "Failed to sync emails");
       }
 
+      console.log("Sync successful:", result);
+      
+      // Set details for debugging
+      setSyncDetails(JSON.stringify(result, null, 2));
+      
       toast.success(result.message || "Successfully synced emails from sheet");
       fetchAllowedEmails();
     } catch (error) {
@@ -178,6 +206,15 @@ export function AllowedEmailsTable() {
           </Button>
         </div>
       </div>
+
+      {syncDetails && (
+        <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
+          <h3 className="text-sm font-medium mb-2">Last Sync Details</h3>
+          <pre className="text-xs overflow-auto max-h-40 p-2 bg-gray-100 rounded">
+            {syncDetails}
+          </pre>
+        </div>
+      )}
 
       <div className="flex items-center space-x-2 mb-4">
         <div className="relative flex-1">

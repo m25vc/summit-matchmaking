@@ -48,13 +48,13 @@ function validateEnvironment() {
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const sheetsPrivateKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
   const sheetsClientEmail = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL');
-  const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID');
   
   logMessage("INFO", "ENV", `SUPABASE_URL set: ${!!supabaseUrl}`);
   logMessage("INFO", "ENV", `SUPABASE_SERVICE_ROLE_KEY set: ${!!supabaseServiceRoleKey}`);
   logMessage("INFO", "ENV", `GOOGLE_SHEETS_API_KEY set: ${!!sheetsPrivateKey}`);
   logMessage("INFO", "ENV", `GOOGLE_SHEETS_CLIENT_EMAIL set: ${!!sheetsClientEmail}`);
-  logMessage("INFO", "ENV", `GOOGLE_SHEETS_SPREADSHEET_ID set: ${!!spreadsheetId}`);
+  logMessage("INFO", "ENV", `GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID set: ${!!spreadsheetId}`);
   
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     throw new Error("Missing required Supabase credentials");

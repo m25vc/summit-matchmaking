@@ -36,7 +36,6 @@ export function AllowedEmailsTable() {
   // Fetch allowed emails on component mount
   const fetchAllowedEmails = async () => {
     setLoading(true);
-    console.log("Fetching allowed emails...");
     try {
       const { data, error } = await supabase
         .from("allowed_emails")
@@ -47,7 +46,6 @@ export function AllowedEmailsTable() {
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} allowed emails`);
       setEmails(data || []);
     } catch (error) {
       console.error("Error fetching allowed emails:", error);
@@ -62,16 +60,12 @@ export function AllowedEmailsTable() {
     setSyncing(true);
     
     try {
-      console.log("Starting email sync from Google Sheet...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.error("No active session found");
         toast.error("Authentication required");
         return;
       }
-
-      console.log("Session found, proceeding with sync");
       
       try {
         const response = await fetch(
@@ -93,21 +87,16 @@ export function AllowedEmailsTable() {
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse response as JSON:", parseError);
           throw new Error(`Invalid response format: ${responseText}`);
         }
 
         if (!response.ok) {
-          console.error("Error response from sync function:", result);
           throw new Error(result.error || "Failed to sync emails");
         }
-
-        console.log("Sync successful:", result);
         
         toast.success(result.message || "Successfully synced emails from sheet");
         fetchAllowedEmails();
       } catch (fetchError: any) {
-        console.error("Fetch error:", fetchError);
         throw fetchError;
       }
     } catch (error: any) {

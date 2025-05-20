@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { GoogleAuth } from 'https://esm.sh/google-auth-library@7.0.2';
+import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
 import { sheets } from 'https://esm.sh/@googleapis/sheets@4.0.1';
 
 // Constants
@@ -95,59 +95,41 @@ serve(async (req: Request) => {
 
     console.log("✅ Admin access confirmed");
 
-    // Initialize Google Sheets client
-    const credentials = {
-      client_email: Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL'),
-      private_key: Deno.env.get('GOOGLE_SHEETS_API_KEY')?.replace(/\\n/g, '\n'),
-    };
+    // Get Google OAuth2 token using the same approach as sync-to-sheets
+    const accessToken = await getGoogleAuthToken();
 
-    console.log("🔄 Google credentials configured:");
-    console.log("📧 Client email exists:", !!credentials.client_email);
-    console.log("🔑 Private key exists:", !!credentials.private_key);
-
+    // Fetch spreadsheet metadata to verify it exists and we have access
+    console.log("🔍 Fetching spreadsheet metadata to verify access...");
+    
+    // Get the dedicated spreadsheet ID for allowed emails
+    const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID');
+    if (!spreadsheetId) {
+      console.error("🛑 Missing spreadsheet ID in environment variables");
+      throw new Error('Allowlist Spreadsheet ID not configured');
+    }
+    
+    console.log("📊 Using spreadsheet ID:", spreadsheetId);
+    
     try {
-      console.log("🔄 Creating Google auth client...");
-      const auth = new GoogleAuth({
-        credentials,
-        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-      });
-
-      console.log("✅ Google auth client created");
-      console.log("🔄 Creating Google Sheets client...");
-
+      // Create sheets client without using GoogleAuth
       const sheetsClient = sheets({
         version: 'v4',
-        auth: await auth.getClient(),
+        auth: accessToken, // Use the token directly
       });
-
-      console.log("✅ Google Sheets client created");
-
-      // Get the dedicated spreadsheet ID for allowed emails
-      const spreadsheetId = Deno.env.get('GOOGLE_SHEETS_ALLOWLIST_SPREADSHEET_ID');
-      if (!spreadsheetId) {
-        console.error("🛑 Missing spreadsheet ID in environment variables");
-        throw new Error('Allowlist Spreadsheet ID not configured');
-      }
-
-      console.log("📊 Using spreadsheet ID:", spreadsheetId);
-      console.log(`📑 Fetching data from sheet "${ALLOWED_EMAILS_SHEET_NAME}", column F, starting from row 4`);
-
-      // Fetch spreadsheet metadata to verify it exists and we have access
-      console.log("🔍 Fetching spreadsheet metadata to verify access...");
-      try {
-        const metadataResponse = await sheetsClient.spreadsheets.get({
-          spreadsheetId,
-        });
-        console.log("✅ Successfully accessed spreadsheet metadata");
-        console.log("📑 Spreadsheet title:", metadataResponse.data.properties?.title);
-        console.log("📋 Available sheets:", metadataResponse.data.sheets?.map(s => s.properties?.title).join(", "));
-      } catch (metaError) {
-        console.error("❌ Failed to access spreadsheet metadata:", metaError);
-        throw new Error(`Cannot access spreadsheet: ${metaError.message}`);
-      }
-
+      
+      // Verify spreadsheet access
+      const metadataResponse = await sheetsClient.spreadsheets.get({
+        spreadsheetId,
+      });
+      
+      console.log("✅ Successfully accessed spreadsheet metadata");
+      console.log("📑 Spreadsheet title:", metadataResponse.data.properties?.title);
+      console.log("📋 Available sheets:", metadataResponse.data.sheets?.map(s => s.properties?.title).join(", "));
+      
       // Fetch allowed emails from Google Sheets - targeting column F
+      console.log(`📑 Fetching data from sheet "${ALLOWED_EMAILS_SHEET_NAME}", column F, starting from row 4`);
       console.log("🔄 Fetching values from spreadsheet...");
+      
       const response = await sheetsClient.spreadsheets.values.get({
         spreadsheetId,
         range: `${ALLOWED_EMAILS_SHEET_NAME}!F:F`, // Column F for emails
@@ -234,11 +216,11 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
-    } catch (googleError) {
-      console.error('❌ Google API Error:', googleError);
-      console.error('❌ Error details:', googleError.stack || 'No stack trace available');
+    } catch (sheetError) {
+      console.error('❌ Sheets API Error:', sheetError);
+      console.error('❌ Error details:', sheetError.stack || 'No stack trace available');
       return new Response(
-        JSON.stringify({ error: 'Google API error', details: googleError.message }),
+        JSON.stringify({ error: 'Google Sheets API error', details: sheetError.message }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -254,7 +236,97 @@ serve(async (req: Request) => {
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+        }
     );
   }
 });
+
+// Get Google OAuth2 token using service account credentials - using the approach from sync-to-sheets
+async function getGoogleAuthToken() {
+  const GOOGLE_SHEETS_PRIVATE_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')?.replace(/\\n/g, '\n');
+  const GOOGLE_SHEETS_CLIENT_EMAIL = Deno.env.get('GOOGLE_SHEETS_CLIENT_EMAIL');
+
+  if (!GOOGLE_SHEETS_PRIVATE_KEY || !GOOGLE_SHEETS_CLIENT_EMAIL) {
+    throw new Error('Missing Google service account credentials');
+  }
+
+  try {
+    console.log("Creating JWT payload...");
+    // Create JWT payload for Google's OAuth2 service
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + 3600; // Token expires in 1 hour
+    
+    const payload = {
+      iss: GOOGLE_SHEETS_CLIENT_EMAIL,
+      scope: 'https://www.googleapis.com/auth/spreadsheets',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp,
+      iat,
+    };
+    
+    console.log("Preparing private key...");
+    
+    // Remove header and footer if present and decode base64
+    let privateKeyContent = GOOGLE_SHEETS_PRIVATE_KEY;
+    if (privateKeyContent.includes('-----BEGIN PRIVATE KEY-----')) {
+      privateKeyContent = privateKeyContent
+        .replace('-----BEGIN PRIVATE KEY-----', '')
+        .replace('-----END PRIVATE KEY-----', '')
+        .replace(/\s+/g, '');
+    }
+    
+    // Import the private key using crypto APIs
+    console.log("Importing private key...");
+    try {
+      // First, try to decode the base64 key
+      const binaryKey = Uint8Array.from(atob(privateKeyContent), c => c.charCodeAt(0));
+      
+      // Import the key
+      const privateKey = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryKey,
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-256'
+        },
+        false,
+        ['sign']
+      );
+      
+      console.log("Key successfully imported, creating JWT...");
+      
+      // Create and sign the JWT
+      const jwt = await create({ alg: 'RS256', typ: 'JWT' }, payload, privateKey);
+      
+      console.log("JWT created, exchanging for access token...");
+      
+      // Exchange JWT for access token
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: jwt,
+        }),
+      });
+      
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenResponse.ok) {
+        console.error('Token error response:', tokenData);
+        throw new Error(`Failed to get Google auth token: ${tokenData.error}: ${tokenData.error_description}`);
+      }
+      
+      console.log("Successfully obtained access token");
+      return tokenData.access_token;
+    } catch (importError) {
+      console.error("Error importing key:", importError);
+      throw new Error(`Failed to import private key: ${importError.message}`);
+    }
+  } catch (error) {
+    console.error("Error in getGoogleAuthToken:", error);
+    throw error;
+  }
+}

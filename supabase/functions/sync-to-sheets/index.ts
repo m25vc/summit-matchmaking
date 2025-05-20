@@ -179,23 +179,35 @@ function processMatchesData(matches) {
   // Add headers as the first row
   const headers = [
     'ID',
-    'Founder ID',
-    'Investor ID', 
+    'Founder Name', 
+    'Founder Company',
+    'Founder Email',
+    'Investor Name',
+    'Investor Company',
+    'Investor Email',
     'Priority',
     'Not Interested',
     'Set By',
-    'Created At'
+    'Created At',
+    'Mutual Match',
+    'Score'
   ];
   
   // Format the match data for Google Sheets
   const matchRows = matches.map((match) => [
     match.id || '',
-    match.founder_id || '',
-    match.investor_id || '',
+    match.initiator ? `${match.initiator.first_name} ${match.initiator.last_name}` : '',
+    match.initiator ? match.initiator.company_name : '',
+    match.initiator ? match.initiator.email : '',
+    match.target ? `${match.target.first_name} ${match.target.last_name}` : '',
+    match.target ? match.target.company_name : '',
+    match.target ? match.target.email : '',
     match.priority || 'low',
     match.not_interested ? 'Yes' : 'No',
     match.set_by || '',
-    match.created_at ? new Date(match.created_at).toISOString() : ''
+    match.created_at ? new Date(match.created_at).toISOString() : '',
+    match.has_mutual_match ? 'Yes' : 'No',
+    match.score || 0
   ]);
   
   // Combine headers and data

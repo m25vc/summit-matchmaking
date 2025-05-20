@@ -75,7 +75,7 @@ export const PriorityMatchesTable = ({ matches }: PriorityMatchesTableProps) => 
         throw new Error('Authentication required to sync matches');
       }
       
-      // Sanitize matches data before sending to Supabase function
+      // Make sure we're sending the full match data with profiles included
       const sanitizedMatches = sanitizeJson(matches);
       
       const { error } = await supabase.functions.invoke('sync-to-sheets', {

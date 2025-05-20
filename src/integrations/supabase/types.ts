@@ -284,6 +284,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       match_scores: {
@@ -332,6 +359,10 @@ export type Database = {
           p_set_by: string
         }
         Returns: undefined
+      }
+      toggle_signups_enabled: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {

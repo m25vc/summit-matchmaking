@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersTable } from '@/components/admin/UsersTable';
 import { PriorityMatchesTable } from '@/components/admin/PriorityMatchesTable';
 import { AllowedEmailsTable } from '@/components/admin/AllowedEmailsTable';
+import { SignupsToggle } from '@/components/admin/SignupsToggle';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -44,6 +45,9 @@ const AdminDashboard = () => {
     <DashboardLayout>
       <div className="container mx-auto px-4">
         <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        
+        {/* Add SignupsToggle component before the tabs */}
+        <SignupsToggle />
         
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>

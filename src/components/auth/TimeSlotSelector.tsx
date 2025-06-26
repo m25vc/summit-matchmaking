@@ -83,15 +83,14 @@ export default function TimeSlotSelector({
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Select Your Unavailability</h2>
-        <p className="text-gray-500">Please select 30-minute blocks when you're unavailable</p>
+        <p className="text-gray-500">Please select 30-minute blocks when you're unavailable for 1:1 meetings</p>
       </div>
       
       <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex-1 border rounded-md p-4">
           <h3 className="font-medium flex items-center mb-3">
             <CalendarClock className="mr-2 h-5 w-5" />
-            Day 1
+            Day 1: Wednesday, August 20
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {day1Slots.map((slot, index) => (
@@ -111,7 +110,7 @@ export default function TimeSlotSelector({
         <div className="flex-1 border rounded-md p-4">
           <h3 className="font-medium flex items-center mb-3">
             <CalendarClock className="mr-2 h-5 w-5" />
-            Day 2
+            Day 2: Thursday, August 21
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {day2Slots.map((slot, index) => (

@@ -38,7 +38,9 @@ export default function AvailabilityPage() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6 p-6">
-        <h1 className="text-2xl font-bold">Set Your Unavailability</h1>
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Mark Times You Are Unavailable</h1>
+        </div>
         <TimeSlotSelector
           initialTimeSlots={unavailableSlots}
           onComplete={handleComplete}

@@ -16,6 +16,10 @@ export const founderFormSchema = z.object({
 
 // Updated schema to support arrays for multi-select fields
 export const investorFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Please enter a valid email address"),
+  firmName: z.string().min(1, "Firm name is required"),
   firmDescription: z.string().min(10, "Please provide a longer description"),
   investmentThesis: z.string().optional(),
   minInvestmentAmount: z.string().optional(),

@@ -13,6 +13,7 @@ import ProfileCompletion from '@/pages/ProfileCompletion';
 import EditProfile from '@/pages/EditProfile';
 import NotFound from '@/pages/NotFound';
 import AvailabilityPage from '@/pages/Availability';
+import MatchmakingGuide from '@/pages/MatchmakingGuide';
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AvailabilityPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/matchmaking-guide"
+              element={
+                <ProtectedRoute>
+                  <MatchmakingGuide />
                 </ProtectedRoute>
               }
             />

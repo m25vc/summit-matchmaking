@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -76,9 +75,6 @@ const stageOptions = [
 // Geographic focus options
 const geoOptions = [
   { value: "Global", label: "Global" },
-  { value: "Always", label: "Always" },
-  { value: "Sometimes", label: "Sometimes" },
-  { value: "Never", label: "Never" },
   { value: "Regional: No Coast", label: "Regional: No Coast" },
   { value: "Regional: Midwest", label: "Regional: Midwest" },
   { value: "Other / Specific", label: "Other / Specific" },

@@ -1,4 +1,3 @@
-
 import * as z from "zod";
 
 export const founderFormSchema = z.object({
@@ -29,6 +28,8 @@ export const investorFormSchema = z.object({
   checkSize: z.string().optional(),
   linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),
+  leadsDeals: z.enum(["Always", "Sometimes", "Never"]),
+  businessModels: z.array(z.enum(["B2B", "B2C"])).optional(),
 });
 
 export type FounderFormValues = z.infer<typeof founderFormSchema>;

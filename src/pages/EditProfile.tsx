@@ -231,7 +231,7 @@ export default function EditProfile() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-7xl mx-auto space-y-6 p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Profile</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">{isEditing ? 'Edit Profile' : 'Profile'}</h1>
         {isEditing ? (
           <>
             {profile.user_type === 'founder' ? (

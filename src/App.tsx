@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,6 +12,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import ProfileCompletion from '@/pages/ProfileCompletion';
 import EditProfile from '@/pages/EditProfile';
 import NotFound from '@/pages/NotFound';
+import AvailabilityPage from '@/pages/Availability';
 
 const queryClient = new QueryClient();
 
@@ -53,6 +53,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EditProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/availability"
+              element={
+                <ProtectedRoute>
+                  <AvailabilityPage />
                 </ProtectedRoute>
               }
             />

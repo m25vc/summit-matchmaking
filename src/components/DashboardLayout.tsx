@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
-import { UserCog, ShieldCheck } from 'lucide-react';
+import { UserCog, ShieldCheck, CalendarClock } from 'lucide-react';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -13,7 +12,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[DashboardLayout] Session:', session);
       if (!session) {
+        console.log('[DashboardLayout] No session, navigating to /auth');
         navigate('/auth');
         return;
       }
@@ -23,22 +24,28 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         .select('role')
         .eq('id', session.user.id)
         .single();
+      console.log('[DashboardLayout] Profile:', profile);
 
       setIsAdmin(profile?.role === 'admin');
       setLoading(false);
+      console.log('[DashboardLayout] setLoading(false)');
     };
     
     checkUser();
   }, [navigate]);
 
   const handleSignOut = async () => {
+    console.log('[DashboardLayout] Signing out...');
     await supabase.auth.signOut();
     navigate('/');
   };
 
   if (loading) {
+    console.log('[DashboardLayout] Loading...');
     return <div>Loading...</div>;
   }
+
+  console.log('[DashboardLayout] Rendering children');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,6 +70,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   Admin
                 </Link>
               )}
+              <Link 
+                to="/availability"
+                className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
+              >
+                <CalendarClock className="h-4 w-4 mr-1" />
+                Set Availability
+              </Link>
               <Link 
                 to="/profile/edit"
                 className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"

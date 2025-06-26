@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -84,8 +83,8 @@ export default function TimeSlotSelector({
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Select Your Availability</h2>
-        <p className="text-gray-500">Please select 30-minute blocks when you're available</p>
+        <h2 className="text-2xl font-bold">Select Your Unavailability</h2>
+        <p className="text-gray-500">Please select 30-minute blocks when you're unavailable</p>
       </div>
       
       <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">

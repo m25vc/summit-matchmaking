@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,35 +11,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    
+    console.log('[ProtectedRoute] useEffect start');
     // Add a hard timeout to ensure we never get stuck in loading state
     const loadingTimeout = setTimeout(() => {
       if (mounted && isLoading) {
-        console.log("ProtectedRoute: Loading timeout triggered, forcing completion");
+        console.log('[ProtectedRoute] Loading timeout triggered, forcing completion');
         setIsLoading(false);
       }
     }, 3000); // 3 second max wait time
     
     const checkAuth = async () => {
       try {
-        console.log("ProtectedRoute: Checking session");
+        console.log('[ProtectedRoute] Checking session');
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[ProtectedRoute] Session:', session);
         
         if (!mounted) return;
         
         if (session?.user) {
-          console.log("ProtectedRoute: User is authenticated");
+          console.log('[ProtectedRoute] User is authenticated:', session.user);
           setUser(session.user);
           
           // Skip profile completion check - always allow users to access protected routes
           setProfileComplete(true);
         } else {
-          console.log("ProtectedRoute: No authenticated user found");
+          console.log('[ProtectedRoute] No authenticated user found');
           setUser(null);
         }
       } catch (error) {
         if (!mounted) return;
-        console.error("ProtectedRoute: Error checking session:", error);
+        console.error('[ProtectedRoute] Error checking session:', error);
         setUser(null);
       } finally {
         if (mounted) {
@@ -48,6 +48,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => {
             if (mounted) {
               setIsLoading(false);
+              console.log('[ProtectedRoute] setIsLoading(false)');
             }
           }, 100);
         }
@@ -58,7 +59,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      console.log(`ProtectedRoute: Auth state change: ${event}`);
+      console.log(`[ProtectedRoute] Auth state change: ${event}`, session);
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
         
@@ -67,16 +68,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         setTimeout(() => {
           if (mounted) {
             setIsLoading(false);
+            console.log('[ProtectedRoute] setIsLoading(false) after SIGNED_IN');
           }
         }, 300);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsLoading(false);
+        console.log('[ProtectedRoute] setIsLoading(false) after SIGNED_OUT');
       } else {
         // For other events, we can set isLoading to false after a short delay
         setTimeout(() => {
           if (mounted) {
             setIsLoading(false);
+            console.log('[ProtectedRoute] setIsLoading(false) after other event');
           }
         }, 200);
       }
@@ -84,7 +88,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     // Perform initial auth check
     checkAuth();
-
+    console.log('[ProtectedRoute] useEffect end');
     return () => {
       mounted = false;
       subscription.unsubscribe();
@@ -93,6 +97,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [location.pathname]);
 
   if (isLoading) {
+    console.log('[ProtectedRoute] isLoading, rendering skeleton');
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">
@@ -108,10 +113,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    console.log("ProtectedRoute: No user, redirecting to auth");
+    console.log('[ProtectedRoute] No user, redirecting to /auth');
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  console.log('[ProtectedRoute] Rendering children');
   // Always allow access to protected routes
   return <>{children}</>;
 };

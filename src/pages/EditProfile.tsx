@@ -137,6 +137,7 @@ export default function EditProfile() {
         .update({
           first_name: values.firstName,
           last_name: values.lastName,
+          job_title: values.jobTitle,
           email: values.email,
           company_name: values.firmName, // Using company_name field for firm name
         })
@@ -159,11 +160,15 @@ export default function EditProfile() {
           firm_website_url: values.firmWebsiteUrl || null,
           firm_hq: values.firmHQ || null,
           geographic_focus: (values.geographicFocus || []) as any,
-          check_size: values.checkSize || null,
+          check_size: Array.isArray(values.checkSize) ? values.checkSize : [],
           linkedin_url: values.linkedinUrl || null,
           additional_notes: values.additionalNotes || null,
           leads_deals: values.leadsDeals,
           business_models: values.businessModels || [],
+          industries_specific: values.industriesSpecific || '',
+          revenue_criteria: values.revenueCriteria || '',
+          geography_specific: values.geographySpecific || '',
+          check_size_specific: values.checkSizeSpecific || '',
         });
 
       if (error) {
@@ -238,6 +243,7 @@ export default function EditProfile() {
   const investorDefaultValues = investorDetails ? {
     firstName: profile.first_name || '',
     lastName: profile.last_name || '',
+    jobTitle: profile.job_title || '',
     email: profile.email || '',
     firmName: profile.company_name || '',
     firmDescription: investorDetails.firm_description,
@@ -246,16 +252,22 @@ export default function EditProfile() {
     firmWebsiteUrl: investorDetails.firm_website_url || '',
     firmHQ: investorDetails.firm_hq || '',
     geographicFocus: Array.isArray(investorDetails.geographic_focus) ? investorDetails.geographic_focus : [],
-    checkSize: typeof investorDetails.check_size === 'string' ? investorDetails.check_size : '',
+    checkSize: Array.isArray(investorDetails.check_size) ? investorDetails.check_size : [],
     linkedinUrl: investorDetails.linkedin_url || '',
     additionalNotes: investorDetails.additional_notes || '',
     leadsDeals: (investorDetails as any)['leads_deals'] || 'Sometimes',
     businessModels: ((investorDetails as any)['business_models'] || []) as ('B2B' | 'B2C')[],
+    industriesSpecific: (investorDetails as any)['industries_specific'] || '',
+    revenueCriteria: (investorDetails as any)['revenue_criteria'] || '',
+    geographySpecific: (investorDetails as any)['geography_specific'] || '',
+    checkSizeSpecific: (investorDetails as any)['check_size_specific'] || '',
   } : {
     firstName: profile.first_name || '',
     lastName: profile.last_name || '',
+    jobTitle: profile.job_title || '',
     email: profile.email || '',
     firmName: profile.company_name || '',
+    checkSize: [],
   };
 
   // Debug logging
@@ -405,10 +417,10 @@ export default function EditProfile() {
                           <span className="text-base text-gray-900 sm:ml-4">{investorDetails.firm_hq}</span>
                         </div>
                       )}
-                      {investorDetails.check_size && (
+                      {investorDetails.check_size && investorDetails.check_size.length > 0 && (
                         <div className="flex flex-col sm:flex-row sm:items-center">
                           <span className="text-sm font-medium text-gray-700 sm:w-40 sm:flex-shrink-0">Typical Check Size:</span>
-                          <span className="text-base text-gray-900 sm:ml-4">{investorDetails.check_size}</span>
+                          <span className="text-base text-gray-900 sm:ml-4">{Array.isArray(investorDetails.check_size) ? investorDetails.check_size.join(', ') : ''}</span>
                         </div>
                       )}
                       {investorDetails.firm_website_url && (
@@ -544,6 +556,39 @@ export default function EditProfile() {
                         <p className="text-base text-gray-900 leading-relaxed">{investorDetails.additional_notes}</p>
                       </div>
                     )}
+
+                    {/* Additional Criteria */}
+                    {(investorDetails as any)['industries_specific'] || (investorDetails as any)['revenue_criteria'] || (investorDetails as any)['geography_specific'] || (investorDetails as any)['check_size_specific'] ? (
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Criteria</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {(investorDetails as any)['industries_specific'] && (
+                            <div>
+                              <h4 className="text-md font-medium text-gray-800 mb-2">Other Industry Inclusion / Exclusion</h4>
+                              <p className="text-base text-gray-900 leading-relaxed">{(investorDetails as any)['industries_specific']}</p>
+                            </div>
+                          )}
+                          {(investorDetails as any)['revenue_criteria'] && (
+                            <div>
+                              <h4 className="text-md font-medium text-gray-800 mb-2">Revenue Criteria</h4>
+                              <p className="text-base text-gray-900 leading-relaxed">{(investorDetails as any)['revenue_criteria']}</p>
+                            </div>
+                          )}
+                          {(investorDetails as any)['geography_specific'] && (
+                            <div>
+                              <h4 className="text-md font-medium text-gray-800 mb-2">Other Geographic Focus</h4>
+                              <p className="text-base text-gray-900 leading-relaxed">{(investorDetails as any)['geography_specific']}</p>
+                            </div>
+                          )}
+                          {(investorDetails as any)['check_size_specific'] && (
+                            <div>
+                              <h4 className="text-md font-medium text-gray-800 mb-2">Specific Check Size</h4>
+                              <p className="text-base text-gray-900 leading-relaxed">{(investorDetails as any)['check_size_specific']}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
                   </>
                 )}
               </div>

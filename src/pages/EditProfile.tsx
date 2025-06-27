@@ -25,69 +25,70 @@ export default function EditProfile() {
   const founderFormRef = useRef<HTMLFormElement>(null);
   const investorFormRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate('/auth');
-          return;
-        }
-
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          toast.error("Failed to load profile");
-          return;
-        }
-        
-        if (!profileData) {
-          console.error('Profile not found');
-          toast.error("Profile not found");
-          navigate('/auth');
-          return;
-        }
-
-        setProfile(profileData);
-        
-        if (profileData.user_type === 'founder') {
-          const { data: founderData, error: founderError } = await supabase
-            .from('founder_details')
-            .select('*')
-            .eq('profile_id', user.id)
-            .maybeSingle();
-          
-          if (founderError) {
-            console.error('Error fetching founder details:', founderError);
-          } else if (founderData) {
-            setFounderDetails(founderData);
-          }
-        } else if (profileData.user_type === 'investor') {
-          const { data: investorData, error: investorError } = await supabase
-            .from('investor_details')
-            .select('*')
-            .eq('profile_id', user.id)
-            .maybeSingle();
-          
-          if (investorError) {
-            console.error('Error fetching investor details:', investorError);
-          } else if (investorData) {
-            setInvestorDetails(investorData);
-          }
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error("Failed to load profile");
-      } finally {
-        setLoading(false);
+  // Move fetchProfile out of useEffect so it can be called after save
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
       }
-    };
 
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast.error("Failed to load profile");
+        return;
+      }
+      
+      if (!profileData) {
+        console.error('Profile not found');
+        toast.error("Profile not found");
+        navigate('/auth');
+        return;
+      }
+
+      setProfile(profileData);
+      
+      if (profileData.user_type === 'founder') {
+        const { data: founderData, error: founderError } = await supabase
+          .from('founder_details')
+          .select('*')
+          .eq('profile_id', user.id)
+          .maybeSingle();
+        
+        if (founderError) {
+          console.error('Error fetching founder details:', founderError);
+        } else if (founderData) {
+          setFounderDetails(founderData);
+        }
+      } else if (profileData.user_type === 'investor') {
+        const { data: investorData, error: investorError } = await supabase
+          .from('investor_details')
+          .select('*')
+          .eq('profile_id', user.id)
+          .maybeSingle();
+        
+        if (investorError) {
+          console.error('Error fetching investor details:', investorError);
+        } else if (investorData) {
+          setInvestorDetails(investorData);
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, [navigate]);
 
@@ -118,6 +119,7 @@ export default function EditProfile() {
       }
 
       toast.success("Profile updated successfully");
+      await fetchProfile();
       setIsEditing(false);
       setIsSaving(false);
     } catch (error) {
@@ -147,27 +149,21 @@ export default function EditProfile() {
         return;
       }
 
-      // Convert the geographicFocus array to a string if it exists and has elements
-      const geographicFocusValue = values.geographicFocus && values.geographicFocus.length > 0
-        ? values.geographicFocus[0] // Taking the first value from the array
-        : null;
-        
       const { error } = await supabase
         .from('investor_details')
         .upsert({
           profile_id: profile!.id,
           firm_description: values.firmDescription,
-          investment_thesis: values.investmentThesis || null,
-          min_investment_amount: values.minInvestmentAmount ? parseInt(values.minInvestmentAmount) : null,
-          max_investment_amount: values.maxInvestmentAmount ? parseInt(values.maxInvestmentAmount) : null,
-          preferred_industries: values.preferredIndustries,
-          preferred_stages: values.preferredStages,
+          preferred_industries: values.preferredIndustries || [],
+          preferred_stages: values.preferredStages || [],
           firm_website_url: values.firmWebsiteUrl || null,
           firm_hq: values.firmHQ || null,
-          geographic_focus: geographicFocusValue, // Converting array to string
+          geographic_focus: (values.geographicFocus || []) as any,
           check_size: values.checkSize || null,
           linkedin_url: values.linkedinUrl || null,
           additional_notes: values.additionalNotes || null,
+          leads_deals: values.leadsDeals,
+          business_models: values.businessModels || [],
         });
 
       if (error) {
@@ -178,6 +174,7 @@ export default function EditProfile() {
       }
 
       toast.success("Profile updated successfully");
+      await fetchProfile();
       setIsEditing(false);
       setIsSaving(false);
     } catch (error) {
@@ -244,23 +241,27 @@ export default function EditProfile() {
     email: profile.email || '',
     firmName: profile.company_name || '',
     firmDescription: investorDetails.firm_description,
-    investmentThesis: investorDetails.investment_thesis || '',
-    minInvestmentAmount: investorDetails.min_investment_amount?.toString() || '',
-    maxInvestmentAmount: investorDetails.max_investment_amount?.toString() || '',
     preferredIndustries: investorDetails.preferred_industries || [],
     preferredStages: investorDetails.preferred_stages || [],
     firmWebsiteUrl: investorDetails.firm_website_url || '',
     firmHQ: investorDetails.firm_hq || '',
-    geographicFocus: investorDetails.geographic_focus ? [investorDetails.geographic_focus] : [],
-    checkSize: investorDetails.check_size || '',
+    geographicFocus: Array.isArray(investorDetails.geographic_focus) ? investorDetails.geographic_focus : [],
+    checkSize: typeof investorDetails.check_size === 'string' ? investorDetails.check_size : '',
     linkedinUrl: investorDetails.linkedin_url || '',
     additionalNotes: investorDetails.additional_notes || '',
+    leadsDeals: (investorDetails as any)['leads_deals'] || 'Sometimes',
+    businessModels: ((investorDetails as any)['business_models'] || []) as ('B2B' | 'B2C')[],
   } : {
     firstName: profile.first_name || '',
     lastName: profile.last_name || '',
     email: profile.email || '',
     firmName: profile.company_name || '',
   };
+
+  // Debug logging
+  console.log('investorDetails:', investorDetails);
+  console.log('investorDefaultValues:', investorDefaultValues);
+  console.log('investorDefaultValues.businessModels:', investorDefaultValues.businessModels);
 
   return (
     <DashboardLayout>
@@ -309,15 +310,18 @@ export default function EditProfile() {
                 onSubmit={async (values) => {
                   await onFounderSubmit(values);
                 }}
+                setIsSaving={setIsSaving}
                 ref={founderFormRef}
               />
-            ) : profile.user_type === 'investor' ? (
+            ) : profile.user_type === 'investor' && investorDetails ? (
               <InvestorForm
+                key={`investor-form-${isEditing}-${(investorDetails as any).profile_id}`}
                 defaultValues={investorDefaultValues}
                 showSubmitButton={false}
                 onSubmit={async (values) => {
                   await onInvestorSubmit(values);
                 }}
+                setIsSaving={setIsSaving}
                 ref={investorFormRef}
               />
             ) : null}
@@ -484,13 +488,6 @@ export default function EditProfile() {
                       <div className="bg-white rounded-lg border border-gray-200 p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Firm Description</h3>
                         <p className="text-base text-gray-900 leading-relaxed">{investorDetails.firm_description}</p>
-                      </div>
-                    )}
-
-                    {investorDetails.investment_thesis && (
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Investment Thesis</h3>
-                        <p className="text-base text-gray-900 leading-relaxed">{investorDetails.investment_thesis}</p>
                       </div>
                     )}
 

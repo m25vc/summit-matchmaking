@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/ui/dropdown-menu";
 import { investorFormSchema, type InvestorFormValues } from "@/schemas/profileSchemas";
+import { toast } from "sonner";
 
 // Industry options for the multi-select dropdown
 const industryOptions = [
@@ -173,26 +174,45 @@ interface InvestorFormProps {
   defaultValues?: Partial<InvestorFormValues>;
   onSubmit: (values: InvestorFormValues) => Promise<void>;
   showSubmitButton?: boolean;
+  setIsSaving?: (saving: boolean) => void;
 }
 
 export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
-  ({ defaultValues, onSubmit, showSubmitButton = true }, ref) => {
+  ({ defaultValues, onSubmit, showSubmitButton = true, setIsSaving }, ref) => {
     // Ensure default values have arrays for multi-select fields
     const initialValues = {
       ...defaultValues,
       preferredIndustries: defaultValues?.preferredIndustries || [],
       preferredStages: defaultValues?.preferredStages || [],
       geographicFocus: defaultValues?.geographicFocus || [],
+      businessModels: defaultValues?.businessModels || [],
     };
 
     const form = useForm<InvestorFormValues>({
       resolver: zodResolver(investorFormSchema),
       defaultValues: initialValues,
+      mode: 'onChange',
+      reValidateMode: 'onChange',
     });
+
+    // Debug logging
+    console.log('InvestorForm defaultValues:', defaultValues);
+    console.log('InvestorForm initialValues:', initialValues);
+    console.log('InvestorForm current values:', form.getValues());
 
     return (
       <Form {...form}>
-        <form ref={ref} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          ref={ref}
+          onSubmit={form.handleSubmit(
+            onSubmit,
+            (errors) => {
+              if (typeof setIsSaving === 'function') setIsSaving(false);
+              toast.error("Please fix the errors in the form before saving.");
+            }
+          )}
+          className="space-y-6"
+        >
           {/* Personal Information */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
@@ -210,7 +230,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="lastName"
@@ -224,7 +243,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="email"
@@ -238,7 +256,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="linkedinUrl"
@@ -252,7 +269,13 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
+            </div>
+          </div>
 
+          {/* Firm Overview Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Firm Overview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <FormField
                 control={form.control}
                 name="firmName"
@@ -266,7 +289,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="firmWebsiteUrl"
@@ -281,11 +303,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                 )}
               />
             </div>
-          </div>
-
-          {/* Firm Description Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Firm Overview</h3>
             <FormField
               control={form.control}
               name="firmDescription"
@@ -303,7 +320,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                 </FormItem>
               )}
             />
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               <FormField
                 control={form.control}
@@ -318,7 +334,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="checkSize"
@@ -346,7 +361,6 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="leadsDeals"
@@ -423,50 +437,63 @@ export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
                 <FormField
                   control={form.control}
                   name="businessModels"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 mb-3">Business Models</FormLabel>
-                      <FormControl>
-                        <div className="flex flex-col space-y-2">
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              value="B2B"
-                              checked={field.value?.includes("B2B") || false}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  field.onChange([...(field.value || []), "B2B"]);
-                                } else {
-                                  field.onChange((field.value || []).filter((v: string) => v !== "B2B"));
-                                }
-                              }}
-                              disabled={form.formState.isSubmitting}
-                              className="text-base"
-                            />
-                            <span className="text-sm text-gray-700">B2B</span>
-                          </label>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              value="B2C"
-                              checked={field.value?.includes("B2C") || false}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  field.onChange([...(field.value || []), "B2C"]);
-                                } else {
-                                  field.onChange((field.value || []).filter((v: string) => v !== "B2C"));
-                                }
-                              }}
-                              disabled={form.formState.isSubmitting}
-                              className="text-base"
-                            />
-                            <span className="text-sm text-gray-700">B2C</span>
-                          </label>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Ensure field.value is always an array
+                    const currentValue = Array.isArray(field.value) ? field.value : [];
+                    
+                    // Debug logging for business models
+                    console.log('businessModels field.value:', field.value);
+                    console.log('businessModels currentValue:', currentValue);
+                    console.log('businessModels includes B2B:', currentValue.includes("B2B"));
+                    console.log('businessModels includes B2C:', currentValue.includes("B2C"));
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 mb-3">Business Models</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-col space-y-2">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                value="B2B"
+                                checked={currentValue.includes("B2B")}
+                                onChange={e => {
+                                  console.log('B2B checkbox changed:', e.target.checked);
+                                  if (e.target.checked) {
+                                    field.onChange([...currentValue, "B2B"]);
+                                  } else {
+                                    field.onChange(currentValue.filter((v: string) => v !== "B2B"));
+                                  }
+                                }}
+                                disabled={form.formState.isSubmitting}
+                                className="text-base"
+                              />
+                              <span className="text-sm text-gray-700">B2B</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                value="B2C"
+                                checked={currentValue.includes("B2C")}
+                                onChange={e => {
+                                  console.log('B2C checkbox changed:', e.target.checked);
+                                  if (e.target.checked) {
+                                    field.onChange([...currentValue, "B2C"]);
+                                  } else {
+                                    field.onChange(currentValue.filter((v: string) => v !== "B2C"));
+                                  }
+                                }}
+                                disabled={form.formState.isSubmitting}
+                                className="text-base"
+                              />
+                              <span className="text-sm text-gray-700">B2C</span>
+                            </label>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </div>

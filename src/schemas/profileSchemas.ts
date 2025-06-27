@@ -21,9 +21,6 @@ export const investorFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   firmName: z.string().min(1, "Firm name is required"),
   firmDescription: z.string().min(10, "Please provide a longer description"),
-  investmentThesis: z.string().optional(),
-  minInvestmentAmount: z.string().optional(),
-  maxInvestmentAmount: z.string().optional(),
   preferredIndustries: z.array(z.string()).min(1, "Please specify at least one preferred industry"),
   preferredStages: z.array(z.string()).min(1, "Please specify at least one preferred stage"),
   firmWebsiteUrl: z.string().url().optional().or(z.literal("")),
@@ -33,7 +30,7 @@ export const investorFormSchema = z.object({
   linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),
   leadsDeals: z.enum(["Always", "Sometimes", "Never"]),
-  businessModels: z.array(z.enum(["B2B", "B2C"])).optional(),
+  businessModels: z.array(z.enum(["B2B", "B2C"])).optional().default([]),
 });
 
 export type FounderFormValues = z.infer<typeof founderFormSchema>;

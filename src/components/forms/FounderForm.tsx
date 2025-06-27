@@ -14,23 +14,37 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { founderFormSchema, type FounderFormValues } from "@/schemas/profileSchemas";
+import { toast } from "sonner";
 
 interface FounderFormProps {
   defaultValues?: Partial<FounderFormValues>;
   onSubmit: (values: FounderFormValues) => Promise<void>;
   showSubmitButton?: boolean;
+  setIsSaving?: (saving: boolean) => void;
 }
 
 export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
-  ({ defaultValues, onSubmit, showSubmitButton = true }, ref) => {
+  ({ defaultValues, onSubmit, showSubmitButton = true, setIsSaving }, ref) => {
     const form = useForm<FounderFormValues>({
       resolver: zodResolver(founderFormSchema),
       defaultValues: defaultValues || {},
+      mode: 'onChange',
+      reValidateMode: 'onChange',
     });
 
     return (
       <Form {...form}>
-        <form ref={ref} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          ref={ref}
+          onSubmit={form.handleSubmit(
+            onSubmit,
+            (errors) => {
+              if (typeof setIsSaving === 'function') setIsSaving(false);
+              toast.error("Please fix the errors in the form before saving.");
+            }
+          )}
+          className="space-y-6"
+        >
           {/* Company Description Section */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Overview</h3>

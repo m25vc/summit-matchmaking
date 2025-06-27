@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import DashboardLayout from '@/components/DashboardLayout';
@@ -8,6 +8,7 @@ import { FounderForm } from '@/components/forms/FounderForm';
 import { InvestorForm } from '@/components/forms/InvestorForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserCog } from 'lucide-react';
+import type { FounderFormValues, InvestorFormValues } from '@/schemas/profileSchemas';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type FounderDetails = Database['public']['Tables']['founder_details']['Row'];
@@ -20,6 +21,9 @@ export default function EditProfile() {
   const [investorDetails, setInvestorDetails] = useState<InvestorDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const founderFormRef = useRef<HTMLFormElement>(null);
+  const investorFormRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -109,14 +113,17 @@ export default function EditProfile() {
       if (error) {
         console.error('Error updating founder details:', error);
         toast.error("Failed to update profile");
+        setIsSaving(false);
         return;
       }
 
       toast.success("Profile updated successfully");
-      // navigate('/dashboard'); // Removed to stay on profile page
+      setIsEditing(false);
+      setIsSaving(false);
     } catch (error) {
       console.error('Error:', error);
       toast.error("Failed to update profile");
+      setIsSaving(false);
     }
   };
 
@@ -136,6 +143,7 @@ export default function EditProfile() {
       if (profileError) {
         console.error('Error updating profile:', profileError);
         toast.error("Failed to update profile");
+        setIsSaving(false);
         return;
       }
 
@@ -165,14 +173,40 @@ export default function EditProfile() {
       if (error) {
         console.error('Error updating investor details:', error);
         toast.error("Failed to update profile");
+        setIsSaving(false);
         return;
       }
 
       toast.success("Profile updated successfully");
-      // navigate('/dashboard'); // Removed to stay on profile page
+      setIsEditing(false);
+      setIsSaving(false);
     } catch (error) {
       console.error('Error:', error);
       toast.error("Failed to update profile");
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    
+    try {
+      // Trigger form submission based on user type
+      if (profile?.user_type === 'founder' && founderFormRef.current) {
+        const submitButton = founderFormRef.current.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitButton) {
+          submitButton.click();
+        }
+      } else if (profile?.user_type === 'investor' && investorFormRef.current) {
+        const submitButton = investorFormRef.current.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitButton) {
+          submitButton.click();
+        }
+      }
+    } catch (error) {
+      console.error('Error saving:', error);
+      setIsSaving(false);
     }
   };
 
@@ -231,32 +265,62 @@ export default function EditProfile() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-7xl mx-auto space-y-6 p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">{isEditing ? 'Edit Profile' : 'Profile'}</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isEditing ? 'Edit Profile' : 'Profile'}
+          </h1>
+          {!isEditing && (
+            <button
+              className="inline-flex items-center justify-center w-10 h-10 bg-white hover:bg-gray-50 border border-gray-300 rounded-full text-gray-600 hover:text-gray-800 transition-colors shadow-sm"
+              onClick={() => setIsEditing(true)}
+              title="Edit Profile"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
+          {isEditing && (
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+                disabled={isSaving}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          )}
+        </div>
         {isEditing ? (
           <>
             {profile.user_type === 'founder' ? (
               <FounderForm
                 defaultValues={founderDefaultValues}
+                showSubmitButton={false}
                 onSubmit={async (values) => {
                   await onFounderSubmit(values);
-                  setIsEditing(false);
                 }}
+                ref={founderFormRef}
               />
             ) : profile.user_type === 'investor' ? (
               <InvestorForm
                 defaultValues={investorDefaultValues}
+                showSubmitButton={false}
                 onSubmit={async (values) => {
                   await onInvestorSubmit(values);
-                  setIsEditing(false);
                 }}
+                ref={investorFormRef}
               />
             ) : null}
-            <button
-              className="mt-6 inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-base font-medium text-gray-700 transition-colors"
-              onClick={() => setIsEditing(false)}
-            >
-              Cancel
-            </button>
           </>
         ) : (
           <>
@@ -487,13 +551,6 @@ export default function EditProfile() {
                 )}
               </div>
             )}
-            <button
-              className="mt-6 inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-md text-base font-medium text-white transition-colors shadow-sm"
-              onClick={() => setIsEditing(true)}
-            >
-              <UserCog className="h-5 w-5 mr-2" />
-              Edit Profile
-            </button>
           </>
         )}
       </div>

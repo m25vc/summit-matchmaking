@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -171,295 +172,109 @@ const industryCols = Array.from({ length: industryColCount }, (_, i) => industry
 interface InvestorFormProps {
   defaultValues?: Partial<InvestorFormValues>;
   onSubmit: (values: InvestorFormValues) => Promise<void>;
+  showSubmitButton?: boolean;
 }
 
-export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
-  // Ensure default values have arrays for multi-select fields
-  const initialValues = {
-    ...defaultValues,
-    preferredIndustries: defaultValues?.preferredIndustries || [],
-    preferredStages: defaultValues?.preferredStages || [],
-    geographicFocus: defaultValues?.geographicFocus || [],
-  };
+export const InvestorForm = forwardRef<HTMLFormElement, InvestorFormProps>(
+  ({ defaultValues, onSubmit, showSubmitButton = true }, ref) => {
+    // Ensure default values have arrays for multi-select fields
+    const initialValues = {
+      ...defaultValues,
+      preferredIndustries: defaultValues?.preferredIndustries || [],
+      preferredStages: defaultValues?.preferredStages || [],
+      geographicFocus: defaultValues?.geographicFocus || [],
+    };
 
-  const form = useForm<InvestorFormValues>({
-    resolver: zodResolver(investorFormSchema),
-    defaultValues: initialValues,
-  });
+    const form = useForm<InvestorFormValues>({
+      resolver: zodResolver(investorFormSchema),
+      defaultValues: initialValues,
+    });
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Personal Information */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your first name" className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your last name" className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Preferred Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter your email address" className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="linkedinUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">LinkedIn Profile URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://linkedin.com/in/..." className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="firmName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Firm Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your firm name" className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="firmWebsiteUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Firm Website URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://..." className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Firm Description Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Firm Overview</h3>
-          <FormField
-            control={form.control}
-            name="firmDescription"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Firm Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Describe your investment firm..."
-                    className="min-h-[120px] text-base"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            <FormField
-              control={form.control}
-              name="firmHQ"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Firm HQ Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Chicago, IL" className="text-base" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="checkSize"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Typical Check Size</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="text-base">
-                        <SelectValue placeholder="Select typical check size" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="<50K">&lt;$50K</SelectItem>
-                      <SelectItem value="50K - 100K">$50K - $100K</SelectItem>
-                      <SelectItem value="100K - 250K">$100K - $250K</SelectItem>
-                      <SelectItem value="250K - 500K">$250K - $500K</SelectItem>
-                      <SelectItem value="500K - 1M">$500K - $1M</SelectItem>
-                      <SelectItem value="1M - 3M">$1M - $3M</SelectItem>
-                      <SelectItem value="3M - 7M">$3M - $7M</SelectItem>
-                      <SelectItem value="7M+">$7M+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="leadsDeals"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Leads Deals</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="text-base">
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Always">Always</SelectItem>
-                      <SelectItem value="Sometimes">Sometimes</SelectItem>
-                      <SelectItem value="Never">Never</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Investment Preferences */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Preferences</h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            {/* Preferred Stages - Left Column */}
-            <div>
+    return (
+      <Form {...form}>
+        <form ref={ref} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Personal Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="preferredStages"
+                name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 mb-3">Preferred Investment Stages</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">First Name</FormLabel>
                     <FormControl>
-                      <div className="flex gap-4">
-                        {rowMajorStageCols.map((col, colIdx) => (
-                          <div key={colIdx} className="flex flex-col space-y-2">
-                            {col.map(option => (
-                              <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[120px]">
-                                <input
-                                  type="checkbox"
-                                  value={option.value}
-                                  checked={field.value?.includes(option.value) || false}
-                                  onChange={e => {
-                                    if (e.target.checked) {
-                                      field.onChange([...(field.value || []), option.value]);
-                                    } else {
-                                      field.onChange((field.value || []).filter((v: string) => v !== option.value));
-                                    }
-                                  }}
-                                  disabled={form.formState.isSubmitting}
-                                  className="text-base"
-                                />
-                                <span className="text-sm text-gray-700">{option.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
+                      <Input placeholder="Enter your first name" className="text-base" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            {/* Business Models - Right Column */}
-            <div>
               <FormField
                 control={form.control}
-                name="businessModels"
+                name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 mb-3">Business Models</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Last Name</FormLabel>
                     <FormControl>
-                      <div className="flex flex-col space-y-2">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            value="B2B"
-                            checked={field.value?.includes("B2B") || false}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                field.onChange([...(field.value || []), "B2B"]);
-                              } else {
-                                field.onChange((field.value || []).filter((v: string) => v !== "B2B"));
-                              }
-                            }}
-                            disabled={form.formState.isSubmitting}
-                            className="text-base"
-                          />
-                          <span className="text-sm text-gray-700">B2B</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            value="B2C"
-                            checked={field.value?.includes("B2C") || false}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                field.onChange([...(field.value || []), "B2C"]);
-                              } else {
-                                field.onChange((field.value || []).filter((v: string) => v !== "B2C"));
-                              }
-                            }}
-                            disabled={form.formState.isSubmitting}
-                            className="text-base"
-                          />
-                          <span className="text-sm text-gray-700">B2C</span>
-                        </label>
-                      </div>
+                      <Input placeholder="Enter your last name" className="text-base" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Preferred Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter your email address" className="text-base" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="linkedinUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">LinkedIn Profile URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://linkedin.com/in/..." className="text-base" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="firmName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Firm Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your firm name" className="text-base" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="firmWebsiteUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Firm Website URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://..." className="text-base" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -468,83 +283,247 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
             </div>
           </div>
 
-          <FormField
-            control={form.control}
-            name="preferredIndustries"
-            render={({ field }) => (
-              <FormItem className="mt-8">
-                <FormLabel className="text-sm font-medium text-gray-700 mb-3">Preferred Industries</FormLabel>
-                <FormControl>
-                  <div className="flex gap-4">
-                    {industryCols.map((col, colIdx) => (
-                      <div key={colIdx} className="flex flex-col space-y-2">
-                        {col.map(option => (
-                          <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[140px]">
+          {/* Firm Description Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Firm Overview</h3>
+            <FormField
+              control={form.control}
+              name="firmDescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">Firm Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe your investment firm..."
+                      className="min-h-[120px] text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+              <FormField
+                control={form.control}
+                name="firmHQ"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Firm HQ Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Chicago, IL" className="text-base" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="checkSize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Typical Check Size</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select typical check size" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="<50K">&lt;$50K</SelectItem>
+                        <SelectItem value="50K - 100K">$50K - $100K</SelectItem>
+                        <SelectItem value="100K - 250K">$100K - $250K</SelectItem>
+                        <SelectItem value="250K - 500K">$250K - $500K</SelectItem>
+                        <SelectItem value="500K - 1M">$500K - $1M</SelectItem>
+                        <SelectItem value="1M - 3M">$1M - $3M</SelectItem>
+                        <SelectItem value="3M - 7M">$3M - $7M</SelectItem>
+                        <SelectItem value="7M+">$7M+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="leadsDeals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Leads Deals</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Always">Always</SelectItem>
+                        <SelectItem value="Sometimes">Sometimes</SelectItem>
+                        <SelectItem value="Never">Never</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Investment Preferences */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Preferences</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+              {/* Preferred Stages - Left Column */}
+              <div>
+                <FormField
+                  control={form.control}
+                  name="preferredStages"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-700 mb-3">Preferred Investment Stages</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-4">
+                          {rowMajorStageCols.map((col, colIdx) => (
+                            <div key={colIdx} className="flex flex-col space-y-2">
+                              {col.map(option => (
+                                <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[120px]">
+                                  <input
+                                    type="checkbox"
+                                    value={option.value}
+                                    checked={field.value?.includes(option.value) || false}
+                                    onChange={e => {
+                                      if (e.target.checked) {
+                                        field.onChange([...(field.value || []), option.value]);
+                                      } else {
+                                        field.onChange((field.value || []).filter((v: string) => v !== option.value));
+                                      }
+                                    }}
+                                    disabled={form.formState.isSubmitting}
+                                    className="text-base"
+                                  />
+                                  <span className="text-sm text-gray-700">{option.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Business Models - Right Column */}
+              <div>
+                <FormField
+                  control={form.control}
+                  name="businessModels"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-700 mb-3">Business Models</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-col space-y-2">
+                          <label className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              value={option.value}
-                              checked={field.value?.includes(option.value) || false}
+                              value="B2B"
+                              checked={field.value?.includes("B2B") || false}
                               onChange={e => {
                                 if (e.target.checked) {
-                                  field.onChange([...(field.value || []), option.value]);
+                                  field.onChange([...(field.value || []), "B2B"]);
                                 } else {
-                                  field.onChange((field.value || []).filter((v: string) => v !== option.value));
+                                  field.onChange((field.value || []).filter((v: string) => v !== "B2B"));
                                 }
                               }}
                               disabled={form.formState.isSubmitting}
                               className="text-base"
                             />
-                            <span className="text-sm text-gray-700">{option.label}</span>
+                            <span className="text-sm text-gray-700">B2B</span>
                           </label>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              value="B2C"
+                              checked={field.value?.includes("B2C") || false}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  field.onChange([...(field.value || []), "B2C"]);
+                                } else {
+                                  field.onChange((field.value || []).filter((v: string) => v !== "B2C"));
+                                }
+                              }}
+                              disabled={form.formState.isSubmitting}
+                              className="text-base"
+                            />
+                            <span className="text-sm text-gray-700">B2C</span>
+                          </label>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
-        {/* Geographic Focus */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Focus</h3>
-          <FormField
-            control={form.control}
-            name="geographicFocus"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700 mb-3">Geographic Focus</FormLabel>
-                <FormControl>
-                  <div className="space-y-4">
-                    {/* Global & National */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {geoGlobalNational.map(option => (
-                        <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[220px]">
-                          <input
-                            type="checkbox"
-                            value={option.value}
-                            checked={field.value?.includes(option.value) || false}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                field.onChange([...(field.value || []), option.value]);
-                              } else {
-                                field.onChange((field.value || []).filter((v: string) => v !== option.value));
-                              }
-                            }}
-                            disabled={form.formState.isSubmitting}
-                            className="text-base"
-                          />
-                          <span className="text-sm text-gray-700">{option.label}</span>
-                        </label>
+            <FormField
+              control={form.control}
+              name="preferredIndustries"
+              render={({ field }) => (
+                <FormItem className="mt-8">
+                  <FormLabel className="text-sm font-medium text-gray-700 mb-3">Preferred Industries</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-4">
+                      {industryCols.map((col, colIdx) => (
+                        <div key={colIdx} className="flex flex-col space-y-2">
+                          {col.map(option => (
+                            <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[140px]">
+                              <input
+                                type="checkbox"
+                                value={option.value}
+                                checked={field.value?.includes(option.value) || false}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    field.onChange([...(field.value || []), option.value]);
+                                  } else {
+                                    field.onChange((field.value || []).filter((v: string) => v !== option.value));
+                                  }
+                                }}
+                                disabled={form.formState.isSubmitting}
+                                className="text-base"
+                              />
+                              <span className="text-sm text-gray-700">{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       ))}
                     </div>
-                    {/* Regional */}
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800 mb-2">Regional</div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Geographic Focus */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Focus</h3>
+            <FormField
+              control={form.control}
+              name="geographicFocus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700 mb-3">Geographic Focus</FormLabel>
+                  <FormControl>
+                    <div className="space-y-4">
+                      {/* Global & National */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        {geoRegional.map(option => (
+                        {geoGlobalNational.map(option => (
                           <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[220px]">
                             <input
                               type="checkbox"
@@ -564,64 +543,93 @@ export function InvestorForm({ defaultValues, onSubmit }: InvestorFormProps) {
                           </label>
                         ))}
                       </div>
-                    </div>
-                    {/* States */}
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800 mb-2">States</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        {geoStates.map(option => (
-                          <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[220px]">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={field.value?.includes(option.value) || false}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  field.onChange([...(field.value || []), option.value]);
-                                } else {
-                                  field.onChange((field.value || []).filter((v: string) => v !== option.value));
-                                }
-                              }}
-                              disabled={form.formState.isSubmitting}
-                              className="text-base"
-                            />
-                            <span className="text-sm text-gray-700">{option.label}</span>
-                          </label>
-                        ))}
+                      {/* Regional */}
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800 mb-2">Regional</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {geoRegional.map(option => (
+                            <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[220px]">
+                              <input
+                                type="checkbox"
+                                value={option.value}
+                                checked={field.value?.includes(option.value) || false}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    field.onChange([...(field.value || []), option.value]);
+                                  } else {
+                                    field.onChange((field.value || []).filter((v: string) => v !== option.value));
+                                  }
+                                }}
+                                disabled={form.formState.isSubmitting}
+                                className="text-base"
+                              />
+                              <span className="text-sm text-gray-700">{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      {/* States */}
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800 mb-2">States</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {geoStates.map(option => (
+                            <label key={option.value} className="flex items-center space-x-2 ml-4 min-w-[220px]">
+                              <input
+                                type="checkbox"
+                                value={option.value}
+                                checked={field.value?.includes(option.value) || false}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    field.onChange([...(field.value || []), option.value]);
+                                  } else {
+                                    field.onChange((field.value || []).filter((v: string) => v !== option.value));
+                                  }
+                                }}
+                                disabled={form.formState.isSubmitting}
+                                className="text-base"
+                              />
+                              <span className="text-sm text-gray-700">{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        {/* Additional Information */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
-          <FormField
-            control={form.control}
-            name="additionalNotes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Additional Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Any additional information you'd like to share..."
-                    className="min-h-[80px] text-base"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+          {/* Additional Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+            <FormField
+              control={form.control}
+              name="additionalNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">Additional Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Any additional information you'd like to share..."
+                      className="min-h-[80px] text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <Button type="submit" className="w-full text-base font-medium py-3">Save Profile</Button>
-      </form>
-    </Form>
-  );
-}
+          {showSubmitButton && (
+            <Button type="submit" className="w-full text-base font-medium py-3">Save Profile</Button>
+          )}
+          {/* Hidden submit button for sticky save functionality */}
+          <button type="submit" className="hidden" />
+        </form>
+      </Form>
+    );
+  }
+);

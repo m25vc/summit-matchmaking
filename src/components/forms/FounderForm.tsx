@@ -45,7 +45,79 @@ export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
           )}
           className="space-y-6"
         >
-          {/* Company Description Section */}
+          {/* Personal Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your first name" className="text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your last name" className="text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="jobTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Job Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your job title" className="text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Preferred Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter your email address" className="text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="linkedinUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">LinkedIn Profile URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://linkedin.com/in/..." className="text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Company Overview Section (combined) */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Overview</h3>
             <FormField
@@ -53,7 +125,7 @@ export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
               name="companyDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Company Description</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">One Line Company Description</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your company..."
@@ -65,12 +137,7 @@ export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
                 </FormItem>
               )}
             />
-          </div>
-
-          {/* Basic Company Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               <FormField
                 control={form.control}
                 name="industry"
@@ -84,142 +151,6 @@ export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="companyStage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">Company Stage</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Pre-seed, Seed, Series A" className="text-base" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="fundingStage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">Funding Stage</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Pre-seed, Seed, Series A" className="text-base" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="targetRaiseAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">Target Raise Amount (in thousands)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 1000 for $1M" className="text-base" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Financial Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="lastRoundRaised"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">Most Recent Round Raised</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="text-base">
-                          <SelectValue placeholder="Select most recent round" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Pre-seed">Pre-seed</SelectItem>
-                        <SelectItem value="Seed">Seed</SelectItem>
-                        <SelectItem value="Series A">Series A</SelectItem>
-                        <SelectItem value="Series B">Series B</SelectItem>
-                        <SelectItem value="Series C+">Series C+</SelectItem>
-                        <SelectItem value="Not Raised Yet">Not Raised Yet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="currentRevenue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">Current Annual Revenue Range</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="text-base">
-                          <SelectValue placeholder="Select revenue range" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="$0-$10K">$0-$10K</SelectItem>
-                        <SelectItem value="$10K-$50K">$10K-$50K</SelectItem>
-                        <SelectItem value="$50K-$100K">$50K-$100K</SelectItem>
-                        <SelectItem value="$100K-$500K">$100K-$500K</SelectItem>
-                        <SelectItem value="$500K-$1M">$500K-$1M</SelectItem>
-                        <SelectItem value="$1M+">$1M+</SelectItem>
-                        <SelectItem value="No Revenue Yet">No Revenue Yet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="nextRaisePlanned"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">When Do You Plan to Raise Again?</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="text-base">
-                          <SelectValue placeholder="Select next raise timeline" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Q2 2025">Q2 2025</SelectItem>
-                        <SelectItem value="Q3 2025">Q3 2025</SelectItem>
-                        <SelectItem value="Q4 2025">Q4 2025</SelectItem>
-                        <SelectItem value="Q1 2026">Q1 2026</SelectItem>
-                        <SelectItem value="Q2 2026">Q2 2026</SelectItem>
-                        <SelectItem value="Q3 2026">Q3 2026</SelectItem>
-                        <SelectItem value="Q4 2026">Q4 2026</SelectItem>
-                        <SelectItem value="No Plans">No Immediate Plans</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="companyWebsiteUrl"
@@ -233,15 +164,64 @@ export const FounderForm = forwardRef<HTMLFormElement, FounderFormProps>(
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="linkedinUrl"
+                name="lastRoundRaised"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">LinkedIn Profile URL</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Most Recent Round Raised</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select most recent round" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Pre-Seed">Pre-Seed</SelectItem>
+                        <SelectItem value="Seed">Seed</SelectItem>
+                        <SelectItem value="Seed+">Seed+</SelectItem>
+                        <SelectItem value="Series A">Series A</SelectItem>
+                        <SelectItem value="Series B">Series B</SelectItem>
+                        <SelectItem value="Series C">Series C</SelectItem>
+                        <SelectItem value="Series D">Series D</SelectItem>
+                        <SelectItem value="Series E">Series E</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="currentRevenue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Current Annual Revenue</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select revenue" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="< $1M">&lt; $1M</SelectItem>
+                        <SelectItem value="$1M - $3M">$1M - $3M</SelectItem>
+                        <SelectItem value="$3M - $5M">$3M - $5M</SelectItem>
+                        <SelectItem value="> $5M">&gt; $5M</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nextRaisePlanned"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">When Do You Plan to Raise Again?</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://linkedin.com/in/..." className="text-base" {...field} />
+                      <Input placeholder="e.g. Q4 2025, Not sure, After product launch, etc." className="text-base" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

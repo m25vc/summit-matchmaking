@@ -1,16 +1,19 @@
 import * as z from "zod";
 
 export const founderFormSchema = z.object({
+  // Personal Information
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  jobTitle: z.string().optional(),
+  email: z.string().email("Please enter a valid email address"),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
+  // Company Information
   industry: z.string().min(1, "Industry is required"),
-  companyStage: z.string().min(1, "Company stage is required"),
-  fundingStage: z.string().min(1, "Funding stage is required"),
   companyDescription: z.string().min(10, "Please provide a longer description"),
-  targetRaiseAmount: z.string().optional(),
   companyWebsiteUrl: z.string().url().optional().or(z.literal("")),
   lastRoundRaised: z.string().optional(),
   currentRevenue: z.string().optional(),
   nextRaisePlanned: z.string().optional(),
-  linkedinUrl: z.string().url().optional().or(z.literal("")),
   additionalNotes: z.string().optional(),
 });
 

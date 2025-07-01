@@ -1,4 +1,4 @@
-
+import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AuthContainerProps {
@@ -9,8 +9,8 @@ interface AuthContainerProps {
 const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="p-8 rounded-lg bg-white shadow-sm w-full max-w-md">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="p-8 rounded-xl bg-white shadow-xl w-full max-w-md border border-gray-200">
           <div className="mb-6 flex justify-center">
             <img 
               src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
@@ -23,6 +23,9 @@ const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         </div>
       </div>
@@ -30,7 +33,7 @@ const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="flex justify-center">
           <img 
@@ -39,7 +42,9 @@ const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
             className="h-12 w-auto"
           />
         </div>
-        {children}
+        <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-200">
+          {children}
+        </div>
       </div>
     </div>
   );

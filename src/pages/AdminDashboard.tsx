@@ -5,6 +5,7 @@ import { UsersTable } from '@/components/admin/UsersTable';
 import { PriorityMatchesTable } from '@/components/admin/PriorityMatchesTable';
 import { AllowedEmailsTable } from '@/components/admin/AllowedEmailsTable';
 import { SignupsToggle } from '@/components/admin/SignupsToggle';
+import { EmailDebugger } from '@/components/auth/EmailDebugger';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="priorities">Priority Matches</TabsTrigger>
             <TabsTrigger value="allowlist">Email Allowlist</TabsTrigger>
+            <TabsTrigger value="debug">Email Debug</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -66,6 +68,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="allowlist">
             <AllowedEmailsTable />
+          </TabsContent>
+
+          <TabsContent value="debug">
+            <EmailDebugger />
           </TabsContent>
         </Tabs>
       </div>

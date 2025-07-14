@@ -6,15 +6,15 @@ export default function MatchmakingGuide() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6 p-6">
-        <Card className="bg-blue-50">
+        <Card className="bg-[#ffe5e8]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
-              <AlertCircle className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-[#8f0014]">
+              <AlertCircle className="h-5 w-5 text-[#8f0014]" />
               How Matching Works
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm text-blue-700">
+            <div className="space-y-3 text-sm text-[#8f0014]">
               <p>
                 As a founder, you can prioritize matches with investors who align with your goals. Simply set their priority level to indicate your interest.
               </p>

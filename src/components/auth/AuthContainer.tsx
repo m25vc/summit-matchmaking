@@ -13,7 +13,7 @@ const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
         <div className="p-8 rounded-xl bg-white shadow-xl w-full max-w-md border border-gray-200">
           <div className="mb-6 flex justify-center">
             <img 
-              src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
+              src="/M25_Logo.png" 
               alt="M25 Logo" 
               className="h-12 w-auto"
             />
@@ -37,7 +37,7 @@ const AuthContainer = ({ isLoading, children }: AuthContainerProps) => {
       <div className="max-w-md w-full space-y-8">
         <div className="flex justify-center">
           <img 
-            src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
+            src="/M25_Logo.png" 
             alt="M25 Logo" 
             className="h-12 w-auto"
           />

@@ -1,22 +1,10 @@
-# Welcome to your Lovable project
+# M25 Summit Matchmaking
 
-## Project info
+A networking platform that connects founders and investors at M25 Club Summit events.
 
-**URL**: https://lovable.dev/projects/bb531cdb-41f0-49d2-b9cf-72ba07ff8d00
+## Development
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/bb531cdb-41f0-49d2-b9cf-72ba07ff8d00) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This project is built with React, TypeScript, and Vite.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -60,10 +48,8 @@ This project is built with .
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/bb531cdb-41f0-49d2-b9cf-72ba07ff8d00) and click on Share -> Publish.
+This project is configured for GitHub Pages deployment with a custom domain.
 
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+The site is automatically deployed when changes are pushed to the main branch.

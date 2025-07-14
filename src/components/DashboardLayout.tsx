@@ -54,7 +54,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4">
               <img 
-                src="/lovable-uploads/ed6dc4fc-70bd-4ee0-aa8e-01c89f7c45f3.png" 
+                src="/M25_Logo.png" 
                 alt="M25 Logo" 
                 className="h-8 w-auto"
               />
